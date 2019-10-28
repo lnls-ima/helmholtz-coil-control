@@ -1,0 +1,22 @@
+program Bobina_Helmholtz_v5;
+
+uses
+  Forms,
+  Helmholtz_v4 in '..\Bobina de Helmholtz v5\Helmholtz_v4.pas' {FHelmholtz},
+  Motores in '..\Bobina de Helmholtz v5\Motores.pas' {FMotores},
+  Medicao in '..\Bobina de Helmholtz v5\Medicao.pas' {FMedicao},
+  ConfBob in '..\Bobina de Helmholtz v5\ConfBob.pas' {FConfBob},
+  ConfGeral in '..\Bobina de Helmholtz v5\ConfGeral.pas' {FConfGeral},
+  Conexoes in '..\Bobina de Helmholtz v5\Conexoes.pas' {FConexoes},
+  Offset in '..\Bobina de Helmholtz v5\Offset.pas' {FOffset},
+  Biblioteca in '..\Bobina de Helmholtz v5\Biblioteca.pas' {FBiblioteca},
+  Resultados in '..\Bobina de Helmholtz v5\Resultados.pas' {FResults};
+
+{$R *.RES}
+
+begin
+  Application.Initialize;
+  Application.CreateForm(TFHelmholtz, FHelmholtz);
+  Application.CreateForm(TFBiblioteca, FBiblioteca);
+  Application.Run;
+end.
