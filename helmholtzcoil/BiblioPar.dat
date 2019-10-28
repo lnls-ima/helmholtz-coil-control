@@ -1,0 +1,44 @@
+Biblioteca de Parâmetros Helmholtz
+
+#Espiras	228
+#Voltas Medida	10.
+#Voltas Motor	1.0
+#Voltas Offset	2.0
+Aceleracao Medid	5.0
+Aceleracao Medida	1.0
+Aceleracao Motor	2.0
+Dist Centro	0.1
+End Integrador	28
+Endereco Driver	1.0
+Ganho Mx	1
+Ganho My	0
+Ganho Mz	1
+Offset Ganho1	0.0
+Offset Ganho10	0.0
+Offset Ganho100	0.0
+Offset Ganho2	0.0
+Offset Ganho20	0.0
+Offset Ganho5	0.0
+Offset Ganho50	0.0
+Passos Motor	50000
+Pontos Integracao	128
+Porta Display	5
+Porta Driver	4
+Porta Integrador	28
+Porta Multimetro	0
+Principal Mz	True
+Pulsos Encoder	2048
+Pulsos para Trigger	738.
+Raio1	0.34
+Raio2	0.0
+Resistência cabo	0.8202
+SalvarGeral	True
+Secundária Mx	True
+Secundária My	True
+Subtrair Volume	8e-11
+Velocidade Medida	1.0
+Velocidade Motor	1.0
+Volume Bloco	0.0002
+Volume Novo	-8e-11
+
+END
