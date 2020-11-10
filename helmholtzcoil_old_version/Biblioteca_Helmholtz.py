@@ -12,7 +12,7 @@ import PDI5150_GPIB
 import Agilent34401A as Agilent
 import numpy as np
 
-from PyQt4 import QtCore, QtGui
+from PyQt5 import QtCore, QtWidgets as QtCore, QtGui
 # ******************************************
 
 # Parâmetros

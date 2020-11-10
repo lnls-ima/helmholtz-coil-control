@@ -14,11 +14,11 @@ import math
 import Biblioteca_Helmholtz as Biblioteca
 import threading
 import numpy as np
-from matplotlib.backends.backend_qt4 import NavigationToolbar2QT as NavigationToolbar
+from matplotlib.backends.backend_qt5 import NavigationToolbar2QT as NavigationToolbar
 import matplotlib.pyplot as plt
 import random
 
-from PyQt4 import QtCore, QtGui
+from PyQt5 import QtCore, QtWidgets as QtCore, QtGui
 from Interface_Helmholtz import *
 import sys
 import traceback
