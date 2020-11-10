@@ -35,6 +35,7 @@ class TemperatureWidget(_TablePlotWidget):
     _left_axis_1_format = '{0:.4f}'
     _left_axis_1_data_labels = ['Temperature [degC]']
     _left_axis_1_data_colors = [(255, 0, 0)]
+    _default_cable_resistance = 0.814
 
     def __init__(self, parent=None):
         """Set up the ui and signal/slot connections."""
@@ -44,7 +45,7 @@ class TemperatureWidget(_TablePlotWidget):
         self.la_resistance = _QLabel('Cable Resistance [Ohms]')
         self.sbd_resistance = _QDoubleSpinBox()
         self.sbd_resistance.setDecimals(4)
-        self.sbd_resistance.setValue(0.8202)
+        self.sbd_resistance.setValue(self._default_cable_resistance)
         self.pbt_configure = _QPushButton('Configure Device')
         self.pbt_configure.clicked.connect(self.configure_devices)
         self.add_widgets_next_to_table(
@@ -89,6 +90,7 @@ class TemperatureWidget(_TablePlotWidget):
             self.blockSignals(True)
             _QApplication.setOverrideCursor(_Qt.WaitCursor)
 
+            _multimeter.reset()
             _multimeter.send_command('CONF:RES 100,0.0001')
 
             self.blockSignals(False)
