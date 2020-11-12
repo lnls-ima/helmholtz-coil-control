@@ -6,9 +6,9 @@ import sys as _sys
 import threading as _threading
 from qtpy.QtWidgets import QApplication as _QApplication
 
-from helmholtzcoil.gui import utils as _utils
-from helmholtzcoil.gui.mainwindow import MainWindow as _MainWindow
-import helmholtzcoil.data as _data
+from helmholtz.gui import utils as _utils
+from helmholtz.gui.mainwindow import MainWindow as _MainWindow
+from helmholtz.data import configuration as _configuration
 
 
 class MainApp(_QApplication):
@@ -24,15 +24,25 @@ class MainApp(_QApplication):
         self.mongo = _utils.MONGO
         self.server = _utils.SERVER
         self.create_database()
+        self.coil_config = _configuration.CoilConfig()
+        self.motor_encoder_config = _configuration.MotorEncoderConfig()
 
     def create_database(self):
         """Create database and tables."""
-        _ConnectionConfig = _data.configuration.ConnectionConfig(
+        _ConnectionConfig = _configuration.ConnectionConfig(
+            database_name=self.database_name,
+            mongo=self.mongo, server=self.server)
+        _CoilConfig = _configuration.CoilConfig(
+            database_name=self.database_name,
+            mongo=self.mongo, server=self.server)
+        _MotorEncoderConfig = _configuration.MotorEncoderConfig(
             database_name=self.database_name,
             mongo=self.mongo, server=self.server)
 
         status = []
         status.append(_ConnectionConfig.db_create_collection())
+        status.append(_CoilConfig.db_create_collection())
+        status.append(_MotorEncoderConfig.db_create_collection())
         if not all(status):
             raise Exception("Failed to create database.")
 

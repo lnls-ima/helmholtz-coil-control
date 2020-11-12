@@ -2,7 +2,7 @@
 
 """Run the control application."""
 
-from helmholtzcoil.gui import mainapp
+from helmholtz.gui import mainapp
 
 
 THREAD = False

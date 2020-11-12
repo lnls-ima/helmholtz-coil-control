@@ -23,17 +23,21 @@ from qtpy.QtWidgets import (
     )
 
 from imautils.gui import databasewidgets as _databasewidgets
-from hallbench.gui.utils import get_ui_file as _get_ui_file
-import hallbench.data as _data
+from helmholtz.gui.utils import get_ui_file as _get_ui_file
+import helmholtz.data as _data
 
 
 _ConnectionConfig = _data.configuration.ConnectionConfig
+_CoilConfig = _data.configuration.CoilConfig
+_MotorEncoderConfig = _data.configuration.MotorEncoderConfig
 
 
 class DatabaseWidget(_QWidget):
     """Database widget class for the control application."""
 
     _connection_table_name = _ConnectionConfig.collection_name
+    _coil_table_name = _CoilConfig.collection_name
+    _motor_encoder_table_name = _MotorEncoderConfig.collection_name
 
     _hidden_columns = []
 
@@ -47,10 +51,14 @@ class DatabaseWidget(_QWidget):
 
         self._table_object_dict = {
             self._connection_table_name: _ConnectionConfig,
+            self._coil_table_name: _CoilConfig,
+            self._motor_encoder_table_name: _MotorEncoderConfig,
             }
 
         self._table_page_dict = {
             self._connection_table_name: None,
+            self._coil_table_name: None,
+            self._motor_encoder_table_name: None,
             }
 
         self.short_version_hidden_tables = []

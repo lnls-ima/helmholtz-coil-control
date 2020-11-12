@@ -14,9 +14,9 @@ from qtpy.QtWidgets import (
 from qtpy.QtCore import Qt as _Qt
 import qtpy.uic as _uic
 
-from helmholtzcoil.gui.utils import get_ui_file as _get_ui_file
-import helmholtzcoil.data.configuration as _configuration
-from helmholtzcoil.devices import (
+from helmholtz.gui.utils import get_ui_file as _get_ui_file
+import helmholtz.data.configuration as _configuration
+from helmholtz.devices import (
     display as _display,
     driver as _driver,
     multimeter as _multimeter,
@@ -35,7 +35,7 @@ class ConnectionWidget(_QWidget):
         uifile = _get_ui_file(self)
         self.ui = _uic.loadUi(uifile, self)
 
-        self.connection_config = _configuration.ConnectionConfig()
+        self.config = _configuration.ConnectionConfig()
 
         self.connect_signal_slots()
         self.update_serial_ports()
@@ -78,24 +78,24 @@ class ConnectionWidget(_QWidget):
         _QApplication.setOverrideCursor(_Qt.WaitCursor)
 
         try:
-            if self.connection_config.display_enable:
+            if self.config.display_enable:
                 _display.connect(
-                    self.connection_config.display_port,
-                    self.connection_config.display_baudrate)
+                    self.config.display_port,
+                    self.config.display_baudrate)
 
-            if self.connection_config.driver_enable:
+            if self.config.driver_enable:
                 _driver.connect(
-                    self.connection_config.driver_port,
-                    self.connection_config.driver_baudrate)
+                    self.config.driver_port,
+                    self.config.driver_baudrate)
 
-            if self.connection_config.multimeter_enable:
+            if self.config.multimeter_enable:
                 _multimeter.connect(
-                    self.connection_config.multimeter_port,
-                    self.connection_config.multimeter_baudrate)
+                    self.config.multimeter_port,
+                    self.config.multimeter_baudrate)
 
-            if self.connection_config.integrator_enable:
+            if self.config.integrator_enable:
                 _integrator.connect(
-                    self.connection_config.integrator_address)
+                    self.config.integrator_address)
 
             self.update_led_status()
             connected = self.connection_status()
@@ -118,19 +118,19 @@ class ConnectionWidget(_QWidget):
     def connection_status(self):
         """Return the connection status."""
         try:
-            if (self.connection_config.display_enable and
+            if (self.config.display_enable and
                     not _display.connected):
                 return False
 
-            if (self.connection_config.driver_enable and
+            if (self.config.driver_enable and
                     not _driver.connected):
                 return False
 
-            if (self.connection_config.multimeter_enable and
+            if (self.config.multimeter_enable and
                     not _mulitimeter.connected):
                 return False
 
-            if (self.connection_config.integrator_enable and
+            if (self.config.integrator_enable and
                     not _integrator.connected):
                 return False
 
@@ -215,10 +215,10 @@ class ConnectionWidget(_QWidget):
                     self, 'Failure', 'Invalid database ID.', _QMessageBox.Ok)
                 return
 
-            self.connection_config.clear()
-            self.connection_config.db_update_database(
+            self.config.clear()
+            self.config.db_update_database(
                 self.database_name, mongo=self.mongo, server=self.server)
-            self.connection_config.db_read(idn)
+            self.config.db_read(idn)
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
             msg = 'Failed to read connection from database.'
@@ -233,36 +233,36 @@ class ConnectionWidget(_QWidget):
         """Load configuration to set connection parameters."""
         try:
             self.ui.chb_display_enable.setChecked(
-                self.connection_config.display_enable)
+                self.config.display_enable)
             self.ui.cmb_display_port.setCurrentIndex(
                 self.ui.cmb_display_port.findText(
-                    self.connection_config.display_port))
+                    self.config.display_port))
             self.ui.cmb_display_baudrate.setCurrentIndex(
                 self.ui.cmb_display_baudrate.findText(
-                    str(self.connection_config.display_baudrate)))
+                    str(self.config.display_baudrate)))
 
             self.ui.chb_driver_enable.setChecked(
-                self.connection_config.driver_enable)
+                self.config.driver_enable)
             self.ui.cmb_driver_port.setCurrentIndex(
                 self.ui.cmb_driver_port.findText(
-                    self.connection_config.driver_port))
+                    self.config.driver_port))
             self.ui.cmb_driver_baudrate.setCurrentIndex(
                 self.ui.cmb_driver_baudrate.findText(
-                    str(self.connection_config.driver_baudrate)))
+                    str(self.config.driver_baudrate)))
 
             self.ui.chb_multimeter_enable.setChecked(
-                self.connection_config.multimeter_enable)
+                self.config.multimeter_enable)
             self.ui.cmb_multimeter_port.setCurrentIndex(
                 self.ui.cmb_multimeter_port.findText(
-                    self.connection_config.multimeter_port))
+                    self.config.multimeter_port))
             self.ui.cmb_multimeter_baudrate.setCurrentIndex(
                 self.ui.cmb_multimeter_baudrate.findText(
-                    str(self.connection_config.multimeter_baudrate)))
+                    str(self.config.multimeter_baudrate)))
 
             self.ui.chb_integrator_enable.setChecked(
-                self.connection_config.integrator_enable)
+                self.config.integrator_enable)
             self.ui.sb_integrator_address.setValue(
-                self.connection_config.integrator_address)
+                self.config.integrator_address)
 
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
@@ -275,10 +275,10 @@ class ConnectionWidget(_QWidget):
         if self.database_name is not None:
             try:
                 if self.update_configuration():
-                    self.connection_config.db_update_database(
+                    self.config.db_update_database(
                         self.database_name,
                         mongo=self.mongo, server=self.server)
-                    idn = self.connection_config.db_save()
+                    idn = self.config.db_save()
                     self.ui.cmb_idn.addItem(str(idn))
                     self.ui.cmb_idn.setCurrentIndex(self.ui.cmb_idn.count()-1)
                     self.ui.pbt_load_db.setEnabled(False)
@@ -297,10 +297,10 @@ class ConnectionWidget(_QWidget):
         load_enabled = self.ui.pbt_load_db.isEnabled()
         self.ui.cmb_idn.clear()
         try:
-            self.connection_config.db_update_database(
+            self.config.db_update_database(
                 self.database_name,
                 mongo=self.mongo, server=self.server)
-            idns = self.connection_config.db_get_id_list()
+            idns = self.config.db_get_id_list()
             self.ui.cmb_idn.addItems([str(idn) for idn in idns])
             if len(current_text) == 0:
                 self.ui.cmb_idn.setCurrentIndex(self.ui.cmb_idn.count()-1)
@@ -313,40 +313,40 @@ class ConnectionWidget(_QWidget):
 
     def update_configuration(self):
         """Update connection configuration parameters."""
-        self.connection_config.clear()
+        self.config.clear()
 
         try:
-            self.connection_config.display_enable = (
+            self.config.display_enable = (
                 self.ui.chb_display_enable.isChecked())
-            self.connection_config.display_port = (
+            self.config.display_port = (
                 self.ui.cmb_display_port.currentText())
-            self.connection_config.display_baudrate = int(
+            self.config.display_baudrate = int(
                 self.ui.cmb_display_baudrate.currentText())
 
-            self.connection_config.driver_enable = (
+            self.config.driver_enable = (
                 self.ui.chb_driver_enable.isChecked())
-            self.connection_config.driver_port = (
+            self.config.driver_port = (
                 self.ui.cmb_driver_port.currentText())
-            self.connection_config.driver_baudrate = int(
+            self.config.driver_baudrate = int(
                 self.ui.cmb_driver_baudrate.currentText())
 
-            self.connection_config.multimeter_enable = (
+            self.config.multimeter_enable = (
                 self.ui.chb_multimeter_enable.isChecked())
-            self.connection_config.multimeter_port = (
+            self.config.multimeter_port = (
                 self.ui.cmb_multimeter_port.currentText())
-            self.connection_config.multimeter_baudrate = int(
+            self.config.multimeter_baudrate = int(
                 self.ui.cmb_multimeter_baudrate.currentText())
 
-            self.connection_config.integrator_enable = (
+            self.config.integrator_enable = (
                 self.ui.chb_integrator_enable.isChecked())
-            self.connection_config.integrator_address = (
+            self.config.integrator_address = (
                 self.ui.sb_integrator_address.value())
 
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
-            self.connection_config.clear()
+            self.config.clear()
 
-        if self.connection_config.valid_data():
+        if self.config.valid_data():
             return True
         else:
             msg = 'Invalid connection configuration.'

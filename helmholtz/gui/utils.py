@@ -24,7 +24,7 @@ ICON_SIZE = 24
 DATABASE_NAME = 'helmholtz_coil_measurements.db'
 MONGO = False
 SERVER = 'localhost'
-UPDATE_POSITIONS_INTERVAL = 0.5  # [s]
+UPDATE_ENCODER_INTERVAL = 0.5  # [s]
 UPDATE_PLOT_INTERVAL = 0.1  # [s]
 TABLE_NUMBER_ROWS = 1000
 TABLE_MAX_NUMBER_ROWS = 100
@@ -59,7 +59,7 @@ def get_default_icon_size():
 def get_icon(icon_file):
     """Get the Qt icon for the given file."""
     img_path = _path.join(
-        BASEPATH, _path.join('helmholtzcoil', _path.join('resources', 'img')))
+        BASEPATH, _path.join('helmholtz', _path.join('resources', 'img')))
     icon_path = _path.join(img_path, icon_file)
     icon = _QIcon()
     icon.addPixmap(
@@ -80,7 +80,7 @@ def get_ui_file(widget):
     else:
         basename = '%s.ui' % widget.__class__.__name__.lower()
     ui_path = _path.join(
-        BASEPATH, _path.join('helmholtzcoil', _path.join('gui', 'ui')))
+        BASEPATH, _path.join('helmholtz', _path.join('gui', 'ui')))
     ui_file = _path.join(ui_path, basename)
 
     return ui_file

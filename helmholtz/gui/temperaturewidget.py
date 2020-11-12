@@ -20,10 +20,10 @@ from qtpy.QtCore import (
     Signal as _Signal,
     )
 
-from helmholtzcoil.gui.auxiliarywidgets import (
+from helmholtz.gui.auxiliarywidgets import (
     TablePlotWidget as _TablePlotWidget
     )
-from helmholtzcoil.devices import (
+from helmholtz.devices import (
     multimeter as _multimeter,
     )
 

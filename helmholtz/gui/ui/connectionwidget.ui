@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1159</width>
-    <height>488</height>
+    <width>1000</width>
+    <height>550</height>
    </rect>
   </property>
   <property name="font">
@@ -825,7 +825,6 @@
        </spacer>
       </item>
      </layout>
-     <zorder></zorder>
      <zorder>label_6</zorder>
      <zorder>verticalSpacer</zorder>
     </widget>

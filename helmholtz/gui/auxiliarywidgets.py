@@ -51,7 +51,7 @@ from matplotlib.backends.backend_qt5agg import (
     NavigationToolbar2QT as _Toolbar
     )
 
-import helmholtzcoil.gui.utils as _utils
+import helmholtz.gui.utils as _utils
 
 _font = _utils.get_default_font()
 _font_bold = _utils.get_default_font(bold=True)

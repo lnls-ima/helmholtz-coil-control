@@ -4,6 +4,8 @@ import os as _os
 import time as _time
 
 from imautils.devices.utils import configure_logging
+from imautils.devices import HeidenhainLib as _HeidenhainLib
+from imautils.devices import ParkerDriverLib as _ParkerDriverLib
 from imautils.devices import Agilent34401ALib as _Agilent34401ALib
 
 _timestamp = _time.strftime('%Y-%m-%d_%H-%M-%S', _time.localtime())
@@ -20,7 +22,7 @@ logfile = _os.path.join(
     _logs_path, '{0:s}_helmholtz_coil.log'.format(_timestamp))
 configure_logging(logfile)
 
-display = None
-driver = None
+display = _HeidenhainLib.HeidenhainSerial(log=True)
+driver = _ParkerDriverLib.ParkerDriverSerial(log=True)
 multimeter = _Agilent34401ALib.Agilent34401ASerial(log=True)
 integrator = None
