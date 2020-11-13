@@ -45,6 +45,7 @@ class MotorWidget(_QWidget):
 
         self.connect_signal_slots()
         self.update_ids()
+        self.load_last_db_entry()
 
     @property
     def database_name(self):
@@ -80,13 +81,13 @@ class MotorWidget(_QWidget):
             self.ui.sb_driver_address,
             self.ui.sbd_max_velocity,
             self.ui.sbd_acceleration,
+            self.ui.sb_encoder_resolution,
             ]
         for sb in sbs:
             sb.valueChanged.connect(self.clear_load_options)
 
         cmbs = [
             self.ui.cmb_motor_resolution,
-            self.ui.cmb_encoder_resolution,
             ]
         for cmb in cmbs:
             cmb.currentIndexChanged.connect(self.clear_load_options)
@@ -207,6 +208,28 @@ class MotorWidget(_QWidget):
         self.ui.cmb_idn.setCurrentIndex(self.ui.cmb_idn.findText(str(idn)))
         self.ui.pbt_load_db.setEnabled(False)
 
+    def load_last_db_entry(self):
+        """Load configuration from database to set parameters."""
+        try:
+            self.config.clear()
+            self.config.db_update_database(
+                self.database_name, mongo=self.mongo, server=self.server)
+            self.config.db_read()
+
+            idn = self.config.idn
+            self.update_ids()
+            idx = self.ui.cmb_idn.findText(str(idn))
+            if idx == -1:
+                self.ui.cmb_idn.setCurrentIndex(-1)
+                return
+       
+        except Exception:
+            return
+
+        self.load()
+        self.ui.cmb_idn.setCurrentIndex(self.ui.cmb_idn.findText(str(idn)))
+        self.ui.pbt_load_db.setEnabled(False)
+
     def load(self):
         """Load configuration to set parameters."""
         try:
@@ -216,15 +239,14 @@ class MotorWidget(_QWidget):
                 self.config.acceleration)
             self.ui.sb_driver_address.setValue(
                 self.config.driver_address)
+            self.ui.sb_encoder_resolution.setValue(
+                self.config.encoder_resolution)
             self.ui.cmb_rotation_direction.setCurrentIndex(
                 self.ui.cmb_rotation_direction.findText(
                     str(self.config.rotation_direction)))
             self.ui.cmb_motor_resolution.setCurrentIndex(
                 self.ui.cmb_motor_resolution.findText(
                     str(self.config.motor_resolution)))
-            self.ui.cmb_encoder_resolution.setCurrentIndex(
-                self.ui.cmb_encoder_resolution.findText(
-                    str(self.config.encoder_resolution)))
 
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
@@ -284,12 +306,12 @@ class MotorWidget(_QWidget):
                 self.ui.sbd_acceleration.value())
             self.config.driver_address = (
                 self.ui.sb_driver_address.value())
+            self.config.encoder_resolution = (
+                self.ui.sb_encoder_resolution.value())
             self.config.rotation_direction = (
                 self.ui.cmb_rotation_direction.currentText())
             self.config.motor_resolution = (
                 self.ui.cmb_motor_resolution.currentText())
-            self.config.encoder_resolution = (
-                self.ui.cmb_encoder_resolution.currentText())
 
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
@@ -330,17 +352,19 @@ class MotorWidget(_QWidget):
                 self.ui.sbd_acceleration.value())
             self.config.driver_address = (
                 self.ui.sb_driver_address.value())
+            self.config.encoder_resolution = (
+                self.ui.sb_encoder_resolution.value())
             self.config.rotation_direction = (
                 self.ui.cmb_rotation_direction.currentText())
             self.config.motor_resolution = (
                 self.ui.cmb_motor_resolution.currentText())
-            self.config.encoder_resolution = (
-                self.ui.cmb_encoder_resolution.currentText())
 
             if not self.config.valid_data():
                 msg = 'Invalid configuration.'
                 _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
                 return False
+
+            self.save_db()
 
             self.global_motor_encoder_config = self.config.copy()
             msg = 'Motor and encoder parameters configured.'

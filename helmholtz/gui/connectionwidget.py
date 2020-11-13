@@ -40,6 +40,7 @@ class ConnectionWidget(_QWidget):
         self.connect_signal_slots()
         self.update_serial_ports()
         self.update_connection_ids()
+        self.load_last_db_entry()
 
     @property
     def database_name(self):
@@ -223,6 +224,28 @@ class ConnectionWidget(_QWidget):
             _traceback.print_exc(file=_sys.stdout)
             msg = 'Failed to read connection from database.'
             _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            return
+
+        self.load()
+        self.ui.cmb_idn.setCurrentIndex(self.ui.cmb_idn.findText(str(idn)))
+        self.ui.pbt_load_db.setEnabled(False)
+
+    def load_last_db_entry(self):
+        """Load configuration from database to set parameters."""
+        try:
+            self.config.clear()
+            self.config.db_update_database(
+                self.database_name, mongo=self.mongo, server=self.server)
+            self.config.db_read()
+
+            idn = self.config.idn
+            self.update_ids()
+            idx = self.ui.cmb_idn.findText(str(idn))
+            if idx == -1:
+                self.ui.cmb_idn.setCurrentIndex(-1)
+                return
+       
+        except Exception:
             return
 
         self.load()
