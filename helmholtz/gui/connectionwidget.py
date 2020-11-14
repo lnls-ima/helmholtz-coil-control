@@ -5,7 +5,6 @@
 import os as _os
 import sys as _sys
 import traceback as _traceback
-import serial.tools.list_ports as _list_ports
 from qtpy.QtWidgets import (
     QWidget as _QWidget,
     QMessageBox as _QMessageBox,
@@ -39,7 +38,7 @@ class ConnectionWidget(_QWidget):
 
         self.connect_signal_slots()
         self.update_serial_ports()
-        self.update_connection_ids()
+        self.update_ids()
         self.load_last_db_entry()
 
     @property
@@ -82,21 +81,35 @@ class ConnectionWidget(_QWidget):
             if self.config.display_enable:
                 _display.connect(
                     self.config.display_port,
-                    self.config.display_baudrate)
+                    self.config.display_baudrate,
+                    bytesize=self.config.display_bytesize,
+                    stopbits=float(self.config.display_stopbits),
+                    parity=self.config.display_parity[0],
+                    )
 
             if self.config.driver_enable:
                 _driver.connect(
                     self.config.driver_port,
-                    self.config.driver_baudrate)
+                    self.config.driver_baudrate,
+                    bytesize=self.config.driver_bytesize,
+                    stopbits=float(self.config.driver_stopbits),
+                    parity=self.config.driver_parity[0],
+                    )
 
             if self.config.multimeter_enable:
                 _multimeter.connect(
                     self.config.multimeter_port,
-                    self.config.multimeter_baudrate)
+                    self.config.multimeter_baudrate,
+                    bytesize=self.config.multimeter_bytesize,
+                    stopbits=float(self.config.multimeter_stopbits),
+                    parity=self.config.multimeter_parity[0],
+                    )
 
             if self.config.integrator_enable:
                 _integrator.connect(
-                    self.config.integrator_address)
+                    self.config.integrator_address,
+                    board=self.config.integrator_board,
+                    )
 
             self.update_led_status()
             connected = self.connection_status()
@@ -154,6 +167,10 @@ class ConnectionWidget(_QWidget):
 
         sbs = [
             self.ui.sb_integrator_address,
+            self.ui.sb_display_bytesize,
+            self.ui.sb_driver_bytesize,
+            self.ui.sb_multimeter_bytesize,
+            self.ui.sb_integrator_board,
             ]
         for sb in sbs:
             sb.valueChanged.connect(self.clear_load_options)
@@ -161,16 +178,22 @@ class ConnectionWidget(_QWidget):
         cmbs = [
             self.ui.cmb_display_port,
             self.ui.cmb_display_baudrate,
+            self.ui.cmb_display_parity,
+            self.ui.cmb_display_stopbits,
             self.ui.cmb_driver_port,
             self.ui.cmb_driver_baudrate,
+            self.ui.cmb_driver_parity,
+            self.ui.cmb_driver_stopbits,
             self.ui.cmb_multimeter_port,
             self.ui.cmb_multimeter_baudrate,
+            self.ui.cmb_multimeter_parity,
+            self.ui.cmb_multimeter_stopbits,
             ]
         for cmb in cmbs:
             cmb.currentIndexChanged.connect(self.clear_load_options)
 
         self.ui.cmb_idn.currentIndexChanged.connect(self.enable_load_db)
-        self.ui.tbt_update_idn.clicked.connect(self.update_connection_ids)
+        self.ui.tbt_update_idn.clicked.connect(self.update_ids)
         self.ui.pbt_load_db.clicked.connect(self.load_db)
         self.ui.tbt_save_db.clicked.connect(self.save_db)
         self.ui.pbt_connect.clicked.connect(self.connect_devices)
@@ -208,7 +231,7 @@ class ConnectionWidget(_QWidget):
             return
 
         try:
-            self.update_connection_ids()
+            self.update_ids()
             idx = self.ui.cmb_idn.findText(str(idn))
             if idx == -1:
                 self.ui.cmb_idn.setCurrentIndex(-1)
@@ -244,7 +267,7 @@ class ConnectionWidget(_QWidget):
             if idx == -1:
                 self.ui.cmb_idn.setCurrentIndex(-1)
                 return
-       
+
         except Exception:
             return
 
@@ -263,6 +286,14 @@ class ConnectionWidget(_QWidget):
             self.ui.cmb_display_baudrate.setCurrentIndex(
                 self.ui.cmb_display_baudrate.findText(
                     str(self.config.display_baudrate)))
+            self.ui.sb_display_bytesize.setValue(
+                self.config.display_bytesize)
+            self.ui.cmb_display_parity.setCurrentIndex(
+                self.ui.cmb_display_parity.findText(
+                    self.config.display_parity))
+            self.ui.cmb_display_stopbits.setCurrentIndex(
+                self.ui.cmb_display_stopbits.findText(
+                    self.config.display_stopbits))
 
             self.ui.chb_driver_enable.setChecked(
                 self.config.driver_enable)
@@ -272,6 +303,14 @@ class ConnectionWidget(_QWidget):
             self.ui.cmb_driver_baudrate.setCurrentIndex(
                 self.ui.cmb_driver_baudrate.findText(
                     str(self.config.driver_baudrate)))
+            self.ui.sb_driver_bytesize.setValue(
+                self.config.driver_bytesize)
+            self.ui.cmb_driver_parity.setCurrentIndex(
+                self.ui.cmb_driver_parity.findText(
+                    self.config.driver_parity))
+            self.ui.cmb_driver_stopbits.setCurrentIndex(
+                self.ui.cmb_driver_stopbits.findText(
+                    self.config.driver_stopbits))
 
             self.ui.chb_multimeter_enable.setChecked(
                 self.config.multimeter_enable)
@@ -281,11 +320,21 @@ class ConnectionWidget(_QWidget):
             self.ui.cmb_multimeter_baudrate.setCurrentIndex(
                 self.ui.cmb_multimeter_baudrate.findText(
                     str(self.config.multimeter_baudrate)))
+            self.ui.sb_multimeter_bytesize.setValue(
+                self.config.multimeter_bytesize)
+            self.ui.cmb_multimeter_parity.setCurrentIndex(
+                self.ui.cmb_multimeter_parity.findText(
+                    self.config.multimeter_parity))
+            self.ui.cmb_multimeter_stopbits.setCurrentIndex(
+                self.ui.cmb_multimeter_stopbits.findText(
+                    self.config.multimeter_stopbits))
 
             self.ui.chb_integrator_enable.setChecked(
                 self.config.integrator_enable)
             self.ui.sb_integrator_address.setValue(
                 self.config.integrator_address)
+            self.ui.sb_integrator_board.setValue(
+                self.config.integrator_board)
 
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
@@ -314,8 +363,8 @@ class ConnectionWidget(_QWidget):
             _QMessageBox.critical(
                 self, 'Failure', msg, _QMessageBox.Ok)
 
-    def update_connection_ids(self):
-        """Update connection IDs in combo box."""
+    def update_ids(self):
+        """Update IDs in combo box."""
         current_text = self.ui.cmb_idn.currentText()
         load_enabled = self.ui.pbt_load_db.isEnabled()
         self.ui.cmb_idn.clear()
@@ -345,6 +394,12 @@ class ConnectionWidget(_QWidget):
                 self.ui.cmb_display_port.currentText())
             self.config.display_baudrate = int(
                 self.ui.cmb_display_baudrate.currentText())
+            self.config.display_bytesize = int(
+                self.ui.sb_display_bytesize.value())
+            self.config.display_parity = (
+                self.ui.cmb_display_parity.currentText())
+            self.config.display_stopbits = (
+                self.ui.cmb_display_stopbits.currentText())
 
             self.config.driver_enable = (
                 self.ui.chb_driver_enable.isChecked())
@@ -352,6 +407,12 @@ class ConnectionWidget(_QWidget):
                 self.ui.cmb_driver_port.currentText())
             self.config.driver_baudrate = int(
                 self.ui.cmb_driver_baudrate.currentText())
+            self.config.driver_bytesize = int(
+                self.ui.sb_driver_bytesize.value())
+            self.config.driver_parity = (
+                self.ui.cmb_driver_parity.currentText())
+            self.config.driver_stopbits = (
+                self.ui.cmb_driver_stopbits.currentText())
 
             self.config.multimeter_enable = (
                 self.ui.chb_multimeter_enable.isChecked())
@@ -359,11 +420,19 @@ class ConnectionWidget(_QWidget):
                 self.ui.cmb_multimeter_port.currentText())
             self.config.multimeter_baudrate = int(
                 self.ui.cmb_multimeter_baudrate.currentText())
+            self.config.multimeter_bytesize = int(
+                self.ui.sb_multimeter_bytesize.value())
+            self.config.multimeter_parity = (
+                self.ui.cmb_multimeter_parity.currentText())
+            self.config.multimeter_stopbits = (
+                self.ui.cmb_multimeter_stopbits.currentText())
 
             self.config.integrator_enable = (
                 self.ui.chb_integrator_enable.isChecked())
             self.config.integrator_address = (
                 self.ui.sb_integrator_address.value())
+            self.config.integrator_board = (
+                self.ui.sb_integrator_board.value())
 
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
@@ -389,28 +458,13 @@ class ConnectionWidget(_QWidget):
 
     def update_serial_ports(self):
         """Update avaliable serial ports."""
-        _l = [p[0] for p in _list_ports.comports()]
-
-        if len(_l) == 0:
-            return
-
-        _ports = []
-        _s = ''
-        _k = str
-        if 'COM' in _l[0]:
-            _s = 'COM'
-            _k = int
-
-        for key in _l:
-            _ports.append(key.strip(_s))
-        _ports.sort(key=_k)
-        _ports = [_s + key for key in _ports]
+        ports = _driver.list_ports()
 
         self.ui.cmb_display_port.clear()
-        self.ui.cmb_display_port.addItems(_ports)
+        self.ui.cmb_display_port.addItems(ports)
 
         self.ui.cmb_driver_port.clear()
-        self.ui.cmb_driver_port.addItems(_ports)
+        self.ui.cmb_driver_port.addItems(ports)
 
         self.ui.cmb_multimeter_port.clear()
-        self.ui.cmb_multimeter_port.addItems(_ports)
+        self.ui.cmb_multimeter_port.addItems(ports)

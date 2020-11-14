@@ -29,7 +29,7 @@ import helmholtz.data as _data
 
 _ConnectionConfig = _data.configuration.ConnectionConfig
 _CoilConfig = _data.configuration.CoilConfig
-_MotorEncoderConfig = _data.configuration.MotorEncoderConfig
+_MotorIntegratorConfig = _data.configuration.MotorIntegratorConfig
 
 
 class DatabaseWidget(_QWidget):
@@ -37,7 +37,7 @@ class DatabaseWidget(_QWidget):
 
     _connection_table_name = _ConnectionConfig.collection_name
     _coil_table_name = _CoilConfig.collection_name
-    _motor_encoder_table_name = _MotorEncoderConfig.collection_name
+    _motor_integrator_table_name = _MotorIntegratorConfig.collection_name
 
     _hidden_columns = []
 
@@ -52,13 +52,13 @@ class DatabaseWidget(_QWidget):
         self._table_object_dict = {
             self._connection_table_name: _ConnectionConfig,
             self._coil_table_name: _CoilConfig,
-            self._motor_encoder_table_name: _MotorEncoderConfig,
+            self._motor_integrator_table_name: _MotorIntegratorConfig,
             }
 
         self._table_page_dict = {
             self._connection_table_name: None,
             self._coil_table_name: None,
-            self._motor_encoder_table_name: None,
+            self._motor_integrator_table_name: None,
             }
 
         self.short_version_hidden_tables = []

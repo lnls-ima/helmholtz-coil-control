@@ -341,7 +341,7 @@ class TablePlotWidget(_QWidget):
     _right_axis_1_data_colors = []
     _right_axis_2_data_colors = []
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, show_legend=True):
         super().__init__(parent)
         self.setWindowTitle("Table and Plot")
         self.resize(1230, 900)
@@ -373,9 +373,11 @@ class TablePlotWidget(_QWidget):
         self.table_analysis_dialog = TableAnalysisDialog()
 
         # add legend to plot
-        self.legend = _pyqtgraph.LegendItem(offset=(70, 30))
-        self.legend.setParentItem(self.pw_plot.graphicsItem())
-        self.legend.setAutoFillBackground(1)
+        self.show_legend = show_legend
+        if self.show_legend:
+            self.legend = _pyqtgraph.LegendItem(offset=(70, 30))
+            self.legend.setParentItem(self.pw_plot.graphicsItem())
+            self.legend.setAutoFillBackground(1)
 
         self.right_axis_1 = None
         self.right_axis_2 = None
@@ -607,8 +609,9 @@ class TablePlotWidget(_QWidget):
 
     def clear_legend_items(self):
         """Clear plot legend."""
-        for label in self._legend_items:
-            self.legend.removeItem(label)
+        if self.show_legend:
+            for label in self._legend_items:
+                self.legend.removeItem(label)
 
     def clear_button_clicked(self):
         """Clear all values."""
@@ -643,6 +646,7 @@ class TablePlotWidget(_QWidget):
     def configure_plot(self):
         """Configure data plots."""
         self.pw_plot.clear()
+
         self.pw_plot.setLabel('bottom', self._bottom_axis_label)
         self.pw_plot.showGrid(x=True, y=True)
 
@@ -840,12 +844,13 @@ class TablePlotWidget(_QWidget):
 
     def update_legend_items(self):
         """Update legend items."""
-        self.clear_legend_items()
-        self._legend_items = []
-        for label in self._data_labels:
-            legend_label = label.split('[')[0]
-            self._legend_items.append(legend_label)
-            self.legend.addItem(self._graphs[label], legend_label)
+        if self.show_legend:
+            self.clear_legend_items()
+            self._legend_items = []
+            for label in self._data_labels:
+                legend_label = label.split('[')[0]
+                self._legend_items.append(legend_label)
+                self.legend.addItem(self._graphs[label], legend_label)
 
     def update_monitor_interval(self):
         """Update monitor interval value."""

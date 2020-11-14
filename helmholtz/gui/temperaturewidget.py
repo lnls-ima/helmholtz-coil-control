@@ -39,7 +39,7 @@ class TemperatureWidget(_TablePlotWidget):
 
     def __init__(self, parent=None):
         """Set up the ui and signal/slot connections."""
-        super().__init__(parent)
+        super().__init__(parent, show_legend=False)
 
         # add check box and configure button
         self.la_resistance = _QLabel('Cable Resistance [Ohms]')

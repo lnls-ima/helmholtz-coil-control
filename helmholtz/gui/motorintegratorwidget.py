@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""Motor widget for the control application."""
+"""Motor and integrator widget for the control application."""
 
 import os as _os
 import sys as _sys
@@ -14,7 +14,7 @@ from qtpy.QtWidgets import (
 from qtpy.QtCore import (
     Qt as _Qt,
     QTimer as _QTimer
-) 
+)
 import qtpy.uic as _uic
 
 from helmholtz.gui import utils as _utils
@@ -24,8 +24,8 @@ from helmholtz.devices import (
     integrator as _integrator,
 )
 
-class MotorWidget(_QWidget):
-    """Motor widget class for the control application."""
+class MotorIntegratorWidget(_QWidget):
+    """Motor and integrator widget class for the control application."""
 
     _update_encoder_interval = _utils.UPDATE_ENCODER_INTERVAL
 
@@ -37,7 +37,7 @@ class MotorWidget(_QWidget):
         uifile = _utils.get_ui_file(self)
         self.ui = _uic.loadUi(uifile, self)
 
-        self.config = _configuration.MotorEncoderConfig()
+        self.config = _configuration.MotorIntegratorConfig()
 
         self.stop_encoder_update = True
         self.timer = _QTimer()
@@ -79,15 +79,18 @@ class MotorWidget(_QWidget):
         """Create signal/slot connections."""
         sbs = [
             self.ui.sb_driver_address,
-            self.ui.sbd_max_velocity,
-            self.ui.sbd_acceleration,
+            self.ui.sbd_motor_velocity,
+            self.ui.sbd_motor_acceleration,
             self.ui.sb_encoder_resolution,
             ]
         for sb in sbs:
             sb.valueChanged.connect(self.clear_load_options)
 
         cmbs = [
+            self.ui.cmb_motor_direction,
             self.ui.cmb_motor_resolution,
+            self.ui.cmb_integrator_channel,
+            self.ui.cmb_encoder_direction,
             ]
         for cmb in cmbs:
             cmb.currentIndexChanged.connect(self.clear_load_options)
@@ -97,40 +100,48 @@ class MotorWidget(_QWidget):
         self.ui.pbt_load_db.clicked.connect(self.load_db)
         self.ui.tbt_save_db.clicked.connect(self.save_db)
         self.ui.pbt_config_param.clicked.connect(self.config_param)
-        self.ui.chb_encoder.stateChanged.connect(
+        self.ui.chb_encoder.clicked.connect(
             self.enable_encoder_reading)
         self.ui.rbt_nr_turns.toggled.connect(self.disable_invalid_widgets)
         self.ui.rbt_nr_steps.toggled.connect(self.disable_invalid_widgets)
-        self.ui.pbt_move.clicked.connect(self.move_motor)
-        self.ui.pbt_stop.clicked.connect(self.stop_motor)
+        self.ui.pbt_move_motor.clicked.connect(self.move_motor)
+        self.ui.pbt_stop_motor.clicked.connect(self.stop_motor)
 
     def move_motor(self):
-        if not self.update_configuration():
-            return
-
         try:
-            resolution = self.config.motor_resolution
+            if not _driver.connected:
+                msg = 'Driver not connected.'
+                _QMessageBox.critical(
+                    self, 'Failure', msg, _QMessageBox.Ok)
+                return
+
+            driver_address = self.ui.sb_driver_address.value()
+            resolution = self.ui.cmb_motor_resolution.currentText()
+            direction = self.ui.cmb_motor_direction.currentText()
+            velocity = self.ui.sbd_motor_velocity.value()
+            acceleration = self.ui.sbd_motor_acceleration.value()
+
             if self.ui.rbt_nr_steps.isChecked():
                 steps = self.ui.sb_nr_steps.value()
             else:
                 steps = resolution*self.ui.sbd_nr_turns.value()
 
             if not _driver.config_motor(
-                    self.config.driver_address,
+                    driver_address,
                     0,
-                    self.config.rotation_direction,
+                    direction,
                     resolution,
-                    self.config.max_velocity,
-                    self.config.acceleration,
+                    velocity,
+                    acceleration,
                     steps):
-                
+
                 msg = 'Failed to send configuration to motor.'
                 _QMessageBox.critical(
                     self, 'Failure', msg, _QMessageBox.Ok)
                 return
 
             _driver.move_motor(self.config.driver_address)
-        
+
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
             msg = 'Failed to move motor.'
@@ -142,7 +153,8 @@ class MotorWidget(_QWidget):
             return
 
         try:
-            _driver.stop_motor(self.config.driver_address)
+            driver_address = self.ui.sb_driver_address.value()
+            _driver.stop_motor(driver_address)
 
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
@@ -160,11 +172,28 @@ class MotorWidget(_QWidget):
 
     def enable_encoder_reading(self):
         """Enable encoder reading."""
-        if self.ui.chb_encoder.isChecked():
-            self.ui.lcd_encoder.setEnabled(True)
-            self.stop_encoder_update = False
-            self.timer.start(self._update_encoder_interval*1000)
-        else:
+        try:
+            if self.ui.chb_encoder.isChecked():
+                encoder_resolution = self.ui.sb_encoder_resolution.value()
+
+                if _integrator.configure_encoder_reading(encoder_resolution):
+                    self.stop_encoder_update = False
+                    self.timer.start(self._update_encoder_interval*1000)
+                    self.ui.lcd_encoder.setEnabled(True)
+                else:
+                    msg = 'Failed to configure encoder reading.'
+                    _QMessageBox.critical(
+                        self, 'Failure', msg, _QMessageBox.Ok)
+                    self.stop_encoder_update = True
+                    self.ui.lcd_encoder.setEnabled(False)
+                    self.ui.chb_encoder.setChecked(False)
+            else:
+                self.ui.lcd_encoder.setEnabled(False)
+                self.stop_encoder_update = True
+                self.timer.stop()
+
+        except Exception:
+            _traceback.print_exc(file=_sys.stdout)
             self.ui.lcd_encoder.setEnabled(False)
             self.stop_encoder_update = True
             self.timer.stop()
@@ -222,7 +251,7 @@ class MotorWidget(_QWidget):
             if idx == -1:
                 self.ui.cmb_idn.setCurrentIndex(-1)
                 return
-       
+
         except Exception:
             return
 
@@ -233,20 +262,26 @@ class MotorWidget(_QWidget):
     def load(self):
         """Load configuration to set parameters."""
         try:
-            self.ui.sbd_max_velocity.setValue(
-                self.config.max_velocity)
-            self.ui.sbd_acceleration.setValue(
-                self.config.acceleration)
             self.ui.sb_driver_address.setValue(
                 self.config.driver_address)
-            self.ui.sb_encoder_resolution.setValue(
-                self.config.encoder_resolution)
-            self.ui.cmb_rotation_direction.setCurrentIndex(
-                self.ui.cmb_rotation_direction.findText(
-                    str(self.config.rotation_direction)))
+            self.ui.sbd_motor_velocity.setValue(
+                self.config.motor_velocity)
+            self.ui.sbd_motor_acceleration.setValue(
+                self.config.motor_acceleration)
+            self.ui.cmb_motor_direction.setCurrentIndex(
+                self.ui.cmb_motor_direction.findText(
+                    str(self.config.motor_direction)))
             self.ui.cmb_motor_resolution.setCurrentIndex(
                 self.ui.cmb_motor_resolution.findText(
                     str(self.config.motor_resolution)))
+            self.ui.cmb_integrator_channel.setCurrentIndex(
+                self.ui.cmb_integrator_channel.findText(
+                    str(self.config.integrator_channel)))
+            self.ui.cmb_encoder_direction.setCurrentIndex(
+                self.ui.cmb_encoder_direction.findText(
+                    str(self.config.encoder_direction)))
+            self.ui.sb_encoder_resolution.setValue(
+                self.config.encoder_resolution)
 
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
@@ -300,18 +335,22 @@ class MotorWidget(_QWidget):
         self.config.clear()
 
         try:
-            self.config.max_velocity = (
-                self.ui.sbd_max_velocity.value())
-            self.config.acceleration = (
-                self.ui.sbd_acceleration.value())
             self.config.driver_address = (
                 self.ui.sb_driver_address.value())
-            self.config.encoder_resolution = (
-                self.ui.sb_encoder_resolution.value())
-            self.config.rotation_direction = (
-                self.ui.cmb_rotation_direction.currentText())
+            self.config.motor_velocity = (
+                self.ui.sbd_motor_velocity.value())
+            self.config.motor_acceleration = (
+                self.ui.sbd_motor_acceleration.value())
+            self.config.motor_direction = (
+                self.ui.cmb_motor_direction.currentText())
             self.config.motor_resolution = (
                 self.ui.cmb_motor_resolution.currentText())
+            self.config.integrator_channel = (
+                self.ui.cmb_integrator_channel.currentText())
+            self.config.encoder_direction = (
+                self.ui.cmb_encoder_direction.currentText())
+            self.config.encoder_resolution = (
+                self.ui.sb_encoder_resolution.value())
 
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
@@ -337,7 +376,9 @@ class MotorWidget(_QWidget):
                 self.ui.lcd_encoder.setEnabled(False)
                 return
 
-            self.ui.lcd_encoder.setvalue(0)
+            value = int(_integrator.read_from_device())
+            self.ui.lcd_encoder.setvalue(value)
+
         except Exception:
             pass
 
@@ -346,18 +387,22 @@ class MotorWidget(_QWidget):
         self.config.clear()
 
         try:
-            self.config.max_velocity = (
-                self.ui.sbd_max_velocity.value())
-            self.config.acceleration = (
-                self.ui.sbd_acceleration.value())
             self.config.driver_address = (
                 self.ui.sb_driver_address.value())
-            self.config.encoder_resolution = (
-                self.ui.sb_encoder_resolution.value())
-            self.config.rotation_direction = (
-                self.ui.cmb_rotation_direction.currentText())
+            self.config.motor_velocity = (
+                self.ui.sbd_motor_velocity.value())
+            self.config.motor_acceleration = (
+                self.ui.sbd_motor_acceleration.value())
+            self.config.motor_direction = (
+                self.ui.cmb_motor_direction.currentText())
             self.config.motor_resolution = (
                 self.ui.cmb_motor_resolution.currentText())
+            self.config.integrator_channel = (
+                self.ui.cmb_integrator_channel.currentText())
+            self.config.encoder_direction = (
+                self.ui.cmb_encoder_direction.currentText())
+            self.config.encoder_resolution = (
+                self.ui.sb_encoder_resolution.value())
 
             if not self.config.valid_data():
                 msg = 'Invalid configuration.'

@@ -22,8 +22,8 @@ from helmholtz.gui.connectionwidget import ConnectionWidget \
     as _ConnectionWidget
 from helmholtz.gui.coilwidget import CoilWidget \
     as _CoilWidget
-from helmholtz.gui.motorwidget import MotorWidget \
-    as _MotorWidget
+from helmholtz.gui.motorintegratorwidget import MotorIntegratorWidget \
+    as _MotorIntegratorWidget
 from helmholtz.gui.temperaturewidget import TemperatureWidget \
     as _TemperatureWidget
 from helmholtz.gui.databasewidget import DatabaseWidget \
@@ -52,7 +52,7 @@ class MainWindow(_QMainWindow):
         self.tab_names = [
             'connection',
             'coil',
-            'motor',
+            'motor_and_integrator',
             'temperature',
             'database',
             ]
@@ -60,7 +60,7 @@ class MainWindow(_QMainWindow):
         self.tab_widgets = [
             _ConnectionWidget,
             _CoilWidget,
-            _MotorWidget,
+            _MotorIntegratorWidget,
             _TemperatureWidget,
             _DatabaseWidget,
             ]
@@ -69,7 +69,7 @@ class MainWindow(_QMainWindow):
         self.preferences_dialog = _PreferencesDialog(self.tab_names)
         self.preferences_dialog.chb_connection.setChecked(True)
         self.preferences_dialog.chb_coil.setChecked(True)
-        self.preferences_dialog.chb_motor.setChecked(True)
+        self.preferences_dialog.chb_motor_and_integrator.setChecked(True)
         self.preferences_dialog.chb_temperature.setChecked(True)
         self.preferences_dialog.chb_database.setChecked(True)
         self.preferences_dialog.preferences_changed.connect(self.change_tabs)

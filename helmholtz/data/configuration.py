@@ -15,7 +15,7 @@ class ConnectionConfig(_database.DatabaseAndFileDocument):
     """Read, write and stored connection configuration data."""
 
     label = 'Connection'
-    collection_name = 'connections'
+    collection_name = 'connection'
     db_dict = _collections.OrderedDict([
         ('idn', {'field': 'id', 'dtype': int, 'not_null': True}),
         ('date', {'field': 'date', 'dtype': str, 'not_null': True}),
@@ -26,45 +26,50 @@ class ConnectionConfig(_database.DatabaseAndFileDocument):
             {'field': 'display_port', 'dtype': str, 'not_null': True}),
         ('display_baudrate',
             {'field': 'display_baudrate', 'dtype': int, 'not_null': True}),
+        ('display_bytesize',
+            {'field': 'display_bytesize', 'dtype': int, 'not_null': True}),
+        ('display_parity',
+            {'field': 'display_parity', 'dtype': str, 'not_null': True}),
+        ('display_stopbits',
+            {'field': 'display_stopbits', 'dtype': str, 'not_null': True}),
         ('driver_enable',
             {'field': 'driver_enable', 'dtype': int, 'not_null': True}),
         ('driver_port',
             {'field': 'driver_port', 'dtype': str, 'not_null': True}),
         ('driver_baudrate',
             {'field': 'driver_baudrate', 'dtype': int, 'not_null': True}),
+        ('driver_bytesize',
+            {'field': 'driver_bytesize', 'dtype': int, 'not_null': True}),
+        ('driver_parity',
+            {'field': 'driver_parity', 'dtype': str, 'not_null': True}),
+        ('driver_stopbits',
+            {'field': 'driver_stopbits', 'dtype': str, 'not_null': True}),
         ('multimeter_enable',
             {'field': 'multimeter_enable', 'dtype': int, 'not_null': True}),
         ('multimeter_port',
             {'field': 'multimeter_port', 'dtype': str, 'not_null': True}),
         ('multimeter_baudrate',
             {'field': 'multimeter_baudrate', 'dtype': int, 'not_null': True}),
+        ('multimeter_bytesize',
+            {'field': 'multimeter_bytesize', 'dtype': int, 'not_null': True}),
+        ('multimeter_parity',
+            {'field': 'multimeter_parity', 'dtype': str, 'not_null': True}),
+        ('multimeter_stopbits', {
+            'field': 'multimeter_stopbits', 'dtype': str, 'not_null': True}),
         ('integrator_enable',
             {'field': 'integrator_enable', 'dtype': int, 'not_null': True}),
         ('integrator_address',
             {'field': 'integrator_address', 'dtype': int, 'not_null': True}),
+        ('integrator_board',
+            {'field': 'integrator_board', 'dtype': int, 'not_null': True}),
     ])
-
-    def __init__(
-            self, database_name=None, mongo=False, server=None):
-        """Initialize object.
-
-        Args:
-            filename (str): connection configuration filepath.
-            database_name (str): database file path (sqlite) or name (mongo).
-            idn (int): id in database table (sqlite) / collection (mongo).
-            mongo (bool): flag indicating mongoDB (True) or sqlite (False).
-            server (str): MongoDB server.
-
-        """
-        super().__init__(
-            database_name=database_name, mongo=mongo, server=server)
 
 
 class CoilConfig(_database.DatabaseAndFileDocument):
     """Read, write and stored coil configuration data."""
 
     label = 'Coil'
-    collection_name = 'coils'
+    collection_name = 'coil'
     db_dict = _collections.OrderedDict([
         ('idn', {'field': 'id', 'dtype': int, 'not_null': True}),
         ('date', {'field': 'date', 'dtype': str, 'not_null': True}),
@@ -79,56 +84,30 @@ class CoilConfig(_database.DatabaseAndFileDocument):
             {'field': 'nr_turns', 'dtype': int, 'not_null': True}),
     ])
 
-    def __init__(
-            self, database_name=None, mongo=False, server=None):
-        """Initialize object.
 
-        Args:
-            filename (str): connection configuration filepath.
-            database_name (str): database file path (sqlite) or name (mongo).
-            idn (int): id in database table (sqlite) / collection (mongo).
-            mongo (bool): flag indicating mongoDB (True) or sqlite (False).
-            server (str): MongoDB server.
+class MotorIntegratorConfig(_database.DatabaseAndFileDocument):
+    """Read, write and stored motor configuration data."""
 
-        """
-        super().__init__(
-            database_name=database_name, mongo=mongo, server=server)
-
-
-class MotorEncoderConfig(_database.DatabaseAndFileDocument):
-    """Read, write and stored coil configuration data."""
-
-    label = 'Motor'
-    collection_name = 'motors'
+    label = 'Motor_Integrator'
+    collection_name = 'motor_integrator'
     db_dict = _collections.OrderedDict([
         ('idn', {'field': 'id', 'dtype': int, 'not_null': True}),
         ('date', {'field': 'date', 'dtype': str, 'not_null': True}),
         ('hour', {'field': 'hour', 'dtype': str, 'not_null': True}),
         ('driver_address',
             {'field': 'driver_address', 'dtype': int, 'not_null': True}),
-        ('max_velocity',
-            {'field': 'max_velocity', 'dtype': float, 'not_null': True}),
-        ('acceleration',
-            {'field': 'acceleration', 'dtype': float, 'not_null': True}),
-        ('rotation_direction',
-            {'field': 'rotation_direction', 'dtype': str, 'not_null': True}),
+        ('motor_velocity',
+            {'field': 'motor_velocity', 'dtype': float, 'not_null': True}),
+        ('motor_acceleration',
+            {'field': 'motor_acceleration', 'dtype': float, 'not_null': True}),
+        ('motor_direction',
+            {'field': 'motor_direction', 'dtype': str, 'not_null': True}),
         ('motor_resolution',
             {'field': 'motor_resolution', 'dtype': int, 'not_null': True}),
+        ('integrator_channel',
+            {'field': 'integrator_channel', 'dtype': str, 'not_null': True}),
+        ('encoder_direction',
+            {'field': 'encoder_direction', 'dtype': str, 'not_null': True}),
         ('encoder_resolution',
             {'field': 'encoder_resolution', 'dtype': int, 'not_null': True}),
     ])
-
-    def __init__(
-            self, database_name=None, mongo=False, server=None):
-        """Initialize object.
-
-        Args:
-            filename (str): connection configuration filepath.
-            database_name (str): database file path (sqlite) or name (mongo).
-            idn (int): id in database table (sqlite) / collection (mongo).
-            mongo (bool): flag indicating mongoDB (True) or sqlite (False).
-            server (str): MongoDB server.
-
-        """
-        super().__init__(
-            database_name=database_name, mongo=mongo, server=server)
