@@ -26,6 +26,7 @@ class MainApp(_QApplication):
         self.create_database()
         self.coil_config = _configuration.CoilConfig()
         self.motor_integrator_config = _configuration.MotorIntegratorConfig()
+        self.measurement_config = _configuration.MeasurementConfig()
 
     def create_database(self):
         """Create database and tables."""
@@ -38,11 +39,15 @@ class MainApp(_QApplication):
         _MotorIntegratorConfig = _configuration.MotorIntegratorConfig(
             database_name=self.database_name,
             mongo=self.mongo, server=self.server)
+        _MeasurementConfig = _configuration.MeasurementConfig(
+            database_name=self.database_name,
+            mongo=self.mongo, server=self.server)
 
         status = []
         status.append(_ConnectionConfig.db_create_collection())
         status.append(_CoilConfig.db_create_collection())
         status.append(_MotorIntegratorConfig.db_create_collection())
+        status.append(_MeasurementConfig.db_create_collection())
         if not all(status):
             raise Exception("Failed to create database.")
 

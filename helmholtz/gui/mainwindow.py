@@ -20,12 +20,14 @@ from helmholtz.gui.auxiliarywidgets import (
     )
 from helmholtz.gui.connectionwidget import ConnectionWidget \
     as _ConnectionWidget
+from helmholtz.gui.temperaturewidget import TemperatureWidget \
+    as _TemperatureWidget
 from helmholtz.gui.coilwidget import CoilWidget \
     as _CoilWidget
 from helmholtz.gui.motorintegratorwidget import MotorIntegratorWidget \
     as _MotorIntegratorWidget
-from helmholtz.gui.temperaturewidget import TemperatureWidget \
-    as _TemperatureWidget
+from helmholtz.gui.measurementwidget import MeasurementWidget \
+    as _MeasurementWidget
 from helmholtz.gui.databasewidget import DatabaseWidget \
     as _DatabaseWidget
 from helmholtz.devices import logfile as _logfile
@@ -51,26 +53,29 @@ class MainWindow(_QMainWindow):
         # define tab names and corresponding widgets
         self.tab_names = [
             'connection',
+            'temperature',
             'coil',
             'motor_and_integrator',
-            'temperature',
+            'measurement',
             'database',
             ]
 
         self.tab_widgets = [
             _ConnectionWidget,
+            _TemperatureWidget,
             _CoilWidget,
             _MotorIntegratorWidget,
-            _TemperatureWidget,
+            _MeasurementWidget,
             _DatabaseWidget,
             ]
 
         # add preferences dialog
         self.preferences_dialog = _PreferencesDialog(self.tab_names)
         self.preferences_dialog.chb_connection.setChecked(True)
+        self.preferences_dialog.chb_temperature.setChecked(True)
         self.preferences_dialog.chb_coil.setChecked(True)
         self.preferences_dialog.chb_motor_and_integrator.setChecked(True)
-        self.preferences_dialog.chb_temperature.setChecked(True)
+        self.preferences_dialog.chb_measurement.setChecked(True)
         self.preferences_dialog.chb_database.setChecked(True)
         self.preferences_dialog.preferences_changed.connect(self.change_tabs)
 

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>wg_motor</class>
- <widget class="QWidget" name="wg_motor">
+ <class>wg_motor_integrator</class>
+ <widget class="QWidget" name="wg_motor_integrator">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -16,7 +16,7 @@
    </font>
   </property>
   <property name="windowTitle">
-   <string>Motor</string>
+   <string>Motor and Integrator</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
    <item row="0" column="0">

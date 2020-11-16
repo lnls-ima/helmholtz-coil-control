@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""Implementation of classes to handle configuration files."""
+"""Implementation of classes to handle configuration data."""
 
 import sys as _sys
 import numpy as _np
@@ -86,7 +86,7 @@ class CoilConfig(_database.DatabaseAndFileDocument):
 
 
 class MotorIntegratorConfig(_database.DatabaseAndFileDocument):
-    """Read, write and stored motor configuration data."""
+    """Read, write and stored motor and integrator configuration data."""
 
     label = 'Motor_Integrator'
     collection_name = 'motor_integrator'
@@ -110,4 +110,16 @@ class MotorIntegratorConfig(_database.DatabaseAndFileDocument):
             {'field': 'encoder_direction', 'dtype': str, 'not_null': True}),
         ('encoder_resolution',
             {'field': 'encoder_resolution', 'dtype': int, 'not_null': True}),
+    ])
+
+
+class MeasurementConfig(_database.DatabaseAndFileDocument):
+    """Read, write and stored measurement configuration data."""
+
+    label = 'Configuration'
+    collection_name = 'configuration'
+    db_dict = _collections.OrderedDict([
+        ('idn', {'field': 'id', 'dtype': int, 'not_null': True}),
+        ('date', {'field': 'date', 'dtype': str, 'not_null': True}),
+        ('hour', {'field': 'hour', 'dtype': str, 'not_null': True}),
     ])
