@@ -65,26 +65,6 @@ class ConnectionConfig(_database.DatabaseAndFileDocument):
     ])
 
 
-class CoilConfig(_database.DatabaseAndFileDocument):
-    """Read, write and stored coil configuration data."""
-
-    label = 'Coil'
-    collection_name = 'coil'
-    db_dict = _collections.OrderedDict([
-        ('idn', {'field': 'id', 'dtype': int, 'not_null': True}),
-        ('date', {'field': 'date', 'dtype': str, 'not_null': True}),
-        ('hour', {'field': 'hour', 'dtype': str, 'not_null': True}),
-        ('radius_1',
-            {'field': 'radius_1', 'dtype': float, 'not_null': True}),
-        ('radius_2',
-            {'field': 'radius_2', 'dtype': float, 'not_null': True}),
-        ('center_distance',
-            {'field': 'center_distance', 'dtype': float, 'not_null': True}),
-        ('coil_turns',
-            {'field': 'coil_turns', 'dtype': int, 'not_null': True}),
-    ])
-
-
 class MotorIntegratorConfig(_database.DatabaseAndFileDocument):
     """Read, write and stored motor and integrator configuration data."""
 
@@ -126,30 +106,36 @@ class MeasurementConfig(_database.DatabaseAndFileDocument):
             {'field': 'block_name', 'dtype': str, 'not_null': True}),
         ('main_component',
             {'field': 'main_component', 'dtype': str, 'not_null': True}),
-        ('temperature',
-            {'field': 'temperature', 'dtype': float, 'not_null': True}),
+        ('block_temperature',
+            {'field': 'block_temperature', 'dtype': float, 'not_null': True}),
         ('volume_input',
             {'field': 'volume_input', 'dtype': str, 'not_null': True}),
-        ('volume',
-            {'field': 'volume', 'dtype': float, 'not_null': True}),
-        ('dimension1',
-            {'field': 'dimension1', 'dtype': float, 'not_null': True}),
-        ('dimension2',
-            {'field': 'dimension2', 'dtype': float, 'not_null': True}),
-        ('dimension3',
-            {'field': 'dimension3', 'dtype': float, 'not_null': True}),
-        ('mass',
-            {'field': 'mass', 'dtype': float, 'not_null': True}),
+        ('block_volume',
+            {'field': 'block_volume', 'dtype': float, 'not_null': True}),
+        ('block_dimension1',
+            {'field': 'block_dimension1', 'dtype': float, 'not_null': True}),
+        ('block_dimension2',
+            {'field': 'block_dimension2', 'dtype': float, 'not_null': True}),
+        ('block_dimension3',
+            {'field': 'block_dimension3', 'dtype': float, 'not_null': True}),
+        ('block_mass',
+            {'field': 'block_mass', 'dtype': float, 'not_null': True}),
         ('density',
             {'field': 'density', 'dtype': float, 'not_null': True}),
-        ('main_gain',
-            {'field': 'main_gain', 'dtype': int, 'not_null': True}),
-        ('residual_gain',
-            {'field': 'residual_gain', 'dtype': int, 'not_null': True}),
+        ('main_component_gain',
+            {'field': 'main_component_gain', 'dtype': int, 'not_null': True}),
+        ('residual_component_gain',
+            {'field': 'residual_component_gain', 'dtype': int, 'not_null': True}),
         ('trigger',
             {'field': 'trigger', 'dtype': int, 'not_null': True}),
         ('integration_points',
             {'field': 'integration_points', 'dtype': int, 'not_null': True}),
         ('nr_turns',
             {'field': 'nr_turns', 'dtype': int, 'not_null': True}),
+        ('coil_radius',
+            {'field': 'coil_radius', 'dtype': float, 'not_null': True}),
+        ('coil_distance_center',
+            {'field': 'coil_distance_center', 'dtype': float, 'not_null': True}),
+        ('coil_turns',
+            {'field': 'coil_turns', 'dtype': int, 'not_null': True}),
     ])

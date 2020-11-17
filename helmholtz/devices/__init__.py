@@ -16,7 +16,9 @@ class Integrator(_PDI5150Lib.PDI5150GPIB):
             self, channel, encoder_resolution, direction,
             start_trigger, nr_intervals,
             interval_size, gain, wait=0.1):
+        print('int config')
         if not self.connected:
+            print('not connected')
             return False
 
         # Parar todas as coletas e preparar integrador
@@ -49,6 +51,8 @@ class Integrator(_PDI5150Lib.PDI5150GPIB):
         cmd = self.commands.gain + str(gain)
         self.send_command(cmd)
         _time.sleep(wait)
+
+        print('fim int config')
         return True
 
 

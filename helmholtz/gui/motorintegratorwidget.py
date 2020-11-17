@@ -5,7 +5,6 @@
 import os as _os
 import sys as _sys
 import traceback as _traceback
-import serial.tools.list_ports as _list_ports
 from qtpy.QtWidgets import (
     QWidget as _QWidget,
     QMessageBox as _QMessageBox,
@@ -37,42 +36,43 @@ class MotorIntegratorWidget(_ConfigurationWidget):
         uifile = _utils.get_ui_file(self)
         config = _configuration.MotorIntegratorConfig()
         super().__init__(uifile, config, parent=parent)
-        
+
+        self.sb_names = [
+            'driver_address',
+            'encoder_resolution',
+        ]
+
+        self.sbd_names = [
+            'motor_velocity',
+            'motor_acceleration',
+        ]
+
+        self.cmb_names = [
+            'motor_direction',
+            'motor_resolution',
+            'integrator_channel',
+            'encoder_direction',
+        ]
+
         self.connect_signal_slots()
+        self.load_last_db_entry()
 
         self.stop_encoder_update = True
         self.timer = _QTimer()
         self.timer.timeout.connect(self.update_encoder_reading)
 
     @property
-    def global_motor_encoder_config(self):
+    def global_motor_integrator_config(self):
         """Return the motor and encoder global configuration."""
-        return _QApplication.instance().motor_encoder_config
+        return _QApplication.instance().motor_integrator_config
 
-    @global_motor_encoder_config.setter
-    def global_motor_encoder_config(self, value):
-        _QApplication.instance().motor_encoder_config = value
+    @global_motor_integrator_config.setter
+    def global_motor_integrator_config(self, value):
+        _QApplication.instance().motor_integrator_config = value
 
     def connect_signal_slots(self):
         """Create signal/slot connections."""
-        sbs = [
-            self.ui.sb_driver_address,
-            self.ui.sbd_motor_velocity,
-            self.ui.sbd_motor_acceleration,
-            self.ui.sb_encoder_resolution,
-            ]
-        for sb in sbs:
-            sb.valueChanged.connect(self.clear_load_options)
-
-        cmbs = [
-            self.ui.cmb_motor_direction,
-            self.ui.cmb_motor_resolution,
-            self.ui.cmb_integrator_channel,
-            self.ui.cmb_encoder_direction,
-            ]
-        for cmb in cmbs:
-            cmb.currentIndexChanged.connect(self.clear_load_options)
-
+        super().connect_signal_slots()
         self.ui.pbt_config_param.clicked.connect(self.config_param)
         self.ui.chb_encoder.clicked.connect(
             self.enable_encoder_reading)
@@ -80,7 +80,6 @@ class MotorIntegratorWidget(_ConfigurationWidget):
         self.ui.rbt_nr_steps.toggled.connect(self.disable_invalid_widgets)
         self.ui.pbt_move_motor.clicked.connect(self.move_motor)
         self.ui.pbt_stop_motor.clicked.connect(self.stop_motor)
-        super().connect_signal_slots()
 
     def move_motor(self):
         try:
@@ -173,68 +172,6 @@ class MotorIntegratorWidget(_ConfigurationWidget):
             self.stop_encoder_update = True
             self.timer.stop()
 
-    def load(self):
-        """Load configuration to set parameters."""
-        try:
-            self.ui.sb_driver_address.setValue(
-                self.config.driver_address)
-            self.ui.sbd_motor_velocity.setValue(
-                self.config.motor_velocity)
-            self.ui.sbd_motor_acceleration.setValue(
-                self.config.motor_acceleration)
-            self.ui.cmb_motor_direction.setCurrentIndex(
-                self.ui.cmb_motor_direction.findText(
-                    str(self.config.motor_direction)))
-            self.ui.cmb_motor_resolution.setCurrentIndex(
-                self.ui.cmb_motor_resolution.findText(
-                    str(self.config.motor_resolution)))
-            self.ui.cmb_integrator_channel.setCurrentIndex(
-                self.ui.cmb_integrator_channel.findText(
-                    str(self.config.integrator_channel)))
-            self.ui.cmb_encoder_direction.setCurrentIndex(
-                self.ui.cmb_encoder_direction.findText(
-                    str(self.config.encoder_direction)))
-            self.ui.sb_encoder_resolution.setValue(
-                self.config.encoder_resolution)
-
-        except Exception:
-            _traceback.print_exc(file=_sys.stdout)
-            msg = 'Failed to load configuration.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
-
-    def update_configuration(self):
-        """Update configuration parameters."""
-        self.config.clear()
-
-        try:
-            self.config.driver_address = (
-                self.ui.sb_driver_address.value())
-            self.config.motor_velocity = (
-                self.ui.sbd_motor_velocity.value())
-            self.config.motor_acceleration = (
-                self.ui.sbd_motor_acceleration.value())
-            self.config.motor_direction = (
-                self.ui.cmb_motor_direction.currentText())
-            self.config.motor_resolution = (
-                self.ui.cmb_motor_resolution.currentText())
-            self.config.integrator_channel = (
-                self.ui.cmb_integrator_channel.currentText())
-            self.config.encoder_direction = (
-                self.ui.cmb_encoder_direction.currentText())
-            self.config.encoder_resolution = (
-                self.ui.sb_encoder_resolution.value())
-
-        except Exception:
-            _traceback.print_exc(file=_sys.stdout)
-            self.config.clear()
-
-        if self.config.valid_data():
-            return True
-        else:
-            msg = 'Invalid configuration.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
-            return False
-
     def update_encoder_reading(self):
         """Update encoder reading."""
         if self.stop_encoder_update:
@@ -256,34 +193,14 @@ class MotorIntegratorWidget(_ConfigurationWidget):
 
     def config_param(self):
         """Configure motor and encoder parameters."""
-        self.config.clear()
-
         try:
-            self.config.driver_address = (
-                self.ui.sb_driver_address.value())
-            self.config.motor_velocity = (
-                self.ui.sbd_motor_velocity.value())
-            self.config.motor_acceleration = (
-                self.ui.sbd_motor_acceleration.value())
-            self.config.motor_direction = (
-                self.ui.cmb_motor_direction.currentText())
-            self.config.motor_resolution = (
-                self.ui.cmb_motor_resolution.currentText())
-            self.config.integrator_channel = (
-                self.ui.cmb_integrator_channel.currentText())
-            self.config.encoder_direction = (
-                self.ui.cmb_encoder_direction.currentText())
-            self.config.encoder_resolution = (
-                self.ui.sb_encoder_resolution.value())
-
-            if not self.config.valid_data():
-                msg = 'Invalid configuration.'
-                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            if not self.update_configuration():
                 return False
 
             self.save_db()
 
-            self.global_motor_encoder_config = self.config.copy()
+            self.global_motor_integrator_config = self.config.copy()
+            
             msg = 'Motor and encoder parameters configured.'
             _QMessageBox.information(
                 self, 'Information', msg, _QMessageBox.Ok)

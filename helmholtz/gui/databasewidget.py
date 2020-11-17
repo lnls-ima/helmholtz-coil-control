@@ -28,18 +28,18 @@ import helmholtz.data as _data
 
 
 _ConnectionConfig = _data.configuration.ConnectionConfig
-_CoilConfig = _data.configuration.CoilConfig
 _MotorIntegratorConfig = _data.configuration.MotorIntegratorConfig
 _MeasurementConfig = _data.configuration.MeasurementConfig
+_MeasurementData = _data.measurement.MeasurementData
 
 
 class DatabaseWidget(_QWidget):
     """Database widget class for the control application."""
 
     _connection_table_name = _ConnectionConfig.collection_name
-    _coil_table_name = _CoilConfig.collection_name
     _motor_integrator_table_name = _MotorIntegratorConfig.collection_name
-    _measurement_table_name = _MeasurementConfig.collection_name
+    _configuration_table_name = _MeasurementConfig.collection_name
+    _measurement_table_name = _MeasurementData.collection_name
 
     _hidden_columns = []
 
@@ -53,17 +53,14 @@ class DatabaseWidget(_QWidget):
 
         self._table_object_dict = {
             self._connection_table_name: _ConnectionConfig,
-            self._coil_table_name: _CoilConfig,
             self._motor_integrator_table_name: _MotorIntegratorConfig,
-            self._measurement_table_name: _MeasurementConfig,
+            self._configuration_table_name: _MeasurementConfig,
+            self._measurement_table_name: _MeasurementData,
             }
 
-        self._table_page_dict = {
-            self._connection_table_name: None,
-            self._coil_table_name: None,
-            self._motor_integrator_table_name: None,
-            self._measurement_table_name: None,
-            }
+        self._table_page_dict = {}
+        for key in self._table_object_dict.keys():
+            self._table_page_dict[key] = None
 
         self.short_version_hidden_tables = []
 

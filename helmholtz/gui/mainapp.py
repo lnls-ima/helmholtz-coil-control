@@ -25,16 +25,12 @@ class MainApp(_QApplication):
         self.mongo = _utils.MONGO
         self.server = _utils.SERVER
         self.create_database()
-        self.coil_config = _configuration.CoilConfig()
         self.motor_integrator_config = _configuration.MotorIntegratorConfig()
         self.measurement_config = _configuration.MeasurementConfig()
 
     def create_database(self):
         """Create database and tables."""
         connection_config = _configuration.ConnectionConfig(
-            database_name=self.database_name,
-            mongo=self.mongo, server=self.server)
-        coil_config = _configuration.CoilConfig(
             database_name=self.database_name,
             mongo=self.mongo, server=self.server)
         motor_integrator_config = _configuration.MotorIntegratorConfig(
@@ -49,7 +45,6 @@ class MainApp(_QApplication):
 
         status = []
         status.append(connection_config.db_create_collection())
-        status.append(coil_config.db_create_collection())
         status.append(motor_integrator_config.db_create_collection())
         status.append(measurement_config.db_create_collection())
         status.append(measurement_data.db_create_collection())

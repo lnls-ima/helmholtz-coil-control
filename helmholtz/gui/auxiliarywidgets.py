@@ -947,7 +947,11 @@ class ConfigurationWidget(_QWidget):
         self.ui = _uic.loadUi(uifile, self)
         self.config = config
         self.update_ids()
-        self.load_last_db_entry()
+        self.sb_names = []
+        self.sbd_names = []
+        self.cmb_names = []
+        self.le_names = []
+        self.chb_names = []
 
     @property
     def database_name(self):
@@ -970,6 +974,26 @@ class ConfigurationWidget(_QWidget):
 
     def connect_signal_slots(self):
         """Create signal/slot connections."""
+        for name in self.sb_names:
+            sb = getattr(self.ui, 'sb_' + name)
+            sb.valueChanged.connect(self.clear_load_options)
+
+        for name in self.sbd_names:
+            sbd = getattr(self.ui, 'sbd_' + name)
+            sbd.valueChanged.connect(self.clear_load_options)
+
+        for name in self.cmb_names:
+            cmb = getattr(self.ui, 'cmb_' + name)
+            cmb.currentIndexChanged.connect(self.clear_load_options)
+
+        for name in self.le_names:
+            le = getattr(self.ui, 'le_' + name)
+            le.editingFinished.connect(self.clear_load_options)
+
+        for name in self.chb_names:
+            chb = getattr(self.ui, 'chb_' + name)
+            chb.stateChanged.connect(self.clear_load_options)
+
         self.ui.cmb_idn.currentIndexChanged.connect(self.enable_load_db)
         self.ui.tbt_update_idn.clicked.connect(self.update_ids)
         self.ui.pbt_load_db.clicked.connect(self.load_db)
@@ -1038,29 +1062,68 @@ class ConfigurationWidget(_QWidget):
 
     def load(self):
         """Load configuration to set parameters."""
-        pass
+        try:
+            for name in self.sb_names:
+                sb = getattr(self.ui, 'sb_' + name)
+                value = getattr(self.config, name)
+                sb.setValue(value)
+
+            for name in self.sbd_names:
+                sbd = getattr(self.ui, 'sbd_' + name)
+                value = getattr(self.config, name)
+                sbd.setValue(value)
+
+            for name in self.cmb_names:
+                cmb = getattr(self.ui, 'cmb_' + name)
+                value = getattr(self.config, name)
+                cmb.setCurrentIndex(cmb.findText(str(value)))
+
+            for name in self.le_names:
+                le = getattr(self.ui, 'le_' + name)
+                value = getattr(self.config, name)
+                if value is None:
+                    value = ''
+                le.setText(str(value))
+
+            for name in self.chb_names:
+                chb = getattr(self.ui, 'chb_' + name)
+                value = getattr(self.config, name)
+                chb.setChecked(value)
+
+        except Exception:
+            _traceback.print_exc(file=_sys.stdout)
+            msg = 'Failed to load configuration.'
+            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
 
     def save_db(self):
         """Save parameters to database."""
         self.ui.cmb_idn.setCurrentIndex(-1)
-        if self.database_name is not None:
-            try:
-                if self.update_configuration():
-                    self.config.db_update_database(
-                        self.database_name,
-                        mongo=self.mongo, server=self.server)
-                    idn = self.config.db_save()
-                    self.ui.cmb_idn.addItem(str(idn))
-                    self.ui.cmb_idn.setCurrentIndex(self.ui.cmb_idn.count()-1)
-                    self.ui.pbt_load_db.setEnabled(False)
-            except Exception:
-                _traceback.print_exc(file=_sys.stdout)
-                msg = 'Failed to save to database.'
-                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
-        else:
+        
+        if self.database_name is None:
             msg = 'Invalid database filename.'
             _QMessageBox.critical(
                 self, 'Failure', msg, _QMessageBox.Ok)
+            return False
+        
+        try:
+            if self.update_configuration():
+                self.config.db_update_database(
+                    self.database_name,
+                    mongo=self.mongo, server=self.server)
+                idn = self.config.db_save()
+                self.ui.cmb_idn.addItem(str(idn))
+                self.ui.cmb_idn.setCurrentIndex(self.ui.cmb_idn.count()-1)
+                self.ui.pbt_load_db.setEnabled(False)
+                return True
+            
+            else:
+                return False
+        
+        except Exception:
+            _traceback.print_exc(file=_sys.stdout)
+            msg = 'Failed to save to database.'
+            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            return False
 
     def update_ids(self):
         """Update IDs in combo box."""
@@ -1080,8 +1143,44 @@ class ConfigurationWidget(_QWidget):
                 self.ui.cmb_idn.setCurrentText(current_text)
                 self.ui.pbt_load_db.setEnabled(load_enabled)
         except Exception:
-            pass
+            _traceback.print_exc(file=_sys.stdout)
 
-    def update_configuration(self):
+    def update_configuration(self, clear=True):
         """Update configuration parameters."""
-        pass
+        try:
+            if clear:
+                self.config.clear()
+                
+            for name in self.sb_names:
+                sb = getattr(self.ui, 'sb_' + name)
+                setattr(self.config, name, sb.value())
+
+            for name in self.sbd_names:
+                sbd = getattr(self.ui, 'sbd_' + name)
+                setattr(self.config, name, sbd.value())
+
+            for name in self.cmb_names:
+                cmb = getattr(self.ui, 'cmb_' + name)
+                setattr(self.config, name, cmb.currentText())
+
+            for name in self.le_names:
+                le = getattr(self.ui, 'le_' + name)
+                setattr(self.config, name, le.text().strip())
+
+            for name in self.chb_names:
+                chb = getattr(self.ui, 'chb_' + name)
+                setattr(self.config, name, chb.isChecked())
+
+            if self.config.valid_data():
+                return True
+            
+            else:
+                msg = 'Invalid configuration.'
+                _QMessageBox.critical(
+                    self, 'Failure', msg, _QMessageBox.Ok)
+                return False
+
+        except Exception:
+            _traceback.print_exc(file=_sys.stdout)
+            self.config.clear()
+            return False
