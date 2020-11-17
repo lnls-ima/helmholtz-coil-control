@@ -80,8 +80,8 @@ class CoilConfig(_database.DatabaseAndFileDocument):
             {'field': 'radius_2', 'dtype': float, 'not_null': True}),
         ('center_distance',
             {'field': 'center_distance', 'dtype': float, 'not_null': True}),
-        ('nr_turns',
-            {'field': 'nr_turns', 'dtype': int, 'not_null': True}),
+        ('coil_turns',
+            {'field': 'coil_turns', 'dtype': int, 'not_null': True}),
     ])
 
 

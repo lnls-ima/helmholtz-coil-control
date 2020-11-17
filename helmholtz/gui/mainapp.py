@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""Main entry poin to the control application."""
+"""Main entry point to the control application."""
 
 import sys as _sys
 import threading as _threading
@@ -9,10 +9,11 @@ from qtpy.QtWidgets import QApplication as _QApplication
 from helmholtz.gui import utils as _utils
 from helmholtz.gui.mainwindow import MainWindow as _MainWindow
 from helmholtz.data import configuration as _configuration
+from helmholtz.data import measurement as _measurement
 
 
 class MainApp(_QApplication):
-    """Hall bench application."""
+    """Main application."""
 
     def __init__(self, args):
         """Start application."""
@@ -30,24 +31,28 @@ class MainApp(_QApplication):
 
     def create_database(self):
         """Create database and tables."""
-        _ConnectionConfig = _configuration.ConnectionConfig(
+        connection_config = _configuration.ConnectionConfig(
             database_name=self.database_name,
             mongo=self.mongo, server=self.server)
-        _CoilConfig = _configuration.CoilConfig(
+        coil_config = _configuration.CoilConfig(
             database_name=self.database_name,
             mongo=self.mongo, server=self.server)
-        _MotorIntegratorConfig = _configuration.MotorIntegratorConfig(
+        motor_integrator_config = _configuration.MotorIntegratorConfig(
             database_name=self.database_name,
             mongo=self.mongo, server=self.server)
-        _MeasurementConfig = _configuration.MeasurementConfig(
+        measurement_config = _configuration.MeasurementConfig(
+            database_name=self.database_name,
+            mongo=self.mongo, server=self.server)
+        measurement_data = _measurement.MeasurementData(
             database_name=self.database_name,
             mongo=self.mongo, server=self.server)
 
         status = []
-        status.append(_ConnectionConfig.db_create_collection())
-        status.append(_CoilConfig.db_create_collection())
-        status.append(_MotorIntegratorConfig.db_create_collection())
-        status.append(_MeasurementConfig.db_create_collection())
+        status.append(connection_config.db_create_collection())
+        status.append(coil_config.db_create_collection())
+        status.append(motor_integrator_config.db_create_collection())
+        status.append(measurement_config.db_create_collection())
+        status.append(measurement_data.db_create_collection())
         if not all(status):
             raise Exception("Failed to create database.")
 
@@ -76,7 +81,7 @@ class GUIThread(_threading.Thread):
 
 
 def run():
-    """Run hallbench application."""
+    """Run application."""
     app = None
     if not _QApplication.instance():
         app = MainApp([])
@@ -88,5 +93,5 @@ def run():
 
 
 def run_in_thread():
-    """Run hallbench application in a thread."""
+    """Run application in a thread."""
     return GUIThread()

@@ -29,7 +29,7 @@ class CoilWidget(_ConfigurationWidget):
         uifile = _utils.get_ui_file(self)
         config = _configuration.CoilConfig()
         super().__init__(uifile, config, parent=parent)
-        
+
         self.connect_signal_slots()
 
     @property
@@ -47,7 +47,7 @@ class CoilWidget(_ConfigurationWidget):
             self.ui.sbd_radius_1,
             self.ui.sbd_radius_2,
             self.ui.sbd_center_distance,
-            self.ui.sb_nr_turns,
+            self.ui.sb_coil_turns,
             ]
         for sb in sbs:
             sb.valueChanged.connect(self.clear_load_options)
@@ -64,8 +64,8 @@ class CoilWidget(_ConfigurationWidget):
                 self.config.radius_2)
             self.ui.sbd_center_distance.setValue(
                 self.config.center_distance)
-            self.ui.sb_nr_turns.setValue(
-                self.config.nr_turns)
+            self.ui.sb_coil_turns.setValue(
+                self.config.coil_turns)
 
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
@@ -83,8 +83,8 @@ class CoilWidget(_ConfigurationWidget):
                 self.ui.sbd_radius_2.value())
             self.config.center_distance = (
                 self.ui.sbd_center_distance.value())
-            self.config.nr_turns = (
-                self.ui.sb_nr_turns.value())
+            self.config.coil_turns = (
+                self.ui.sb_coil_turns.value())
 
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
@@ -108,8 +108,8 @@ class CoilWidget(_ConfigurationWidget):
                 self.ui.sbd_radius_2.value())
             self.config.center_distance = (
                 self.ui.sbd_center_distance.value())
-            self.config.nr_turns = (
-                self.ui.sb_nr_turns.value())
+            self.config.coil_turns = (
+                self.ui.sb_coil_turns.value())
 
             if not self.config.valid_data():
                 msg = 'Invalid configuration.'
