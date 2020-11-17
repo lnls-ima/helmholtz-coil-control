@@ -4,7 +4,7 @@ __credits__     = [
     ('Freepik', 'Air Conditioner Icon (from flaticon.com)'),
     ('AG Multimedia Studio', 'Green Light Icon (from findicons.com)'),
     ('Freepik', 'Hot Water Icon (from flaticon.com)'),
-    ('AG Multimedia Studio', 'Red Light Icon (from findicons.com)'), 
+    ('AG Multimedia Studio', 'Red Light Icon (from findicons.com)'),
     ('play_circle_outline-24px.svg', 'Move Icon (from https://material.io/icons/)'),
     ('stop-circle-outline.svg', 'Stop Icon (from https://materialdesignicons.com/)'),
     ('save-24px.svg', 'Save Icon (from https://material.io/icons/)'),
@@ -32,6 +32,9 @@ __credits__     = [
     ('check.svg', 'Check Icon (from https://materialdesignicons.com/)'),
     ('alpha_v.svg', 'Alpha V Icon (from https://materialdesignicons.com/)'),
     ('alpha_b.svg', 'Alpha B Icon (from https://materialdesignicons.com/)'),
+    ('balance.png', 'Balance Icon (from https://materialdesignicons.com/)'),
+    ('measure.png', 'Measure Icon (from https://materialdesignicons.com/)'),
+    ('thermometer.png', 'Thermometer Icon (from https://materialdesignicons.com/)'),
     ]
 
 
