@@ -2,7 +2,6 @@
 
 """Motor and integrator widget for the control application."""
 
-import os as _os
 import sys as _sys
 import time as _time
 import traceback as _traceback
@@ -15,7 +14,6 @@ from qtpy.QtCore import (
     Qt as _Qt,
     QTimer as _QTimer
 )
-import qtpy.uic as _uic
 
 from helmholtz.gui import utils as _utils
 from helmholtz.gui.auxiliarywidgets import (
@@ -58,6 +56,7 @@ class MotorIntegratorWidget(_ConfigurationWidget):
         self.connect_signal_slots()
         self.load_last_db_entry()
 
+        self.stop = True
         self.stop_encoder_update = True
         self.timer = _QTimer()
         self.timer.timeout.connect(self.update_encoder_reading)
@@ -75,6 +74,7 @@ class MotorIntegratorWidget(_ConfigurationWidget):
         """Create signal/slot connections."""
         super().connect_signal_slots()
         self.ui.pbt_config_param.clicked.connect(self.config_param)
+        self.ui.pbt_homing.clicked.connect(self.homing)
         self.ui.chb_encoder.clicked.connect(
             self.enable_encoder_reading)
         self.ui.rbt_nr_turns.toggled.connect(self.disable_invalid_widgets)
@@ -82,7 +82,72 @@ class MotorIntegratorWidget(_ConfigurationWidget):
         self.ui.pbt_move_motor.clicked.connect(self.move_motor)
         self.ui.pbt_stop_motor.clicked.connect(self.stop_motor)
 
+    def homing(self):
+        self.stop = False
+
+        try:
+            if not _driver.connected:
+                msg = 'Driver not connected.'
+                _QMessageBox.critical(
+                    self, 'Failure', msg, _QMessageBox.Ok)
+                return        
+
+            if not _integrator.connected:
+                msg = 'Integrator not connected.'
+                _QMessageBox.critical(
+                    self, 'Failure', msg, _QMessageBox.Ok)
+                return
+
+            wait = 0.1
+
+            _integrator.send_command(_integrator.commands.reset_counter)
+            _time.sleep(wait)
+
+            driver_address = self.ui.sb_driver_address.value()
+            mode = 0
+            resolution = int(self.ui.cmb_motor_resolution.currentText())
+            direction = self.ui.cmb_motor_direction.currentText()
+            velocity = self.ui.sbd_motor_velocity.value()
+            acceleration = self.ui.sbd_motor_acceleration.value()
+            steps = int(int(resolution)*1.25)
+
+            if not _driver.config_motor(
+                    driver_address,
+                    mode,
+                    direction,
+                    resolution,
+                    velocity,
+                    acceleration,
+                    steps):
+                msg = 'Failed to send configuration to motor.'
+                _QMessageBox.critical(
+                    self, 'Failure', msg, _QMessageBox.Ok)
+                return
+
+            if direction == '+':
+                homing_direction = '-'
+            else:
+                homing_direction = '+'
+            _integrator.configure_homing(homing_direction)
+
+            if self.stop:
+                return
+
+            _driver.move_motor(driver_address)
+            _time.sleep(wait)
+            while not _driver.ready(driver_address) and not self.stop:
+                _time.sleep(wait)
+                _QApplication.processEvents()
+
+        except Exception:
+            _traceback.print_exc(file=_sys.stdout)
+            msg = 'Homing failed.'
+            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            return
+
     def move_motor(self):
+        self.stop = False
+
         try:
             if not _driver.connected:
                 msg = 'Driver not connected.'
@@ -91,6 +156,7 @@ class MotorIntegratorWidget(_ConfigurationWidget):
                 return
 
             driver_address = self.ui.sb_driver_address.value()
+            mode = 0
             resolution = int(self.ui.cmb_motor_resolution.currentText())
             direction = self.ui.cmb_motor_direction.currentText()
             velocity = self.ui.sbd_motor_velocity.value()
@@ -103,7 +169,7 @@ class MotorIntegratorWidget(_ConfigurationWidget):
 
             if not _driver.config_motor(
                     driver_address,
-                    0,
+                    mode,
                     direction,
                     resolution,
                     velocity,
@@ -115,7 +181,8 @@ class MotorIntegratorWidget(_ConfigurationWidget):
                     self, 'Failure', msg, _QMessageBox.Ok)
                 return
 
-            _driver.move_motor(self.config.driver_address)
+            if not self.stop:
+                _driver.move_motor(self.config.driver_address)
 
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
@@ -124,6 +191,8 @@ class MotorIntegratorWidget(_ConfigurationWidget):
             return
 
     def stop_motor(self):
+        self.stop = True
+
         if not self.update_configuration():
             return
 
@@ -148,12 +217,16 @@ class MotorIntegratorWidget(_ConfigurationWidget):
     def enable_encoder_reading(self):
         """Enable encoder reading."""
         try:
+            if not _integrator.connected:
+                msg = 'Integrator not connected.'
+                _QMessageBox.critical(
+                    self, 'Failure', msg, _QMessageBox.Ok)
+                return
+
             if self.ui.chb_encoder.isChecked():
                 encoder_resolution = self.ui.sb_encoder_resolution.value()
 
                 if _integrator.configure_encoder_reading(encoder_resolution):
-                    _integrator.send_command(
-                        _integrator.commands.reset_counter)
                     self.stop_encoder_update = False
                     self.timer.start(self._update_encoder_interval*1000)
                     self.ui.lcd_encoder.setEnabled(True)
@@ -188,10 +261,7 @@ class MotorIntegratorWidget(_ConfigurationWidget):
                 self.ui.lcd_encoder.setEnabled(False)
                 return
 
-            _integrator.send_command(
-                _integrator.commands.read_counter)
-            _time.sleep(0.1)
-            value = int(_integrator.read_from_device())
+            value = _integrator.read_encoder()
             self.ui.lcd_encoder.display(value)
 
         except Exception:

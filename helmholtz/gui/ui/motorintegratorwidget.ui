@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>952</width>
-    <height>552</height>
+    <height>584</height>
    </rect>
   </property>
   <property name="font">
@@ -150,34 +150,8 @@
      <property name="checkable">
       <bool>false</bool>
      </property>
-     <layout class="QHBoxLayout" name="horizontalLayout">
-      <item>
-       <spacer name="horizontalSpacer_2">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>40</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-      <item alignment="Qt::AlignRight">
-       <widget class="QCheckBox" name="chb_encoder">
-        <property name="font">
-         <font>
-          <weight>50</weight>
-          <bold>false</bold>
-         </font>
-        </property>
-        <property name="text">
-         <string>Enable Encoder Reading</string>
-        </property>
-       </widget>
-      </item>
-      <item>
+     <layout class="QGridLayout" name="gridLayout_3">
+      <item row="1" column="2">
        <widget class="QLCDNumber" name="lcd_encoder">
         <property name="enabled">
          <bool>false</bool>
@@ -193,6 +167,45 @@
           <weight>50</weight>
           <bold>false</bold>
          </font>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <spacer name="horizontalSpacer_2">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item row="1" column="1">
+       <widget class="QCheckBox" name="chb_encoder">
+        <property name="font">
+         <font>
+          <weight>50</weight>
+          <bold>false</bold>
+         </font>
+        </property>
+        <property name="text">
+         <string>Enable Encoder Reading</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1" colspan="2">
+       <widget class="QPushButton" name="pbt_homing">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>50</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>Homing</string>
         </property>
        </widget>
       </item>
@@ -674,7 +687,7 @@
          </font>
         </property>
         <property name="text">
-         <string>Number of steps:</string>
+         <string>&amp;Number of steps:</string>
         </property>
        </widget>
       </item>
@@ -687,7 +700,7 @@
          </font>
         </property>
         <property name="text">
-         <string>Number of turns:</string>
+         <string>Number of &amp;turns:</string>
         </property>
         <property name="checked">
          <bool>true</bool>
