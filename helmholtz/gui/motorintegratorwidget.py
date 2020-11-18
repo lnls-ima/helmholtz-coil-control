@@ -4,6 +4,7 @@
 
 import os as _os
 import sys as _sys
+import time as _time
 import traceback as _traceback
 from qtpy.QtWidgets import (
     QWidget as _QWidget,
@@ -90,7 +91,7 @@ class MotorIntegratorWidget(_ConfigurationWidget):
                 return
 
             driver_address = self.ui.sb_driver_address.value()
-            resolution = self.ui.cmb_motor_resolution.currentText()
+            resolution = int(self.ui.cmb_motor_resolution.currentText())
             direction = self.ui.cmb_motor_direction.currentText()
             velocity = self.ui.sbd_motor_velocity.value()
             acceleration = self.ui.sbd_motor_acceleration.value()
@@ -98,7 +99,7 @@ class MotorIntegratorWidget(_ConfigurationWidget):
             if self.ui.rbt_nr_steps.isChecked():
                 steps = self.ui.sb_nr_steps.value()
             else:
-                steps = resolution*self.ui.sbd_nr_turns.value()
+                steps = int(int(resolution)*self.ui.sbd_nr_turns.value())
 
             if not _driver.config_motor(
                     driver_address,
@@ -151,6 +152,8 @@ class MotorIntegratorWidget(_ConfigurationWidget):
                 encoder_resolution = self.ui.sb_encoder_resolution.value()
 
                 if _integrator.configure_encoder_reading(encoder_resolution):
+                    _integrator.send_command(
+                        _integrator.commands.reset_counter)
                     self.stop_encoder_update = False
                     self.timer.start(self._update_encoder_interval*1000)
                     self.ui.lcd_encoder.setEnabled(True)
@@ -185,8 +188,11 @@ class MotorIntegratorWidget(_ConfigurationWidget):
                 self.ui.lcd_encoder.setEnabled(False)
                 return
 
+            _integrator.send_command(
+                _integrator.commands.read_counter)
+            _time.sleep(0.1)
             value = int(_integrator.read_from_device())
-            self.ui.lcd_encoder.setvalue(value)
+            self.ui.lcd_encoder.display(value)
 
         except Exception:
             pass

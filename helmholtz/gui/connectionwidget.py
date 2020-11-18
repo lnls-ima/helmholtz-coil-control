@@ -66,6 +66,7 @@ class ConnectionWidget(_ConfigurationWidget):
         ]
 
         self.connect_signal_slots()
+        self.update_serial_ports()
         self.load_last_db_entry()
 
     def closeEvent(self, event):
