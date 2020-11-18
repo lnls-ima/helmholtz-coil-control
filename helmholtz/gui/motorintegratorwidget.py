@@ -124,11 +124,7 @@ class MotorIntegratorWidget(_ConfigurationWidget):
                     self, 'Failure', msg, _QMessageBox.Ok)
                 return
 
-            if direction == '+':
-                homing_direction = '-'
-            else:
-                homing_direction = '+'
-            _integrator.configure_homing(homing_direction)
+            _integrator.configure_homing(direction)
 
             if self.stop:
                 return
