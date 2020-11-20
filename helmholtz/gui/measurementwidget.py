@@ -2,10 +2,10 @@
 
 """Measurement widget for the control application."""
 
-import os as _os
 import sys as _sys
 import numpy as _np
 import time as _time
+import warnings as _warnings
 import traceback as _traceback
 import pyqtgraph as _pyqtgraph
 from qtpy.QtWidgets import (
@@ -24,6 +24,7 @@ from helmholtz.gui.auxiliarywidgets import (
     ConfigurationWidget as _ConfigurationWidget
     )
 import helmholtz.data.configuration as _configuration
+import helmholtz.data.measurement as _measurement
 from helmholtz.devices import (
     driver as _driver,
     integrator as _integrator,
@@ -80,7 +81,8 @@ class MeasurementWidget(_ConfigurationWidget):
         self.offset_part2 = None
         self.integrated_voltage = []
         self.integrated_voltage_part1 = []
-        self.integrated_voltage_part2 = [] 
+        self.integrated_voltage_part2 = []
+        self.measurement_data = _measurement.MeasurementData()
         self.graphx = []
         self.graphy = []
         self.graphz = []
@@ -113,7 +115,7 @@ class MeasurementWidget(_ConfigurationWidget):
         self.offset_part2 = None
         self.integrated_voltage = []
         self.integrated_voltage_part1 = []
-        self.integrated_voltage_part2 = [] 
+        self.integrated_voltage_part2 = []
         self.clear_graph()
 
     def clear_graph(self):
@@ -178,39 +180,58 @@ class MeasurementWidget(_ConfigurationWidget):
                     symbolBrush=(0, 0, 255)))
 
         self.ui.pw_graph.setLabel('bottom', 'Integration Points')
-        self.ui.pw_graph.setLabel('left', 'Integrated Voltage [V]')
+        self.ui.pw_graph.setLabel('left', 'Integrated Voltage [V.s]')
         self.ui.pw_graph.showGrid(x=True, y=True)
         self.legend.addItem(self.graphx[0], 'X')
         self.legend.addItem(self.graphy[0], 'Y')
         self.legend.addItem(self.graphz[0], 'Z')
 
+    def plot_integrated_voltage(self):
+        """Plot integrated voltage values."""
+        with _warnings.catch_warnings():
+            _warnings.simplefilter("ignore")
+            nc = self.integrated_voltage_part1.shape[1]
+            for idx in nc:
+                self.graphy[idx].setData(
+                    self.integrated_voltage_part1[:, idx])
+                self.graphz[idx].setData(
+                    self.integrated_voltage_part2[:, idx])
+
     def homing(self):
         try:
             motor_config = self.global_motor_integrator_config
-
-            steps = 1.25*motor_config.motor_resolution
+            wait = 0.1
+            
+            steps = int(int(motor_config.motor_resolution)*2)
             encoder_direction = motor_config.encoder_direction,
+            driver_address = motor_config.driver_address
 
-            if encoder_direction == '+':
-                homing_direction = '-'
-            else:
-                homing_direction = '+'
-     
+            _integrator.send_command(_integrator.commands.reset_counter)
+            _time.sleep(wait)
+
             if not _driver.config_motor(
-                    motor_config.driver_address,
+                    driver_address,
                     0,
                     motor_config.motor_direction,
                     motor_config.motor_resolution,
                     motor_config.motor_velocity,
                     motor_config.motor_acceleration,
                     steps):
+                msg = 'Failed to send configuration to motor.'
+                _QMessageBox.critical(
+                    self, 'Failure', msg, _QMessageBox.Ok)
                 return False
 
-            if not _integrator.configure_homing(homing_direction):
+            _integrator.configure_homing(encoder_direction)
+
+            if self.stop:
                 return False
- 
-            if not _driver.move_motor(motor_config.driver_address):
-                return False
+
+            _driver.move_motor(driver_address)
+            _time.sleep(wait)
+            while not _driver.ready(driver_address) and not self.stop:
+                _time.sleep(wait)
+                _QApplication.processEvents()
 
             return True
 
@@ -244,11 +265,10 @@ class MeasurementWidget(_ConfigurationWidget):
             _traceback.print_exc(file=_sys.stdout)
             return False
 
-    def configure_driver(self, gain):
+    def configure_driver(self):
         try:
             meas_config = self.global_measurement_config
             motor_config = self.global_motor_integrator_config
-            
             steps = (meas_config.nr_turns + 2)*motor_config.motor_resolution
 
             return _driver.config_motor(
@@ -272,6 +292,11 @@ class MeasurementWidget(_ConfigurationWidget):
         try:
             if not _integrator.connected:
                 msg = 'Integrator not connected.'
+                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                return False
+
+            if not _driver.connected:
+                msg = 'Driver not connected.'
                 _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
                 return False
 
@@ -305,6 +330,8 @@ class MeasurementWidget(_ConfigurationWidget):
             _traceback.print_exc(file=_sys.stdout)
             return False
 
+        self.configure_graph(
+            self.global_measurement_config.nr_turns)
         self.ui.pbt_start_measurement.setEnabled(False)
         self.ui.pbt_stop_measurement.setEnabled(True)
         _QApplication.processEvents()
@@ -318,6 +345,26 @@ class MeasurementWidget(_ConfigurationWidget):
             self.ui.pbt_start_measurement.setEnabled(True)
             self.ui.pbt_stop_measurement.setEnabled(False)
             return False
+
+        self.plot_integrated_voltage()
+
+        m, mstd = self.measurement_data.get_magnetization_components(
+            self.global_measurement_config.main_component, 
+            self.integrated_voltage_part1,
+            self.integrated_voltage_part2,
+            0, 0,
+            self.global_measurement_config.coil_turns,
+            self.global_measurement_config.coil_radius,
+            self.global_measurement_config.dist_center,
+            self.block_volume)
+
+        self.ui.le_avg_mx.setText(str(m[0]))
+        self.ui.le_avg_my.setText(str(m[1]))
+        self.ui.le_avg_mz.setText(str(m[2]))
+
+        self.ui.le_std_mx.setText(str(mstd[0]))
+        self.ui.le_std_my.setText(str(mstd[1]))
+        self.ui.le_std_mz.setText(str(mstd[2]))
 
         self.ui.pbt_start_measurement.setEnabled(True)
         self.ui.pbt_stop_measurement.setEnabled(False)
@@ -354,8 +401,9 @@ class MeasurementWidget(_ConfigurationWidget):
             return False
 
         try:
+            wait = 0.1
             self.integrated_voltage = []
-    
+   
             if not self.global_motor_integrator_config.valid_data():
                 msg = 'Motor and integrator parameters not configured.'
                 _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
@@ -370,7 +418,32 @@ class MeasurementWidget(_ConfigurationWidget):
             if not self.configure_driver():
                 return False
 
-            self.integrated_voltage = []
+            _integrator.read_from_device()
+            _time.sleep(wait)
+
+            _integrator.send_command(
+                _integrator.commands.start_measurement)
+            _time.sleep(wait)
+
+            _driver.move_motor(
+                self.global_motor_integrator_config.driver_address)
+
+            integrated_voltage = []
+            status = -1
+            while status == -1 and not self.stop:
+                tmp = _integrator.read_from_device()
+                if tmp != '':
+                    status = tmp.find('\x1a')
+                    if status == -1:
+                        valor = float(tmp.replace('A',''))
+                        integrated_voltage.append(valor)
+                        _QApplication.processEvents()
+            
+            integrated_voltage = _np.array(integrated_voltage).reshape(
+                self.global_measurement_config.nr_turns,
+                self.global_measurement_config.integration_points)
+
+            self.integrated_voltage = integrated_voltage
 
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
