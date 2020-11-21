@@ -2,11 +2,8 @@
 
 """Implementation of classes to handle measurement data."""
 
-import sys as _sys
-import numpy as _np
-import json as _json
-import traceback as _traceback
 import collections as _collections
+import numpy as _np
 
 from imautils.db import database as _database
 
@@ -18,29 +15,22 @@ class MeasurementData(_database.DatabaseAndFileDocument):
     collection_name = 'measurement'
     db_dict = _collections.OrderedDict([
         ('idn', {'field': 'id', 'dtype': int, 'not_null': True}),
-        ('date', {'field': 'date', 'dtype': str, 'not_null': True}),
-        ('hour', {'field': 'hour', 'dtype': str, 'not_null': True}),
-        ('block_name',
-            {'field': 'block_name', 'dtype': str, 'not_null': True}),
-        ('main_component',
-            {'field': 'main_component', 'dtype': str, 'not_null': True}),
-        ('block_temperature',
-            {'field': 'block_temperature', 'dtype': float, 'not_null': True}),
-        ('block_volume',
-            {'field': 'block_volume', 'dtype': float, 'not_null': True}),
-        ('motor_integrator_id',
-            {'field': 'motor_integrator_id', 'dtype': int}),
-        ('offset_id', {'field': 'offset_id', 'dtype': int}),
-        ('configuration_id',
-            {'field': 'configuration_id', 'dtype': int}),
-        ('mx_avg', {'field': 'mx_avg', 'dtype': float}),
-        ('my_avg', {'field': 'my_avg', 'dtype': float}),
-        ('mz_avg', {'field': 'mz_avg', 'dtype': float}),
-        ('mx_std', {'field': 'mx_std', 'dtype': float}),
-        ('my_std', {'field': 'my_std', 'dtype': float}),
-        ('mz_std', {'field': 'mz_std', 'dtype': float}),
-        ('integrated_voltage',
-            {'field': 'integrated_voltage', 'dtype': str}),
+        ('date', {'dtype': str, 'not_null': True}),
+        ('hour', {'dtype': str, 'not_null': True}),
+        ('block_name', {'dtype': str, 'not_null': True}),
+        ('main_component', {'dtype': str, 'not_null': True}),
+        ('block_temperature', {'dtype': float, 'not_null': True}),
+        ('block_volume', {'dtype': float, 'not_null': True}),
+        ('motor_integrator_id', {'dtype': int}),
+        ('offset_id', {'dtype': int}),
+        ('configuration_id', {'dtype': int}),
+        ('mx_avg', {'dtype': float}),
+        ('my_avg', {'dtype': float}),
+        ('mz_avg', {'dtype': float}),
+        ('mx_std', {'dtype': float}),
+        ('my_std', {'dtype': float}),
+        ('mz_std', {'dtype': float}),
+        ('integrated_voltage', {'dtype': str}),
     ])
 
     @staticmethod
@@ -86,7 +76,7 @@ class MeasurementData(_database.DatabaseAndFileDocument):
 
     @classmethod
     def get_magnetization_components(
-            cls, main_component, 
+            cls, main_component,
             integrated_voltage_step1, integrated_voltage_step2,
             offset_step1, offset_step2,
             coil_turns, radius, dist_center, block_volume):
@@ -109,4 +99,3 @@ class MeasurementData(_database.DatabaseAndFileDocument):
             mstd = [mx1_std, my_std, mz_std]
 
         return m, mstd
-
