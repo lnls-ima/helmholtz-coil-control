@@ -116,6 +116,15 @@ class MeasurementWidget(_ConfigurationWidget):
         self.integrated_voltage = []
         self.integrated_voltage_part1 = []
         self.integrated_voltage_part2 = []
+        self.clear_results()
+
+    def clear_results(self):
+        self.ui.le_avg_mx.setText('')
+        self.ui.le_avg_my.setText('')
+        self.ui.le_avg_mz.setText('')
+        self.ui.le_std_mx.setText('')
+        self.ui.le_std_my.setText('')
+        self.ui.le_std_mz.setText('')
         self.clear_graph()
 
     def clear_graph(self):
@@ -191,7 +200,7 @@ class MeasurementWidget(_ConfigurationWidget):
         with _warnings.catch_warnings():
             _warnings.simplefilter("ignore")
             nc = self.integrated_voltage_part1.shape[1]
-            for idx in nc:
+            for idx in range(nc):
                 self.graphy[idx].setData(
                     self.integrated_voltage_part1[:, idx])
                 self.graphz[idx].setData(
@@ -202,7 +211,7 @@ class MeasurementWidget(_ConfigurationWidget):
             motor_config = self.global_motor_integrator_config
             wait = 0.1
             
-            steps = int(int(motor_config.motor_resolution)*2)
+            steps = int(int(motor_config.motor_resolution)*1.25)
             encoder_direction = motor_config.encoder_direction,
             driver_address = motor_config.driver_address
 
@@ -341,22 +350,27 @@ class MeasurementWidget(_ConfigurationWidget):
             self.ui.pbt_stop_measurement.setEnabled(False)
             return False
 
-        if not self.measure_part2():
-            self.ui.pbt_start_measurement.setEnabled(True)
-            self.ui.pbt_stop_measurement.setEnabled(False)
-            return False
+        self.integrated_voltage_part2 = self.integrated_voltage_part1
+
+        # msg = 'Rotate block.'
+        # _QMessageBox.information(self, 'Information', msg, _QMessageBox.Ok)
+
+        # if not self.measure_part2():
+        #     self.ui.pbt_start_measurement.setEnabled(True)
+        #     self.ui.pbt_stop_measurement.setEnabled(False)
+        #     return False
 
         self.plot_integrated_voltage()
 
         m, mstd = self.measurement_data.get_magnetization_components(
             self.global_measurement_config.main_component, 
-            self.integrated_voltage_part1,
-            self.integrated_voltage_part2,
+            self.integrated_voltage_part1*_integrator.conversion_factor,
+            self.integrated_voltage_part2*_integrator.conversion_factor,
             0, 0,
             self.global_measurement_config.coil_turns,
-            self.global_measurement_config.coil_radius,
-            self.global_measurement_config.dist_center,
-            self.block_volume)
+            self.global_measurement_config.coil_radius*1e-3,
+            self.global_measurement_config.coil_distance_center*1e-3,
+            self.block_volume*1e-9)
 
         self.ui.le_avg_mx.setText(str(m[0]))
         self.ui.le_avg_my.setText(str(m[1]))
@@ -381,8 +395,13 @@ class MeasurementWidget(_ConfigurationWidget):
         if not self.measure(gain=self.gain_part1):
             return False
         
-        self.integrated_voltage_part1 = [
-            iv for iv in self.integrated_voltage]
+        self.integrated_voltage_part1 = _np.array([
+            iv for iv in self.integrated_voltage])
+
+        _np.savetxt(
+            'C:\\Users\\labimas\\Desktop\\test_software\\iv1.txt',
+            self.integrated_voltage_part1)
+
         return True
 
     def measure_part2(self):
@@ -392,8 +411,8 @@ class MeasurementWidget(_ConfigurationWidget):
         if not self.measure(gain=self.gain_part2):
             return False
 
-        self.integrated_voltage_part2 = [
-            iv for iv in self.integrated_voltage]
+        self.integrated_voltage_part2 = _np.array([
+            iv for iv in self.integrated_voltage])
         return True
 
     def measure(self, gain):
@@ -409,15 +428,20 @@ class MeasurementWidget(_ConfigurationWidget):
                 _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
                 return False
 
-            if not self.homing():
+            if not self.configure_integrator(gain):
                 return False
 
-            if not self.configure_integrator(gain):
+            if not self.homing():
                 return False
 
             if not self.configure_driver():
                 return False
 
+            _integrator.read_from_device()
+            _time.sleep(wait)
+
+            _integrator.send_command(
+                _integrator.commands.stop_measurement)
             _integrator.read_from_device()
             _time.sleep(wait)
 
@@ -429,21 +453,23 @@ class MeasurementWidget(_ConfigurationWidget):
                 self.global_motor_integrator_config.driver_address)
 
             integrated_voltage = []
-            status = -1
-            while status == -1 and not self.stop:
+            finished = False
+            while (not finished) and (not self.stop):
                 tmp = _integrator.read_from_device()
-                if tmp != '':
-                    status = tmp.find('\x1a')
-                    if status == -1:
-                        valor = float(tmp.replace('A',''))
-                        integrated_voltage.append(valor)
-                        _QApplication.processEvents()
-            
+                if 'A' in tmp:
+                    valor = float(tmp.replace('A',''))
+                    integrated_voltage.append(valor)
+                    _QApplication.processEvents()
+                elif tmp == '\x1a':
+                    finished = True
+
             integrated_voltage = _np.array(integrated_voltage).reshape(
-                self.global_measurement_config.nr_turns,
-                self.global_measurement_config.integration_points)
+                self.global_measurement_config.integration_points,
+                self.global_measurement_config.nr_turns)
 
             self.integrated_voltage = integrated_voltage
+
+            return True
 
         except Exception:
             _traceback.print_exc(file=_sys.stdout)

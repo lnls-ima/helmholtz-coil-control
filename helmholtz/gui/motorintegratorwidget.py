@@ -109,7 +109,7 @@ class MotorIntegratorWidget(_ConfigurationWidget):
             direction = self.ui.cmb_motor_direction.currentText()
             velocity = self.ui.sbd_motor_velocity.value()
             acceleration = self.ui.sbd_motor_acceleration.value()
-            steps = int(int(resolution)*1.25)
+            steps = int(int(resolution)*2)
 
             if not _driver.config_motor(
                     driver_address,

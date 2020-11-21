@@ -56,7 +56,7 @@ class MeasurementData(_database.DatabaseAndFileDocument):
         mag_axis_list = []
         mag_perp_list = []
         for i in range(ivoltage.shape[1]):
-            fft = _np.fft.fft(ivoltage - offset)/npts/2
+            fft = _np.fft.fft(ivoltage[:, i] - offset)/npts
             a1 = fft[1].real
             b1 = fft[1].imag
 
@@ -100,10 +100,11 @@ class MeasurementData(_database.DatabaseAndFileDocument):
             coil_turns, radius,
             dist_center, block_volume)
 
-        if main_component.lower() == 'y':
+        if main_component.lower() == 'vertical':
             m = [mx2, my, mz]
             mstd = [mx2_std, my_std, mz_std]
-        elif main_component.lower() in ('x', 'z'):
+        elif main_component.lower() in (
+                'horizontal', 'longitudinal'):
             m = [mx1, my, mz]
             mstd = [mx1_std, my_std, mz_std]
 

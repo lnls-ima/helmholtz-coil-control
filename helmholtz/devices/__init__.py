@@ -16,24 +16,24 @@ class Integrator(_PDI5150Lib.PDI5150GPIB):
             self, channel, encoder_resolution, direction,
             start_trigger, nr_intervals,
             interval_size, gain, wait=0.1):
-        print('int config')
         if not self.connected:
-            print('not connected')
             return False
-
         # Parar todas as coletas e preparar integrador
         self.send_command(self.commands.stop_measurement)
         _time.sleep(wait)
 
+        r = 'A'
+        while 'A' in r:
+            r = self.read_from_device()
+        
         # Configurar canal a ser utilizado
         self.send_command(self.commands.channel + channel)
         _time.sleep(wait)
 
-        # Configura trigger
-        self.config_encoder_trigger(
-            encoder_resolution, direction,
-            start_trigger, nr_intervals,
-            interval_size, wait=wait)
+        # Configura ganho
+        cmd = self.commands.gain + str(gain)
+        self.send_command(cmd)
+        _time.sleep(wait)
 
         # Configurar para leitura imediata
         self.send_command(self.commands.immediate_reading)
@@ -47,12 +47,15 @@ class Integrator(_PDI5150Lib.PDI5150GPIB):
         self.send_command(self.commands.end_of_data)
         _time.sleep(wait)
 
-        # Configura ganho
-        cmd = self.commands.gain + str(gain)
-        self.send_command(cmd)
+        # Configura trigger
+        self.config_encoder_trigger(
+            encoder_resolution, direction,
+            start_trigger, nr_intervals,
+            interval_size, wait=wait)
+
+        self.send_command(self.commands.stop_measurement)
         _time.sleep(wait)
 
-        print('fim int config')
         return True
 
 
