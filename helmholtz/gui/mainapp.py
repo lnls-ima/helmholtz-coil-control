@@ -8,6 +8,8 @@ from qtpy.QtWidgets import QApplication as _QApplication
 
 from helmholtz.gui import utils as _utils
 from helmholtz.gui.mainwindow import MainWindow as _MainWindow
+from helmholtz.gui.advancedoptionswidgets import AdvancedOptionsDialog \
+    as _AdvancedOptionsDialog
 from helmholtz.data import configuration as _configuration
 from helmholtz.data import measurement as _measurement
 
@@ -25,7 +27,7 @@ class MainApp(_QApplication):
         self.mongo = _utils.MONGO
         self.server = _utils.SERVER
         self.create_database()
-        self.motor_integrator_config = _configuration.MotorIntegratorConfig()
+        self.advanced_options_dialog = _AdvancedOptionsDialog()
         self.measurement_config = _configuration.MeasurementConfig()
 
     def create_database(self):
@@ -33,7 +35,7 @@ class MainApp(_QApplication):
         connection_config = _configuration.ConnectionConfig(
             database_name=self.database_name,
             mongo=self.mongo, server=self.server)
-        motor_integrator_config = _configuration.MotorIntegratorConfig(
+        advanced_options = _configuration.AdvancedOptions(
             database_name=self.database_name,
             mongo=self.mongo, server=self.server)
         measurement_config = _configuration.MeasurementConfig(
@@ -45,7 +47,7 @@ class MainApp(_QApplication):
 
         status = []
         status.append(connection_config.db_create_collection())
-        status.append(motor_integrator_config.db_create_collection())
+        status.append(advanced_options.db_create_collection())
         status.append(measurement_config.db_create_collection())
         status.append(measurement_data.db_create_collection())
         if not all(status):

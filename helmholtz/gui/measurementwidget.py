@@ -52,15 +52,6 @@ class MeasurementWidget(_ConfigurationWidget):
             'block_dimension3',
             'block_mass',
             'density',
-            'coil_radius',
-            'coil_distance_center',
-        ]
-
-        self.sb_names = [
-            'trigger',
-            'integration_points',
-            'nr_turns',
-            'coil_turns',
         ]
 
         self.cmb_names = [
@@ -210,7 +201,7 @@ class MeasurementWidget(_ConfigurationWidget):
         try:
             motor_config = self.global_motor_integrator_config
             wait = 0.1
-            
+
             steps = int(int(motor_config.motor_resolution)*1.25)
             encoder_direction = motor_config.encoder_direction,
             driver_address = motor_config.driver_address
@@ -322,11 +313,11 @@ class MeasurementWidget(_ConfigurationWidget):
             elif self.config.main_component == 'vertical':
                 self.gain_part1 = self.config.main_component_gain
                 self.gain_part2 = self.config.residual_component_gain
-            
+
             elif self.config.main_component == 'longitudinal':
                 self.gain_part1 = self.config.residual_component_gain
                 self.gain_part2 = self.config.main_component_gain
-            
+
             self.offset_part1 = 0
             self.offset_part2 = 0
 
@@ -342,28 +333,25 @@ class MeasurementWidget(_ConfigurationWidget):
         self.configure_graph(
             self.global_measurement_config.nr_turns)
         self.ui.pbt_start_measurement.setEnabled(False)
-        self.ui.pbt_stop_measurement.setEnabled(True)
         _QApplication.processEvents()
 
         if not self.measure_part1():
             self.ui.pbt_start_measurement.setEnabled(True)
-            self.ui.pbt_stop_measurement.setEnabled(False)
             return False
 
         self.integrated_voltage_part2 = self.integrated_voltage_part1
 
-        # msg = 'Rotate block.'
-        # _QMessageBox.information(self, 'Information', msg, _QMessageBox.Ok)
+        msg = 'Rotate block.'
+        _QMessageBox.information(self, 'Information', msg, _QMessageBox.Ok)
 
-        # if not self.measure_part2():
-        #     self.ui.pbt_start_measurement.setEnabled(True)
-        #     self.ui.pbt_stop_measurement.setEnabled(False)
-        #     return False
+        if not self.measure_part2():
+            self.ui.pbt_start_measurement.setEnabled(True)
+            return False
 
         self.plot_integrated_voltage()
 
         m, mstd = self.measurement_data.get_magnetization_components(
-            self.global_measurement_config.main_component, 
+            self.global_measurement_config.main_component,
             self.integrated_voltage_part1*_integrator.conversion_factor,
             self.integrated_voltage_part2*_integrator.conversion_factor,
             0, 0,
@@ -381,12 +369,13 @@ class MeasurementWidget(_ConfigurationWidget):
         self.ui.le_std_mz.setText(str(mstd[2]))
 
         self.ui.pbt_start_measurement.setEnabled(True)
-        self.ui.pbt_stop_measurement.setEnabled(False)
         _QApplication.processEvents()
 
         msg = 'End of measurement.'
         _QMessageBox.information(
             self, 'Measurement', msg, _QMessageBox.Ok)
+
+        return True
 
     def measure_part1(self):
         if self.stop:
@@ -394,7 +383,7 @@ class MeasurementWidget(_ConfigurationWidget):
 
         if not self.measure(gain=self.gain_part1):
             return False
-        
+
         self.integrated_voltage_part1 = _np.array([
             iv for iv in self.integrated_voltage])
 
@@ -422,7 +411,7 @@ class MeasurementWidget(_ConfigurationWidget):
         try:
             wait = 0.1
             self.integrated_voltage = []
-   
+
             if not self.global_motor_integrator_config.valid_data():
                 msg = 'Motor and integrator parameters not configured.'
                 _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
@@ -481,11 +470,10 @@ class MeasurementWidget(_ConfigurationWidget):
         try:
             self.stop = True
             self.ui.pbt_start_measurement.setEnabled(True)
-            self.ui.pbt_stop_measurement.setEnabled(False)
             msg = 'The user stopped the measurements.'
             _QMessageBox.information(
                 self, 'Abort', msg, _QMessageBox.Ok)
-        
+
         except Exception:
             self.stop = True
             _traceback.print_exc(file=_sys.stdout)
@@ -511,18 +499,18 @@ class MeasurementWidget(_ConfigurationWidget):
             if self.ui.rbt_volume.isChecked():
                 v = self.ui.sbd_block_volume.value()
                 vstr = fmt.format(v)
-            
+
             elif self.ui.rbt_size.isChecked():
                 d1 = self.ui.sbd_block_dimension1.value()
                 d2 = self.ui.sbd_block_dimension2.value()
                 d3 = self.ui.sbd_block_dimension3.value()
                 vstr = fmt.format(d1*d2*d3)
-            
+
             elif self.ui.rbt_mass.isChecked():
                 m = self.ui.sbd_block_mass.value()
                 d = self.ui.sbd_density.value()/1000
                 vstr = fmt.format(m/d)
-            
+
             self.ui.le_block_volume.setText(vstr)
         except Exception:
             _traceback.print_exc(file=_sys.stdout)

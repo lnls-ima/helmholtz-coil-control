@@ -65,31 +65,56 @@ class ConnectionConfig(_database.DatabaseAndFileDocument):
     ])
 
 
-class MotorIntegratorConfig(_database.DatabaseAndFileDocument):
-    """Read, write and stored motor and integrator configuration data."""
+class AdvancedOptions(_database.DatabaseAndFileDocument):
+    """Read, write and stored advanced options data."""
 
-    label = 'Motor_Integrator'
-    collection_name = 'motor_integrator'
+    label = 'Advanced_Options'
+    collection_name = 'advanced_options'
     db_dict = _collections.OrderedDict([
         ('idn', {'field': 'id', 'dtype': int, 'not_null': True}),
         ('date', {'field': 'date', 'dtype': str, 'not_null': True}),
         ('hour', {'field': 'hour', 'dtype': str, 'not_null': True}),
-        ('driver_address',
-            {'field': 'driver_address', 'dtype': int, 'not_null': True}),
+        ('motor_driver_address',
+            {'field': 'motor_driver_address', 'dtype': int, 'not_null': True}),
         ('motor_velocity',
             {'field': 'motor_velocity', 'dtype': float, 'not_null': True}),
         ('motor_acceleration',
             {'field': 'motor_acceleration', 'dtype': float, 'not_null': True}),
-        ('motor_direction',
-            {'field': 'motor_direction', 'dtype': str, 'not_null': True}),
+        ('motor_rotation_direction', {
+            'field': 'motor_rotation_direction',
+            'dtype': str, 'not_null': True}),
         ('motor_resolution',
             {'field': 'motor_resolution', 'dtype': int, 'not_null': True}),
         ('integrator_channel',
             {'field': 'integrator_channel', 'dtype': str, 'not_null': True}),
-        ('encoder_direction',
-            {'field': 'encoder_direction', 'dtype': str, 'not_null': True}),
-        ('encoder_resolution',
-            {'field': 'encoder_resolution', 'dtype': int, 'not_null': True}),
+        ('integrator_encoder_direction', {
+            'field': 'integrator_encoder_direction',
+            'dtype': str, 'not_null': True}),
+        ('integrator_encoder_resolution', {
+            'field': 'integrator_encoder_resolution',
+            'dtype': int, 'not_null': True}),
+        ('integration_trigger',
+            {'field': 'integration_trigger', 'dtype': int, 'not_null': True}),
+        ('integration_points',
+            {'field': 'integration_points', 'dtype': int, 'not_null': True}),
+        ('integration_nr_turns',
+            {'field': 'integration_nr_turns', 'dtype': int, 'not_null': True}),
+        ('coil_radius',
+            {'field': 'coil_radius', 'dtype': float, 'not_null': True}),
+        ('coil_distance_center', {
+            'field': 'coil_distance_center',
+            'dtype': float, 'not_null': True}),
+        ('coil_turns',
+            {'field': 'coil_turns', 'dtype': int, 'not_null': True}),
+        ('temperature_cable_resistance', {
+            'field': 'temperature_cable_resistance',
+            'dtype': float, 'not_null': True}),
+        ('temperature_nr_readings', {
+            'field': 'temperature_nr_readings',
+            'dtype': int, 'not_null': True}),
+        ('temperature_reading_frequency', {
+            'field': 'temperature_reading_frequency',
+            'dtype': float, 'not_null': True}),
     ])
 
 
@@ -122,20 +147,10 @@ class MeasurementConfig(_database.DatabaseAndFileDocument):
             {'field': 'block_mass', 'dtype': float, 'not_null': True}),
         ('density',
             {'field': 'density', 'dtype': float, 'not_null': True}),
-        ('main_component_gain',
-            {'field': 'main_component_gain', 'dtype': int, 'not_null': True}),
-        ('residual_component_gain',
-            {'field': 'residual_component_gain', 'dtype': int, 'not_null': True}),
-        ('trigger',
-            {'field': 'trigger', 'dtype': int, 'not_null': True}),
-        ('integration_points',
-            {'field': 'integration_points', 'dtype': int, 'not_null': True}),
-        ('nr_turns',
-            {'field': 'nr_turns', 'dtype': int, 'not_null': True}),
-        ('coil_radius',
-            {'field': 'coil_radius', 'dtype': float, 'not_null': True}),
-        ('coil_distance_center',
-            {'field': 'coil_distance_center', 'dtype': float, 'not_null': True}),
-        ('coil_turns',
-            {'field': 'coil_turns', 'dtype': int, 'not_null': True}),
+        ('main_component_gain', {
+            'field': 'main_component_gain',
+            'dtype': int, 'not_null': True}),
+        ('residual_component_gain', {
+            'field': 'residual_component_gain',
+            'dtype': int, 'not_null': True}),
     ])

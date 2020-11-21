@@ -35,6 +35,7 @@ __credits__     = [
     ('balance.png', 'Balance Icon (from https://materialdesignicons.com/)'),
     ('measure.png', 'Measure Icon (from https://materialdesignicons.com/)'),
     ('thermometer.png', 'Thermometer Icon (from https://materialdesignicons.com/)'),
+    ('tab.png', 'Tab Icon (from https://materialdesignicons.com/)'),
     ]
 
 

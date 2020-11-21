@@ -35,22 +35,15 @@ class TemperatureWidget(_TablePlotWidget):
     _left_axis_1_format = '{0:.4f}'
     _left_axis_1_data_labels = ['Temperature [degC]']
     _left_axis_1_data_colors = [(255, 0, 0)]
-    _default_cable_resistance = 0.814
 
     def __init__(self, parent=None):
         """Set up the ui and signal/slot connections."""
         super().__init__(parent, show_legend=False)
 
-        # add check box and configure button
-        self.la_resistance = _QLabel('Cable Resistance [Ohms]')
-        self.sbd_resistance = _QDoubleSpinBox()
-        self.sbd_resistance.setDecimals(4)
-        self.sbd_resistance.setValue(self._default_cable_resistance)
+        # add configure button
         self.pbt_configure = _QPushButton('Configure Device')
         self.pbt_configure.clicked.connect(self.configure_devices)
-        self.add_widgets_next_to_table(
-            [[self.la_resistance, self.sbd_resistance],
-            [self.pbt_configure]])
+        self.add_widgets_next_to_table(self.pbt_configure)
 
         # Create reading thread
         self.wthread = _QThread()
@@ -59,6 +52,12 @@ class TemperatureWidget(_TablePlotWidget):
         self.wthread.started.connect(self.worker.run)
         self.worker.finished.connect(self.wthread.quit)
         self.worker.finished.connect(self.get_reading)
+
+    @property
+    def config(self):
+        """Return global advanced options."""
+        dialog = _QApplication.instance().advanced_options_dialog
+        return dialog.config
 
     def check_connection(self, monitor=False):
         """Check devices connection."""
@@ -131,7 +130,8 @@ class TemperatureWidget(_TablePlotWidget):
             return
 
         try:
-            self.worker.cable_resistance = self.sbd_resistance.value()
+            cable_resistance = self.config.temperature_cable_resistance
+            self.worker.cable_resistance = cable_resistance
             self.wthread.start()
 
         except Exception:

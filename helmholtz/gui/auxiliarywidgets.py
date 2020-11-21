@@ -159,15 +159,15 @@ class PlotDialog(_QDialog):
         super().show()
 
 
-class PreferencesDialog(_QDialog):
-    """Preferences dialog class for Hall Bench Control application."""
+class SelectTabsDialog(_QDialog):
+    """Select tabs dialog class."""
 
-    preferences_changed = _Signal([dict])
+    tab_selection_changed = _Signal([dict])
 
     def __init__(self, chb_names, parent=None):
         """Set up the ui and create connections."""
         super().__init__(parent)
-        self.setWindowTitle("Preferences")
+        self.setWindowTitle("Select Tabs")
         self.resize(250, 400)
         self.setFont(_font)
 
@@ -193,9 +193,9 @@ class PreferencesDialog(_QDialog):
         self.pbt_apply.setFont(_font_bold)
         vertical_layout.addWidget(self.pbt_apply)
 
-        self.pbt_apply.clicked.connect(self.tabs_preferences_changed)
+        self.pbt_apply.clicked.connect(self.emit_tab_selection_signal)
 
-    def tabs_preferences_changed(self):
+    def emit_tab_selection_signal(self):
         """Get tabs checkbox status and emit signal to change tabs."""
         try:
             chb_status = {}
@@ -203,7 +203,7 @@ class PreferencesDialog(_QDialog):
                 chb = getattr(self, 'chb_' + chb_name)
                 chb_status[chb_name] = chb.isChecked()
 
-            self.preferences_changed.emit(chb_status)
+            self.tab_selection_changed.emit(chb_status)
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
 
@@ -1061,7 +1061,7 @@ class ConfigurationWidget(_QWidget):
         self.ui.pbt_load_db.setEnabled(False)
 
     def load(self):
-        """Load configuration to set parameters."""
+        """Load configuration to graphic interface."""
         try:
             for name in self.sb_names:
                 sb = getattr(self.ui, 'sb_' + name)
@@ -1098,15 +1098,16 @@ class ConfigurationWidget(_QWidget):
     def save_db(self):
         """Save parameters to database."""
         self.ui.cmb_idn.setCurrentIndex(-1)
-        
-        if self.database_name is None:
-            msg = 'Invalid database filename.'
-            _QMessageBox.critical(
-                self, 'Failure', msg, _QMessageBox.Ok)
-            return False
-        
+
         try:
             if self.update_configuration():
+
+                if self.database_name is None:
+                    msg = 'Invalid database filename.'
+                    _QMessageBox.critical(
+                        self, 'Failure', msg, _QMessageBox.Ok)
+                    return False
+
                 self.config.db_update_database(
                     self.database_name,
                     mongo=self.mongo, server=self.server)
@@ -1115,10 +1116,10 @@ class ConfigurationWidget(_QWidget):
                 self.ui.cmb_idn.setCurrentIndex(self.ui.cmb_idn.count()-1)
                 self.ui.pbt_load_db.setEnabled(False)
                 return True
-            
+
             else:
                 return False
-        
+
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
             msg = 'Failed to save to database.'
@@ -1150,7 +1151,7 @@ class ConfigurationWidget(_QWidget):
         try:
             if clear:
                 self.config.clear()
-                
+
             for name in self.sb_names:
                 sb = getattr(self.ui, 'sb_' + name)
                 setattr(self.config, name, sb.value())
@@ -1173,7 +1174,7 @@ class ConfigurationWidget(_QWidget):
 
             if self.config.valid_data():
                 return True
-            
+
             else:
                 msg = 'Invalid configuration.'
                 _QMessageBox.critical(

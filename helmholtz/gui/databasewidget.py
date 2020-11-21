@@ -28,7 +28,7 @@ import helmholtz.data as _data
 
 
 _ConnectionConfig = _data.configuration.ConnectionConfig
-_MotorIntegratorConfig = _data.configuration.MotorIntegratorConfig
+_AdvancedOptions = _data.configuration.AdvancedOptions
 _MeasurementConfig = _data.configuration.MeasurementConfig
 _MeasurementData = _data.measurement.MeasurementData
 
@@ -37,7 +37,7 @@ class DatabaseWidget(_QWidget):
     """Database widget class for the control application."""
 
     _connection_table_name = _ConnectionConfig.collection_name
-    _motor_integrator_table_name = _MotorIntegratorConfig.collection_name
+    _advanced_options_table_name = _AdvancedOptions.collection_name
     _configuration_table_name = _MeasurementConfig.collection_name
     _measurement_table_name = _MeasurementData.collection_name
 
@@ -53,7 +53,7 @@ class DatabaseWidget(_QWidget):
 
         self._table_object_dict = {
             self._connection_table_name: _ConnectionConfig,
-            self._motor_integrator_table_name: _MotorIntegratorConfig,
+            self._advanced_options_table_name: _AdvancedOptions,
             self._configuration_table_name: _MeasurementConfig,
             self._measurement_table_name: _MeasurementData,
             }

@@ -15,7 +15,7 @@ import qtpy.uic as _uic
 
 from helmholtz.gui import utils as _utils
 from helmholtz.gui.auxiliarywidgets import (
-    PreferencesDialog as _PreferencesDialog,
+    SelectTabsDialog as _SelectTabsDialog,
     LogDialog as _LogDialog
     )
 from helmholtz.gui.connectionwidget import ConnectionWidget \
@@ -65,14 +65,14 @@ class MainWindow(_QMainWindow):
             _DatabaseWidget,
             ]
 
-        # add preferences dialog
-        self.preferences_dialog = _PreferencesDialog(self.tab_names)
-        self.preferences_dialog.chb_connection.setChecked(True)
-        self.preferences_dialog.chb_temperature.setChecked(True)
-        self.preferences_dialog.chb_motor_and_integrator.setChecked(True)
-        self.preferences_dialog.chb_measurement.setChecked(True)
-        self.preferences_dialog.chb_database.setChecked(True)
-        self.preferences_dialog.preferences_changed.connect(self.change_tabs)
+        # add select tabs dialog
+        self.select_tabs_dialog = _SelectTabsDialog(self.tab_names)
+        self.select_tabs_dialog.chb_connection.setChecked(True)
+        self.select_tabs_dialog.chb_temperature.setChecked(True)
+        self.select_tabs_dialog.chb_motor_and_integrator.setChecked(True)
+        self.select_tabs_dialog.chb_measurement.setChecked(True)
+        self.select_tabs_dialog.chb_database.setChecked(True)
+        self.select_tabs_dialog.tab_selection_changed.connect(self.change_tabs)
 
         self.log_dialog = _LogDialog()
 
@@ -80,6 +80,7 @@ class MainWindow(_QMainWindow):
         self.ui.le_database.setText(self.database_name)
 
         # connect signals and slots
+        self.select_tabs_dialog.emit_tab_selection_signal()
         self.connect_signal_slots()
 
     @property
@@ -96,13 +97,19 @@ class MainWindow(_QMainWindow):
         """Return the default directory."""
         return _QApplication.instance().directory
 
+    @property
+    def advanced_options_dialog(self):
+        """Advanced options dialog."""
+        return _QApplication.instance().advanced_options_dialog
+
     def closeEvent(self, event):
         """Close main window and dialogs."""
         try:
             for idx in range(self.ui.twg_main.count()):
                 widget = self.ui.twg_main.widget(idx)
                 widget.close()
-            self.preferences_dialog.close()
+            self.advanced_options_dialog.close()
+            self.select_tabs_dialog.close()
             self.log_dialog.close()
             event.accept()
         except Exception:
@@ -162,10 +169,11 @@ class MainWindow(_QMainWindow):
 
     def connect_signal_slots(self):
         """Create signal/slot connections."""
-        self.preferences_dialog.tabs_preferences_changed()
-        self.ui.tbt_preferences.clicked.connect(self.preferences_dialog.show)
+        self.ui.tbt_select_tabs.clicked.connect(self.select_tabs_dialog.show)
         self.ui.tbt_database.clicked.connect(self.change_database)
         self.ui.tbt_log.clicked.connect(self.open_log)
+        self.ui.pbt_advanced_options.clicked.connect(
+            self.advanced_options_dialog.show)
 
     def open_log(self):
         """Open log info."""
