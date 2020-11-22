@@ -44,6 +44,7 @@ from qtpy.QtCore import (
     QSize as _QSize,
     QTimer as _QTimer,
     Signal as _Signal,
+    QCoreApplication as _QCoreApplication,
     )
 from matplotlib.figure import Figure as _Figure
 from matplotlib.backends.backend_qt5agg import (
@@ -121,7 +122,8 @@ class LogDialog(_QDialog):
     def __init__(self, parent=None):
         """Set up the ui."""
         super().__init__(parent)
-        self.setWindowTitle("Log")
+        self.setWindowTitle(
+            _QCoreApplication.translate('', "Log"))
         self.resize(1000, 460)
         self.setFont(_font)
         self.te_text = _QTextEdit()
@@ -167,13 +169,15 @@ class SelectTabsDialog(_QDialog):
     def __init__(self, chb_names, parent=None):
         """Set up the ui and create connections."""
         super().__init__(parent)
-        self.setWindowTitle("Select Tabs")
+        self.setWindowTitle(
+            _QCoreApplication.translate('', "Select Tabs"))
         self.resize(250, 400)
         self.setFont(_font)
 
         main_layout = _QVBoxLayout()
         vertical_layout = _QVBoxLayout()
-        group_box = _QGroupBox("Select Tabs to Show")
+        group_box = _QGroupBox(
+            _QCoreApplication.translate('', "Select Tabs to Show"))
         group_box.setLayout(vertical_layout)
         group_box.setFont(_font_bold)
         main_layout.addWidget(group_box)
@@ -183,12 +187,13 @@ class SelectTabsDialog(_QDialog):
         for name in self.chb_names:
             name_split = name.split('_')
             label = ' '.join([s.capitalize() for s in name_split])
-            chb = _QCheckBox(label)
+            chb = _QCheckBox(_QCoreApplication.translate('', label))
             setattr(self, 'chb_' + name, chb)
             vertical_layout.addWidget(chb)
             chb.setFont(_font)
 
-        self.pbt_apply = _QPushButton("Apply Changes")
+        self.pbt_apply = _QPushButton(
+            _QCoreApplication.translate('', "Apply Changes"))
         self.pbt_apply.setMinimumSize(_QSize(0, 40))
         self.pbt_apply.setFont(_font_bold)
         vertical_layout.addWidget(self.pbt_apply)
@@ -216,13 +221,15 @@ class TableAnalysisDialog(_QDialog):
         super().__init__(parent)
         self.setFont(_font)
 
-        self.setWindowTitle("Statistics")
+        self.setWindowTitle(
+            _QCoreApplication.translate('', "Statistics"))
         self.tbl_results = _QTableWidget()
         self.tbl_results.setAlternatingRowColors(True)
         self.tbl_results.horizontalHeader().setStretchLastSection(True)
         self.tbl_results.horizontalHeader().setDefaultSectionSize(120)
 
-        self.pbt_copy = _QPushButton("Copy to clipboard")
+        self.pbt_copy = _QPushButton(
+            _QCoreApplication.translate('', "Copy to clipboard"))
         self.pbt_copy.clicked.connect(self.copy_to_clipboard)
         self.pbt_copy.setFont(_font_bold)
 
@@ -344,7 +351,8 @@ class TablePlotWidget(_QWidget):
 
     def __init__(self, parent=None, show_legend=True):
         super().__init__(parent)
-        self.setWindowTitle("Table and Plot")
+        self.setWindowTitle(
+            _QCoreApplication.translate('', "Table and Plot"))
         self.resize(1230, 900)
         self.add_widgets()
         self.setFont(_font)
@@ -462,13 +470,15 @@ class TablePlotWidget(_QWidget):
         self.horizontal_layout_1.addWidget(self.pw_plot)
 
         # Read button
-        self.pbt_read = _QPushButton("Read")
+        self.pbt_read = _QPushButton(
+            _QCoreApplication.translate('', "Read"))
         self.pbt_read.setMinimumSize(_QSize(0, 45))
         self.pbt_read.setFont(_font_bold)
         self.vertical_layout_2.addWidget(self.pbt_read)
 
         # Monitor button
-        self.pbt_monitor = _QPushButton("Monitor")
+        self.pbt_monitor = _QPushButton(
+            _QCoreApplication.translate('', "Monitor"))
         self.pbt_monitor.setMinimumSize(_QSize(0, 45))
         self.pbt_monitor.setFont(_font_bold)
         self.pbt_monitor.setCheckable(True)
@@ -476,7 +486,8 @@ class TablePlotWidget(_QWidget):
         self.vertical_layout_2.addWidget(self.pbt_monitor)
 
         # Monitor step
-        label = _QLabel("Step")
+        label = _QLabel(
+            _QCoreApplication.translate('', "Step"))
         label.setAlignment(
             _Qt.AlignRight | _Qt.AlignTrailing | _Qt.AlignVCenter)
         self.horizontal_layout_3.addWidget(label)
@@ -489,9 +500,12 @@ class TablePlotWidget(_QWidget):
         self.horizontal_layout_3.addWidget(self.sbd_monitor_step)
 
         self.cmb_monitor_unit = _QComboBox()
-        self.cmb_monitor_unit.addItem("sec")
-        self.cmb_monitor_unit.addItem("min")
-        self.cmb_monitor_unit.addItem("hour")
+        self.cmb_monitor_unit.addItem(
+            _QCoreApplication.translate('', "sec"))
+        self.cmb_monitor_unit.addItem(
+            _QCoreApplication.translate('', "min"))
+        self.cmb_monitor_unit.addItem(
+            _QCoreApplication.translate('', "hour"))
         self.horizontal_layout_3.addWidget(self.cmb_monitor_unit)
         self.vertical_layout_2.addLayout(self.horizontal_layout_3)
 
@@ -529,37 +543,44 @@ class TablePlotWidget(_QWidget):
         self.tbt_autorange.setIcon(_utils.get_icon(_autorange_icon_file))
         self.tbt_autorange.setIconSize(_icon_size)
         self.tbt_autorange.setCheckable(True)
-        self.tbt_autorange.setToolTip('Turn on plot autorange.')
+        self.tbt_autorange.setToolTip(
+            _QCoreApplication.translate('', 'Turn on plot autorange.'))
         self.vertical_layout_3.addWidget(self.tbt_autorange)
 
         self.tbt_save = _QToolButton()
         self.tbt_save.setIcon(_utils.get_icon(_save_icon_file))
         self.tbt_save.setIconSize(_icon_size)
-        self.tbt_save.setToolTip('Save table data to file.')
+        self.tbt_save.setToolTip(
+            _QCoreApplication.translate('', 'Save table data to file.'))
         self.vertical_layout_3.addWidget(self.tbt_save)
 
         self.tbt_copy = _QToolButton()
         self.tbt_copy.setIcon(_utils.get_icon(_copy_icon_file))
         self.tbt_copy.setIconSize(_icon_size)
-        self.tbt_copy.setToolTip('Copy table data.')
+        self.tbt_copy.setToolTip(
+            _QCoreApplication.translate('', 'Copy table data.'))
         self.vertical_layout_3.addWidget(self.tbt_copy)
 
         self.pbt_stats = _QToolButton()
         self.pbt_stats.setIcon(_utils.get_icon(_stats_icon_file))
         self.pbt_stats.setIconSize(_icon_size)
-        self.pbt_stats.setToolTip('Show data statistics.')
+        self.pbt_stats.setToolTip(
+            _QCoreApplication.translate('', 'Show data statistics.'))
         self.vertical_layout_3.addWidget(self.pbt_stats)
 
         self.pbt_remove = _QToolButton()
         self.pbt_remove.setIcon(_utils.get_icon(_delete_icon_file))
         self.pbt_remove.setIconSize(_icon_size)
-        self.pbt_remove.setToolTip('Remove selected lines from table.')
+        self.pbt_remove.setToolTip(
+            _QCoreApplication.translate(
+                '', 'Remove selected lines from table.'))
         self.vertical_layout_3.addWidget(self.pbt_remove)
 
         self.tbt_clear = _QToolButton()
         self.tbt_clear.setIcon(_utils.get_icon(_clear_icon_file))
         self.tbt_clear.setIconSize(_icon_size)
-        self.tbt_clear.setToolTip('Clear table data.')
+        self.tbt_clear.setToolTip(
+            _QCoreApplication.translate('', 'Clear table data.'))
         self.vertical_layout_3.addWidget(self.tbt_clear)
 
         spacer_item = _QSpacerItem(

@@ -10,7 +10,10 @@ from qtpy.QtWidgets import (
     QApplication as _QApplication,
     QDesktopWidget as _QDesktopWidget,
     )
-from qtpy.QtCore import QTimer as _QTimer
+from qtpy.QtCore import (
+    QTimer as _QTimer,
+    QCoreApplication as _QCoreApplication,
+    )
 import qtpy.uic as _uic
 
 from helmholtz.gui import utils as _utils

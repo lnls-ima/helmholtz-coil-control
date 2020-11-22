@@ -27,8 +27,12 @@ class MainApp(_QApplication):
         self.mongo = _utils.MONGO
         self.server = _utils.SERVER
         self.create_database()
-        self.advanced_options_dialog = _AdvancedOptionsDialog()
         self.measurement_config = _configuration.MeasurementConfig()
+        self.advanced_options_dialog = None
+
+    def create_dialogs(self):
+        """Create dialogs."""
+        self.advanced_options_dialog = _AdvancedOptionsDialog()
 
     def create_database(self):
         """Create database and tables."""
@@ -70,8 +74,14 @@ class GUIThread(_threading.Thread):
         self.app = None
         if not _QApplication.instance():
             self.app = MainApp([])
+            translators = _utils.get_translators()
+            for translator in translators:
+                self.app.installTranslator(translator)
+            self.app.create_dialogs()
             self.window = _MainWindow(
                 width=_utils.WINDOW_WIDTH, height=_utils.WINDOW_HEIGHT)
+            self.app.advanced_options_dialog = (
+                self.window.advanced_options_dialog)
             self.window.show()
             self.window.centralize_window()
             _sys.exit(self.app.exec_())
@@ -82,8 +92,13 @@ def run():
     app = None
     if not _QApplication.instance():
         app = MainApp([])
+        translators = _utils.get_translators()
+        for translator in translators:
+            app.installTranslator(translator)
+        app.create_dialogs()
         window = _MainWindow(
             width=_utils.WINDOW_WIDTH, height=_utils.WINDOW_HEIGHT)
+        app.advanced_options_dialog = window.advanced_options_dialog
         window.show()
         window.centralize_window()
         _sys.exit(app.exec_())

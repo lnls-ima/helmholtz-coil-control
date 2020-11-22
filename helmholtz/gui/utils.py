@@ -2,25 +2,30 @@
 
 """Utils."""
 
+import os as _os
 import sys as _sys
 import numpy as _np
 import pandas as _pd
-import os.path as _path
 import pyqtgraph as _pyqtgraph
 from qtpy.QtGui import (
     QFont as _QFont,
     QIcon as _QIcon,
     QPixmap as _QPixmap,
     )
-from qtpy.QtCore import QSize as _QSize
+from qtpy.QtCore import (
+    QSize as _QSize,
+    QTranslator as _QTranslator,
+    )
 
 
 # GUI configurations
+TRANSLATE = True
 WINDOW_STYLE = 'windows'
 WINDOW_WIDTH = 1200
 WINDOW_HEIGHT = 700
 FONT_SIZE = 11
 ICON_SIZE = 24
+PACKAGE_NAME = 'helmholtz'
 DATABASE_NAME = 'helmholtz_coil_measurements.db'
 MONGO = False
 SERVER = 'localhost'
@@ -31,10 +36,10 @@ TABLE_MAX_NUMBER_ROWS = 100
 TABLE_MAX_STR_SIZE = 100
 
 
-BASEPATH = _path.dirname(
-    _path.dirname(_path.dirname(_path.abspath(__file__))))
+BASEPATH = _os.path.dirname(
+    _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
 if not MONGO:
-    DATABASE_NAME = _path.join(BASEPATH, DATABASE_NAME)
+    DATABASE_NAME = _os.path.join(BASEPATH, DATABASE_NAME)
 
 
 COLOR_LIST = [
@@ -58,9 +63,10 @@ def get_default_icon_size():
 
 def get_icon(icon_file):
     """Get the Qt icon for the given file."""
-    img_path = _path.join(
-        BASEPATH, _path.join('helmholtz', _path.join('resources', 'img')))
-    icon_path = _path.join(img_path, icon_file)
+    img_path = _os.path.join(
+        BASEPATH, _os.path.join(
+            PACKAGE_NAME, _os.path.join('resources', 'img')))
+    icon_path = _os.path.join(img_path, icon_file)
     icon = _QIcon()
     icon.addPixmap(
         _QPixmap(icon_path),
@@ -79,11 +85,25 @@ def get_ui_file(widget):
         basename = '%s.ui' % widget.__name__.lower()
     else:
         basename = '%s.ui' % widget.__class__.__name__.lower()
-    ui_path = _path.join(
-        BASEPATH, _path.join('helmholtz', _path.join('gui', 'ui')))
-    ui_file = _path.join(ui_path, basename)
+    ui_path = _os.path.join(
+        BASEPATH, _os.path.join(PACKAGE_NAME, _os.path.join('gui', 'ui')))
+    ui_file = _os.path.join(ui_path, basename)
 
     return ui_file
+
+
+def get_translators():
+    """Load translation files."""
+    if TRANSLATE:
+        qm_path = _os.path.join(
+            BASEPATH, _os.path.join(PACKAGE_NAME, _os.path.join('gui', 'qm')))
+        tfiles = [p for p in _os.listdir(qm_path) if p.endswith('.qm')]
+        translators = []
+        for tfile in tfiles:
+            translator = _QTranslator()
+            translator.load(_os.path.join(qm_path, tfile))
+            translators.append(translator)
+        return translators
 
 
 def get_value_from_string(text):

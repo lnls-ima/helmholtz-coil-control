@@ -6,6 +6,9 @@ from qtpy.QtWidgets import (
     QDialog as _QDialog,
     QHBoxLayout as _QHBoxLayout,
     )
+from qtpy.QtCore import (
+    QCoreApplication as _QCoreApplication,
+    )
 
 from helmholtz.gui import utils as _utils
 from helmholtz.gui.auxiliarywidgets import (
@@ -23,8 +26,11 @@ class AdvancedOptionsDialog(_QDialog):
         self.main_layout = _QHBoxLayout()
         self.main_layout.addWidget(self.main_widget)
         self.setLayout(self.main_layout)
-        self.setWindowTitle('Advanced Options')
-        self.setWhatsThis('Advanced devices and measurement options dialog.')
+        self.setWindowTitle(
+            _QCoreApplication.translate('', "Advanced Options"))
+        self.setWhatsThis(
+            _QCoreApplication.translate(
+                '', 'Advanced devices and measurement options.'))
 
     @property
     def config(self):
