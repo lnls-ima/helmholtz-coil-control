@@ -83,9 +83,10 @@ class MeasurementWidget(_ConfigurationWidget):
         self.legend.setAutoFillBackground(1)
 
     @property
-    def global_motor_integrator_config(self):
-        """Return the motor and encoder global configuration."""
-        return _QApplication.instance().motor_integrator_config
+    def advanced_options(self):
+        """Return global advanced options."""
+        dialog = _QApplication.instance().advanced_options_dialog
+        return dialog.config
 
     @property
     def global_measurement_config(self):
@@ -199,12 +200,11 @@ class MeasurementWidget(_ConfigurationWidget):
 
     def homing(self):
         try:
-            motor_config = self.global_motor_integrator_config
             wait = 0.1
 
-            steps = int(int(motor_config.motor_resolution)*1.25)
-            encoder_direction = motor_config.encoder_direction,
-            driver_address = motor_config.driver_address
+            steps = int(int(self.advanced_options.motor_resolution)*1.25)
+            encoder_direction = self.advanced_options.integrator_encoder_direction,
+            driver_address = self.advanced_options.motor_driver_address
 
             _integrator.send_command(_integrator.commands.reset_counter)
             _time.sleep(wait)
@@ -212,10 +212,10 @@ class MeasurementWidget(_ConfigurationWidget):
             if not _driver.config_motor(
                     driver_address,
                     0,
-                    motor_config.motor_direction,
-                    motor_config.motor_resolution,
-                    motor_config.motor_velocity,
-                    motor_config.motor_acceleration,
+                    self.advanced_options.motor_rotation_direction,
+                    self.advanced_options.motor_resolution,
+                    self.advanced_options.motor_velocity,
+                    self.advanced_options.motor_acceleration,
                     steps):
                 msg = 'Failed to send configuration to motor.'
                 _QMessageBox.critical(
@@ -243,18 +243,15 @@ class MeasurementWidget(_ConfigurationWidget):
 
     def configure_integrator(self, gain):
         try:
-            meas_config = self.global_measurement_config
-            motor_config = self.global_motor_integrator_config
-
-            nr_intervals = meas_config.integration_points*meas_config.nr_turns
+            nr_intervals = self.advanced_options.integration_points*self.advanced_options.integration_nr_turns
             interval_size = int(
-                motor_config.encoder_resolution/meas_config.integration_points)
+                self.advanced_options.integrator_encoder_resolution/self.advanced_options.integration_points)
 
             return _integrator.configure_measurement(
-                motor_config.integrator_channel,
-                motor_config.encoder_resolution,
-                motor_config.encoder_direction,
-                meas_config.trigger,
+                self.advanced_options.integrator_channel,
+                self.advanced_options.integrator_encoder_resolution,
+                self.advanced_options.integrator_encoder_direction,
+                self.advanced_options.integration_trigger,
                 nr_intervals,
                 interval_size,
                 gain)
@@ -267,17 +264,15 @@ class MeasurementWidget(_ConfigurationWidget):
 
     def configure_driver(self):
         try:
-            meas_config = self.global_measurement_config
-            motor_config = self.global_motor_integrator_config
-            steps = (meas_config.nr_turns + 2)*motor_config.motor_resolution
+            steps = (self.advanced_options.integration_nr_turns + 2)*self.advanced_options.motor_resolution
 
             return _driver.config_motor(
-                motor_config.driver_address,
+                self.advanced_options.motor_driver_address,
                 0,
-                motor_config.motor_direction,
-                motor_config.motor_resolution,
-                motor_config.motor_velocity,
-                motor_config.motor_acceleration,
+                self.advanced_options.motor_rotation_direction,
+                self.advanced_options.motor_resolution,
+                self.advanced_options.motor_velocity,
+                self.advanced_options.motor_acceleration,
                 steps)
 
         except Exception:
@@ -331,7 +326,7 @@ class MeasurementWidget(_ConfigurationWidget):
             return False
 
         self.configure_graph(
-            self.global_measurement_config.nr_turns)
+            self.advanced_options.integration_nr_turns)
         self.ui.pbt_start_measurement.setEnabled(False)
         _QApplication.processEvents()
 
@@ -341,23 +336,23 @@ class MeasurementWidget(_ConfigurationWidget):
 
         self.integrated_voltage_part2 = self.integrated_voltage_part1
 
-        msg = 'Rotate block.'
-        _QMessageBox.information(self, 'Information', msg, _QMessageBox.Ok)
+        # msg = 'Rotate block.'
+        # _QMessageBox.information(self, 'Information', msg, _QMessageBox.Ok)
 
-        if not self.measure_part2():
-            self.ui.pbt_start_measurement.setEnabled(True)
-            return False
+        # if not self.measure_part2():
+        #     self.ui.pbt_start_measurement.setEnabled(True)
+        #     return False
 
         self.plot_integrated_voltage()
 
         m, mstd = self.measurement_data.get_magnetization_components(
             self.global_measurement_config.main_component,
-            self.integrated_voltage_part1*_integrator.conversion_factor,
-            self.integrated_voltage_part2*_integrator.conversion_factor,
+            self.integrated_voltage_part1,
+            self.integrated_voltage_part2,
             0, 0,
-            self.global_measurement_config.coil_turns,
-            self.global_measurement_config.coil_radius*1e-3,
-            self.global_measurement_config.coil_distance_center*1e-3,
+            1, #self.advanced_options.coil_turns,
+            self.advanced_options.coil_radius*1e-3,
+            self.advanced_options.coil_distance_center*1e-3,
             self.block_volume*1e-9)
 
         self.ui.le_avg_mx.setText(str(m[0]))
@@ -387,10 +382,6 @@ class MeasurementWidget(_ConfigurationWidget):
         self.integrated_voltage_part1 = _np.array([
             iv for iv in self.integrated_voltage])
 
-        _np.savetxt(
-            'C:\\Users\\labimas\\Desktop\\test_software\\iv1.txt',
-            self.integrated_voltage_part1)
-
         return True
 
     def measure_part2(self):
@@ -412,8 +403,8 @@ class MeasurementWidget(_ConfigurationWidget):
             wait = 0.1
             self.integrated_voltage = []
 
-            if not self.global_motor_integrator_config.valid_data():
-                msg = 'Motor and integrator parameters not configured.'
+            if not self.advanced_options.valid_data():
+                msg = 'Invalid advanced options configuration.'
                 _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
                 return False
 
@@ -439,7 +430,7 @@ class MeasurementWidget(_ConfigurationWidget):
             _time.sleep(wait)
 
             _driver.move_motor(
-                self.global_motor_integrator_config.driver_address)
+                self.advanced_options.motor_driver_address)
 
             integrated_voltage = []
             finished = False
@@ -453,10 +444,11 @@ class MeasurementWidget(_ConfigurationWidget):
                     finished = True
 
             integrated_voltage = _np.array(integrated_voltage).reshape(
-                self.global_measurement_config.integration_points,
-                self.global_measurement_config.nr_turns)
+                self.advanced_options.integration_nr_turns,
+                self.advanced_options.integration_points).transpose()
 
-            self.integrated_voltage = integrated_voltage
+            self.integrated_voltage = integrated_voltage*(
+                _integrator.conversion_factor/(self.advanced_options.coil_turns/2))
 
             return True
 

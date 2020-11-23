@@ -158,12 +158,8 @@ class ReadValueWorker(_QObject):
 
             ts = _time.time()
 
-            if self.dcct_enabled:
-                reading = _multimeter.read_current()
-            else:
-                reading = _np.nan
-
-            temperature = (reading - 100)/self.cable_resistance
+            reading = _multimeter.read()
+            temperature = (float(reading) - 100)/self.cable_resistance
 
             self.timestamp = ts
             self.reading.append(temperature)

@@ -46,22 +46,22 @@ class MeasurementData(_database.DatabaseAndFileDocument):
         mag_axis_list = []
         mag_perp_list = []
         for i in range(ivoltage.shape[1]):
-            fft = _np.fft.fft(ivoltage[:, i] - offset)/npts
+            fft = _np.fft.fft(ivoltage[:, i])/(npts/2)
             a1 = fft[1].real
             b1 = fft[1].imag
-
+            
             mu0 = 4*_np.pi*1e-7
             dtheta = 2*_np.pi/npts
             geometric_factor = coil_turns*(
-                radius**2)/(radius**2 + dist_center**2)**(3/2)
+                radius**2)/((radius**2 + dist_center**2)**(3/2))
             s = _np.sin(dtheta)
             c = 1 - _np.cos(dtheta)
 
-            moment_axis = (1/mu0/geometric_factor)*(a1*s + b1*c)/2*c
-            moment_perp = (1/mu0/geometric_factor)*(-b1*s + a1*c)/2*c
+            moment_axis = (1/(mu0*geometric_factor))*(a1*s + b1*c)/(2*c)
+            moment_perp = (1/(mu0*geometric_factor))*(-b1*s + a1*c)/(2*c)
 
-            mag_axis = moment_axis/block_volume
-            mag_perp = moment_perp/block_volume
+            mag_axis = mu0*moment_axis/block_volume
+            mag_perp = mu0*moment_perp/block_volume
 
             mag_axis_list.append(mag_axis)
             mag_perp_list.append(mag_perp)

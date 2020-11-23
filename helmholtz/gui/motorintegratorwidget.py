@@ -50,7 +50,7 @@ class MotorIntegratorWidget(_QWidget):
         self.ui.pbt_stop_motor.clicked.connect(self.stop_motor)
 
     @property
-    def config(self):
+    def advanced_options(self):
         """Return global advanced options."""
         dialog = _QApplication.instance().advanced_options_dialog
         return dialog.config
@@ -73,11 +73,11 @@ class MotorIntegratorWidget(_QWidget):
 
             wait = 0.1
 
-            driver_address = self.config.motor_driver_address
-            resolution = self.config.motor_resolution
-            rotation_direction = self.config.motor_roattion_direction
-            velocity = self.config.motor_velocity
-            acceleration = self.config.motor_acceleration
+            driver_address = self.advanced_options.motor_driver_address
+            resolution = self.advanced_options.motor_resolution
+            rotation_direction = self.advanced_options.motor_rotation_direction
+            velocity = self.advanced_options.motor_velocity
+            acceleration = self.advanced_options.motor_acceleration
 
             mode = 0
             steps = int(int(resolution)*2)
@@ -95,9 +95,7 @@ class MotorIntegratorWidget(_QWidget):
                     self, 'Failure', msg, _QMessageBox.Ok)
                 return
 
-            encoder_direction = self.config.integrator_encoder_direction
-            _integrator.send_command(_integrator.commands.reset_counter)
-            _time.sleep(wait)
+            encoder_direction = self.advanced_options.integrator_encoder_direction
 
             _integrator.configure_homing(encoder_direction)
             _time.sleep(wait)
@@ -127,11 +125,11 @@ class MotorIntegratorWidget(_QWidget):
                     self, 'Failure', msg, _QMessageBox.Ok)
                 return
 
-            driver_address = self.config.motor_driver_address
-            resolution = self.config.motor_resolution
-            rotation_direction = self.config.motor_roattion_direction
-            velocity = self.config.motor_velocity
-            acceleration = self.config.motor_accelerationion.value()
+            driver_address = self.advanced_options.motor_driver_address
+            resolution = self.advanced_options.motor_resolution
+            rotation_direction = self.advanced_options.motor_rotation_direction
+            velocity = self.advanced_options.motor_velocity
+            acceleration = self.advanced_options.motor_acceleration
 
             mode = 0
 
@@ -167,7 +165,7 @@ class MotorIntegratorWidget(_QWidget):
         self.stop = True
 
         try:
-            driver_address = self.config.motor_driver_address
+            driver_address = self.advanced_options.motor_driver_address
             _driver.stop_motor(driver_address)
 
         except Exception:
@@ -197,7 +195,7 @@ class MotorIntegratorWidget(_QWidget):
                     self.ui.chb_encoder.setChecked(False)
                     return
 
-                encoder_resolution = self.config.integrator_encoder_resolution
+                encoder_resolution = self.advanced_options.integrator_encoder_resolution
 
                 if _integrator.configure_encoder_reading(encoder_resolution):
                     self.stop_encoder_update = False
