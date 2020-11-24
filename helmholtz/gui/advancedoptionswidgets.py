@@ -51,7 +51,6 @@ class AdvancedOptionsWidget(_ConfigurationWidget):
             'motor_driver_address',
             'integrator_encoder_resolution',
             'integration_trigger',
-            'integration_points',
             'integration_nr_turns',
             'coil_turns',
             'temperature_nr_readings',
@@ -71,6 +70,7 @@ class AdvancedOptionsWidget(_ConfigurationWidget):
             'motor_resolution',
             'integrator_channel',
             'integrator_encoder_direction',
+            'integration_points',
         ]
 
         self.connect_signal_slots()

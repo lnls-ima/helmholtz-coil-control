@@ -60,23 +60,27 @@ class MeasurementWidget(_ConfigurationWidget):
             'residual_component_gain',
         ]
 
+        self.chb_names = [
+            'measure_position_1',
+            'measure_position_2',
+        ]
+
         self.connect_signal_slots()
         self.load_last_db_entry()
         self.update_volume()
 
         self.stop = False
         self.block_volume = None
-        self.gain_part1 = None
-        self.gain_part2 = None
-        self.offset_part1 = None
-        self.offset_part2 = None
+        self.gain_position_1 = None
+        self.gain_position_2 = None
+        self.offset_position_1 = None
+        self.offset_position_2 = None
         self.integrated_voltage = []
-        self.integrated_voltage_part1 = []
-        self.integrated_voltage_part2 = []
+        self.integrated_voltage_position_1 = []
+        self.integrated_voltage_position_2 = []
         self.measurement_data = _measurement.MeasurementData()
-        self.graphx = []
-        self.graphy = []
-        self.graphz = []
+        self.graph_position_1 = []
+        self.graph_position_2 = []
 
         self.legend = _pyqtgraph.LegendItem(offset=(70, 30))
         self.legend.setParentItem(self.ui.pw_graph.graphicsItem())
@@ -89,28 +93,25 @@ class MeasurementWidget(_ConfigurationWidget):
         return dialog.config
 
     @property
-    def global_measurement_config(self):
+    def global_config(self):
         """Return the global measurement configuration."""
         return _QApplication.instance().measurement_config
 
-    @global_measurement_config.setter
-    def global_measurement_config(self, value):
+    @global_config.setter
+    def global_config(self, value):
         _QApplication.instance().measurement_config = value
 
     def clear(self):
         """Clear."""
         self.stop = False
         self.block_volume = None
-        self.gain_part1 = None
-        self.gain_part2 = None
-        self.offset_part1 = None
-        self.offset_part2 = None
+        self.gain_position_1 = None
+        self.gain_position_2 = None
+        self.offset_position_1 = None
+        self.offset_position_2 = None
         self.integrated_voltage = []
-        self.integrated_voltage_part1 = []
-        self.integrated_voltage_part2 = []
-        self.clear_results()
-
-    def clear_results(self):
+        self.integrated_voltage_position_1 = []
+        self.integrated_voltage_position_2 = []
         self.ui.le_avg_mx.setText('')
         self.ui.le_avg_my.setText('')
         self.ui.le_avg_mz.setText('')
@@ -123,9 +124,8 @@ class MeasurementWidget(_ConfigurationWidget):
         """Clear plots."""
         self.ui.pw_graph.plotItem.curves.clear()
         self.ui.pw_graph.clear()
-        self.graphx = []
-        self.graphy = []
-        self.graphz = []
+        self.graph_position_1 = []
+        self.graph_position_2 = []
 
     def connect_signal_slots(self):
         """Create signal/slot connections."""
@@ -141,26 +141,20 @@ class MeasurementWidget(_ConfigurationWidget):
         self.ui.rbt_mass.toggled.connect(self.update_volume_page)
         self.ui.pbt_start_measurement.clicked.connect(self.start_measurement)
         self.ui.pbt_stop_measurement.clicked.connect(self.stop_measurement)
+        self.ui.pbt_clear_results.clicked.connect(self.clear)
+        self.ui.chb_show_position_1.stateChanged.connect(
+            self.plot_integrated_voltage)
+        self.ui.chb_show_position_2.stateChanged.connect(
+            self.plot_integrated_voltage)
 
     def configure_graph(self, nr_curves):
         """Configure graph."""
         self.clear_graph()
-        self.legend.removeItem('X')
-        self.legend.removeItem('Y')
-        self.legend.removeItem('Z')
+        self.legend.removeItem('Position 1')
+        self.legend.removeItem('Position 2')
 
         for idx in range(nr_curves):
-            self.graphx.append(
-                self.ui.pw_graph.plotItem.plot(
-                    _np.array([]),
-                    _np.array([]),
-                    pen=(255, 0, 0),
-                    symbol='o',
-                    symbolPen=(255, 0, 0),
-                    symbolSize=4,
-                    symbolBrush=(255, 0, 0)))
-
-            self.graphy.append(
+            self.graph_position_1.append(
                 self.ui.pw_graph.plotItem.plot(
                     _np.array([]),
                     _np.array([]),
@@ -170,7 +164,7 @@ class MeasurementWidget(_ConfigurationWidget):
                     symbolSize=4,
                     symbolBrush=(0, 255, 0)))
 
-            self.graphz.append(
+            self.graph_position_2.append(
                 self.ui.pw_graph.plotItem.plot(
                     _np.array([]),
                     _np.array([]),
@@ -183,27 +177,47 @@ class MeasurementWidget(_ConfigurationWidget):
         self.ui.pw_graph.setLabel('bottom', 'Integration Points')
         self.ui.pw_graph.setLabel('left', 'Integrated Voltage [V.s]')
         self.ui.pw_graph.showGrid(x=True, y=True)
-        self.legend.addItem(self.graphx[0], 'X')
-        self.legend.addItem(self.graphy[0], 'Y')
-        self.legend.addItem(self.graphz[0], 'Z')
+        self.legend.addItem(self.graph_position_1[0], 'Position 1')
+        self.legend.addItem(self.graph_position_2[0], 'Position 2')
 
     def plot_integrated_voltage(self):
         """Plot integrated voltage values."""
         with _warnings.catch_warnings():
             _warnings.simplefilter("ignore")
-            nc = self.integrated_voltage_part1.shape[1]
-            for idx in range(nc):
-                self.graphy[idx].setData(
-                    self.integrated_voltage_part1[:, idx])
-                self.graphz[idx].setData(
-                    self.integrated_voltage_part2[:, idx])
+
+            show_position_1 = (
+                self.ui.chb_show_position_1.isChecked() *
+                len(self.integrated_voltage_position_1))
+
+            show_position_2 = (
+                self.ui.chb_show_position_2.isChecked() *
+                len(self.integrated_voltage_position_2))
+
+            if show_position_1:
+                n1 = self.integrated_voltage_position_1.shape[1]
+                for idx in range(n1):
+                    self.graph_position_1[idx].setData(
+                        self.integrated_voltage_position_1[:, idx])
+            else:
+                for curve in self.graph_position_1:
+                    curve.clear()
+
+            if show_position_2:
+                n2 = self.integrated_voltage_position_2.shape[1]
+                for idx in range(n2):
+                    self.graph_position_2[idx].setData(
+                        self.integrated_voltage_position_2[:, idx])
+            else:
+                for curve in self.graph_position_2:
+                    curve.clear()
 
     def homing(self):
         try:
             wait = 0.1
 
-            steps = int(int(self.advanced_options.motor_resolution)*1.25)
-            encoder_direction = self.advanced_options.integrator_encoder_direction,
+            steps = int(int(self.advanced_options.motor_resolution)*2)
+            encoder_direction = (
+                self.advanced_options.integrator_encoder_direction)
             driver_address = self.advanced_options.motor_driver_address
 
             _integrator.send_command(_integrator.commands.reset_counter)
@@ -243,9 +257,12 @@ class MeasurementWidget(_ConfigurationWidget):
 
     def configure_integrator(self, gain):
         try:
-            nr_intervals = self.advanced_options.integration_points*self.advanced_options.integration_nr_turns
+            nr_intervals = (
+                self.advanced_options.integration_points *
+                self.advanced_options.integration_nr_turns)
             interval_size = int(
-                self.advanced_options.integrator_encoder_resolution/self.advanced_options.integration_points)
+                self.advanced_options.integrator_encoder_resolution /
+                self.advanced_options.integration_points)
 
             return _integrator.configure_measurement(
                 self.advanced_options.integrator_channel,
@@ -264,7 +281,8 @@ class MeasurementWidget(_ConfigurationWidget):
 
     def configure_driver(self):
         try:
-            steps = (self.advanced_options.integration_nr_turns + 2)*self.advanced_options.motor_resolution
+            steps = (self.advanced_options.integration_nr_turns + 2)*(
+                self.advanced_options.motor_resolution)
 
             return _driver.config_motor(
                 self.advanced_options.motor_driver_address,
@@ -302,22 +320,22 @@ class MeasurementWidget(_ConfigurationWidget):
                 return False
 
             if self.config.main_component == 'horizontal':
-                self.gain_part1 = self.config.main_component_gain
-                self.gain_part2 = self.config.residual_component_gain
+                self.gain_position_1 = self.config.main_component_gain
+                self.gain_position_2 = self.config.residual_component_gain
 
             elif self.config.main_component == 'vertical':
-                self.gain_part1 = self.config.main_component_gain
-                self.gain_part2 = self.config.residual_component_gain
+                self.gain_position_1 = self.config.main_component_gain
+                self.gain_position_2 = self.config.residual_component_gain
 
             elif self.config.main_component == 'longitudinal':
-                self.gain_part1 = self.config.residual_component_gain
-                self.gain_part2 = self.config.main_component_gain
+                self.gain_position_1 = self.config.residual_component_gain
+                self.gain_position_2 = self.config.main_component_gain
 
-            self.offset_part1 = 0
-            self.offset_part2 = 0
+            self.offset_position_1 = 0
+            self.offset_position_2 = 0
 
             self.block_volume = float(self.ui.le_block_volume.text())
-            self.global_measurement_config = self.config.copy()
+            self.global_config = self.config.copy()
 
         except Exception:
             msg = 'Measurement configuration failed.'
@@ -330,27 +348,30 @@ class MeasurementWidget(_ConfigurationWidget):
         self.ui.pbt_start_measurement.setEnabled(False)
         _QApplication.processEvents()
 
-        if not self.measure_part1():
-            self.ui.pbt_start_measurement.setEnabled(True)
-            return False
+        if self.global_config.measure_position_1:
+            msg = 'Place the magnet in Position 1.'
+            _QMessageBox.information(self, 'Information', msg, _QMessageBox.Ok)
 
-        self.integrated_voltage_part2 = self.integrated_voltage_part1
+            if not self.measure_position_1():
+                self.ui.pbt_start_measurement.setEnabled(True)
+                return False
 
-        # msg = 'Rotate block.'
-        # _QMessageBox.information(self, 'Information', msg, _QMessageBox.Ok)
+        if self.global_config.measure_position_2:
+            msg = 'Place the magnet in Position 2.'
+            _QMessageBox.information(self, 'Information', msg, _QMessageBox.Ok)
 
-        # if not self.measure_part2():
-        #     self.ui.pbt_start_measurement.setEnabled(True)
-        #     return False
+            if not self.measure_position_2():
+                self.ui.pbt_start_measurement.setEnabled(True)
+                return False
 
         self.plot_integrated_voltage()
 
         m, mstd = self.measurement_data.get_magnetization_components(
-            self.global_measurement_config.main_component,
-            self.integrated_voltage_part1,
-            self.integrated_voltage_part2,
-            0, 0,
-            1, #self.advanced_options.coil_turns,
+            self.global_config.main_component,
+            self.integrated_voltage_position_1,
+            self.integrated_voltage_position_2,
+            self.offset_position_1, self.offset_position_2,
+            1, # self.advanced_options.coil_turns,
             self.advanced_options.coil_radius*1e-3,
             self.advanced_options.coil_distance_center*1e-3,
             self.block_volume*1e-9)
@@ -372,26 +393,26 @@ class MeasurementWidget(_ConfigurationWidget):
 
         return True
 
-    def measure_part1(self):
+    def measure_position_1(self):
         if self.stop:
             return False
 
-        if not self.measure(gain=self.gain_part1):
+        if not self.measure(gain=self.gain_position_1):
             return False
 
-        self.integrated_voltage_part1 = _np.array([
+        self.integrated_voltage_position_1 = _np.array([
             iv for iv in self.integrated_voltage])
 
         return True
 
-    def measure_part2(self):
+    def measure_position_2(self):
         if self.stop:
             return False
 
-        if not self.measure(gain=self.gain_part2):
+        if not self.measure(gain=self.gain_position_2):
             return False
 
-        self.integrated_voltage_part2 = _np.array([
+        self.integrated_voltage_position_2 = _np.array([
             iv for iv in self.integrated_voltage])
         return True
 
@@ -404,7 +425,7 @@ class MeasurementWidget(_ConfigurationWidget):
             self.integrated_voltage = []
 
             if not self.advanced_options.valid_data():
-                msg = 'Invalid advanced options configuration.'
+                msg = 'Invalid advanced options.'
                 _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
                 return False
 
@@ -417,12 +438,8 @@ class MeasurementWidget(_ConfigurationWidget):
             if not self.configure_driver():
                 return False
 
-            _integrator.read_from_device()
-            _time.sleep(wait)
-
             _integrator.send_command(
                 _integrator.commands.stop_measurement)
-            _integrator.read_from_device()
             _time.sleep(wait)
 
             _integrator.send_command(
@@ -448,7 +465,8 @@ class MeasurementWidget(_ConfigurationWidget):
                 self.advanced_options.integration_points).transpose()
 
             self.integrated_voltage = integrated_voltage*(
-                _integrator.conversion_factor/(self.advanced_options.coil_turns/2))
+                _integrator.conversion_factor/(
+                    self.advanced_options.coil_turns/2))
 
             return True
 
@@ -462,6 +480,8 @@ class MeasurementWidget(_ConfigurationWidget):
         try:
             self.stop = True
             self.ui.pbt_start_measurement.setEnabled(True)
+            _driver.stop_motor(
+                self.advanced_options.motor_driver_address)
             msg = 'The user stopped the measurements.'
             _QMessageBox.information(
                 self, 'Abort', msg, _QMessageBox.Ok)
