@@ -1,3 +1,11 @@
+# Database files
+*.db
+*.db-journal
+
+monitor/
+logs/
+measurements/
+
 # --------------- Default lnls-ima ---------------
 *~
 

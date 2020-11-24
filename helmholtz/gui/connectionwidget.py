@@ -126,6 +126,8 @@ class ConnectionWidget(_ConfigurationWidget):
             self.blockSignals(False)
             _QApplication.restoreOverrideCursor()
 
+            self.save_db()
+
             if not connected:
                 msg = 'Failed to connect devices.'
                 _QMessageBox.critical(

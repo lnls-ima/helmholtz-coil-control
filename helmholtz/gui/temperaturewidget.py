@@ -31,14 +31,17 @@ from helmholtz.devices import (
 class TemperatureWidget(_TablePlotWidget):
     """Temperature class for the control application."""
 
+    _monitor_name = 'temperature'
     _left_axis_1_label = 'Temperature [degC]'
     _left_axis_1_format = '{0:.4f}'
     _left_axis_1_data_labels = ['Temperature [degC]']
-    _left_axis_1_data_colors = [(255, 0, 0)]
+    _left_axis_1_data_colors = [(0, 0, 255)]
+
+    _show_legend = False
 
     def __init__(self, parent=None):
         """Set up the ui and signal/slot connections."""
-        super().__init__(parent, show_legend=False)
+        super().__init__(parent=parent)
 
         # add configure button
         self.pbt_configure = _QPushButton('Configure Device')
@@ -115,6 +118,7 @@ class TemperatureWidget(_TablePlotWidget):
             for i, label in enumerate(self._data_labels):
                 self._readings[label].append(r[i])
             self.add_last_value_to_table()
+            self.add_last_value_to_file()
             self.update_plot()
 
         except Exception:

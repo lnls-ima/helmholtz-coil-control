@@ -131,6 +131,148 @@ class MeasurementWidget(_ConfigurationWidget):
         self.graph_position_1 = []
         self.graph_position_2 = []
 
+    def configure_driver(self, steps):
+        try:
+            _driver.stop_motor(
+                self.advanced_options.motor_driver_address)
+            _time.sleep(0.1)
+
+            return _driver.config_motor(
+                self.advanced_options.motor_driver_address,
+                0,
+                self.advanced_options.motor_rotation_direction,
+                self.advanced_options.motor_resolution,
+                self.advanced_options.motor_velocity,
+                self.advanced_options.motor_acceleration,
+                steps)
+
+        except Exception:
+            msg = 'Failed to configure driver.'
+            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            _traceback.print_exc(file=_sys.stdout)
+            return False
+
+    def configure_graph(self, nr_curves):
+        """Configure graph."""
+        self.clear_graph()
+        self.legend.removeItem('Position 1')
+        self.legend.removeItem('Position 2')
+
+        for idx in range(nr_curves):
+            self.graph_position_1.append(
+                self.ui.pw_graph.plotItem.plot(
+                    _np.array([]),
+                    _np.array([]),
+                    pen=(0, 255, 0),
+                    symbol='o',
+                    symbolPen=(0, 255, 0),
+                    symbolSize=4,
+                    symbolBrush=(0, 255, 0)))
+
+            self.graph_position_2.append(
+                self.ui.pw_graph.plotItem.plot(
+                    _np.array([]),
+                    _np.array([]),
+                    pen=(0, 0, 255),
+                    symbol='o',
+                    symbolPen=(0, 0, 255),
+                    symbolSize=4,
+                    symbolBrush=(0, 0, 255)))
+
+        self.ui.pw_graph.setLabel('bottom', 'Integration Points')
+        self.ui.pw_graph.setLabel('left', 'Integrated Voltage [V.s]')
+        self.ui.pw_graph.showGrid(x=True, y=True)
+        self.legend.addItem(self.graph_position_1[0], 'Position 1')
+        self.legend.addItem(self.graph_position_2[0], 'Position 2')
+
+    def configure_integrator(self, gain):
+        try:
+            nr_intervals = (
+                self.advanced_options.integration_points *
+                self.advanced_options.integration_nr_turns)
+            interval_size = int(
+                self.advanced_options.integrator_encoder_resolution /
+                self.advanced_options.integration_points)
+
+            return _integrator.configure_measurement(
+                self.advanced_options.integrator_channel,
+                self.advanced_options.integrator_encoder_resolution,
+                self.advanced_options.integrator_encoder_direction,
+                self.advanced_options.integration_trigger,
+                nr_intervals,
+                interval_size,
+                gain)
+
+        except Exception:
+            msg = 'Failed to configure integrator.'
+            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            _traceback.print_exc(file=_sys.stdout)
+            return False
+
+    def configure_measurement(self):
+        self.clear()
+
+        try:
+            if not _integrator.connected:
+                msg = 'Integrator not connected.'
+                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                return False
+
+            if not _driver.connected:
+                msg = 'Driver not connected.'
+                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                return False
+
+            if not self.update_configuration():
+                return False
+
+            if not self.save_db():
+                return False
+
+            self.global_config = self.config.copy()
+
+            if self.config.main_component == 'horizontal':
+                self.gain_position_1 = self.global_config.main_component_gain
+                self.gain_position_2 = self.global_config.residual_component_gain
+
+            elif self.config.main_component == 'vertical':
+                self.gain_position_1 = self.global_config.main_component_gain
+                self.gain_position_2 = self.global_config.residual_component_gain
+
+            elif self.config.main_component == 'longitudinal':
+                self.gain_position_1 = self.global_config.residual_component_gain
+                self.gain_position_2 = self.global_config.main_component_gain
+
+            self.offset_position_1 = 0
+            self.offset_position_2 = 0
+
+            self.block_volume = float(self.ui.le_block_volume.text())
+            if self.block_volume == 0:
+                msg = 'Invalid block volume.'
+                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                return False
+
+            self.measurement_data.block_name = self.global_config.block_name
+            self.measurement_data.block_temperature = self.global_config.block_temperature
+            self.measurement_data.advanced_options_id = self.advanced_options.idn
+            self.measurement_data.configuration_id = self.global_config.idn
+
+            if not self.advanced_options.valid_data():
+                msg = 'Invalid advanced options.'
+                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                return False
+
+            self.configure_graph(
+                self.advanced_options.integration_nr_turns)
+            
+            return True
+
+        except Exception:
+            msg = 'Measurement configuration failed.'
+            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            _traceback.print_exc(file=_sys.stdout)
+            return False
+
     def connect_signal_slots(self):
         """Create signal/slot connections."""
         super().connect_signal_slots()
@@ -152,6 +294,243 @@ class MeasurementWidget(_ConfigurationWidget):
         self.ui.chb_show_position_2.stateChanged.connect(
             self.plot_integrated_voltage)
 
+    def homing(self, nr_turns=1.25):
+        try:
+            if self.stop:
+                return False
+
+            wait = 0.1
+
+            steps = int(self.advanced_options.motor_resolution*nr_turns)
+            encoder_direction = (
+                self.advanced_options.integrator_encoder_direction)
+            driver_address = self.advanced_options.motor_driver_address
+
+            if not self.configure_driver(steps):
+                return False
+
+            _integrator.configure_homing(encoder_direction)
+
+            if self.stop:
+                return False
+
+            _driver.move_motor(driver_address)
+            _time.sleep(wait)
+            while not _driver.ready(driver_address) and not self.stop:
+                _time.sleep(wait)
+                _QApplication.processEvents()
+
+            if self.stop:
+                return False
+
+            return True
+
+        except Exception:
+            msg = 'Homing failed.'
+            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            _traceback.print_exc(file=_sys.stdout)
+            return False
+
+    def load(self):
+        """Load configuration to set parameters."""
+        try:
+            rbt_name = 'rbt_' + self.config.volume_input
+            rbt = getattr(self.ui, rbt_name)
+            rbt.setChecked(True)
+            super().load()
+
+        except Exception:
+            _traceback.print_exc(file=_sys.stdout)
+
+    def measure(self, gain):
+        try:
+            if self.stop:
+                return False
+
+            wait = 0.1
+            self.integrated_voltage = []
+            steps = int((self.advanced_options.integration_nr_turns + 1.75)*(
+                self.advanced_options.motor_resolution))
+
+            if not self.configure_integrator(gain):
+                return False
+
+            if not self.homing(nr_turns=1.25):
+                return False
+
+            if not self.configure_driver(steps):
+                return False
+
+            driver_address = self.advanced_options.motor_driver_address
+            nr_turns = self.advanced_options.integration_nr_turns
+            integration_points = self.advanced_options.integration_points
+            max_status = nr_turns*integration_points
+            step_status = int(max_status/20)
+
+            _integrator.send_command(
+                _integrator.commands.stop_measurement)
+            _time.sleep(wait)
+
+            _integrator.send_command(
+                _integrator.commands.start_measurement)
+            _time.sleep(wait)
+
+            reading = _integrator.read_from_device()
+            if reading == '\x1a':
+                msg = 'Incorrect integrator status.'
+                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                return False
+
+            if self.stop:
+                return False
+
+            _driver.move_motor(driver_address)
+
+            self.ui.pgb_status.setMinimum(0)
+            self.ui.pgb_status.setMaximum(max_status)
+            self.ui.pgb_status.setValue(0)
+
+            integrated_voltage = []
+            finished = False
+            while (not finished) and (not self.stop):
+                _QApplication.processEvents()
+                reading = _integrator.read_from_device()
+                if 'A' in reading:
+                    valor = float(reading.replace('A',''))
+                    integrated_voltage.append(valor)
+                    if len(integrated_voltage) % step_status == 0:
+                        self.ui.pgb_status.setValue(
+                            len(integrated_voltage))
+
+                elif reading == '\x1a':
+                    finished = True
+
+            if self.stop:
+                return False
+
+            self.ui.pgb_status.setValue(max_status)
+
+            integrated_voltage = _np.array(integrated_voltage).reshape(
+                nr_turns, integration_points).transpose()
+
+            self.integrated_voltage = integrated_voltage*(
+                _integrator.conversion_factor)
+
+            if self.stop:
+                return False
+
+            return True
+
+        except Exception:
+            _traceback.print_exc(file=_sys.stdout)
+            _driver.stop_motor(
+                self.advanced_options.motor_driver_address)
+            self.ui.pgb_status.setValue(0)
+            msg = 'Measurement failed.'
+            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            return False
+
+    def measure_position_1(self):
+        if not self.measure(gain=self.gain_position_1):
+            return False
+
+        self.integrated_voltage_position_1 = _np.array([
+            iv for iv in self.integrated_voltage])
+
+        return True
+
+    def measure_position_2(self):
+        if not self.measure(gain=self.gain_position_2):
+            return False
+
+        self.integrated_voltage_position_2 = _np.array([
+            iv for iv in self.integrated_voltage])
+        
+        return True
+
+    def move_to_initial_position(self):
+        try:
+            if self.stop:
+                return False
+
+            trigger = self.advanced_options.integration_trigger
+            encoder_resolution = self.advanced_options.integrator_encoder_resolution
+            motor_resolution = self.advanced_options.motor_resolution
+            rotation_direction = self.advanced_options.motor_rotation_direction
+            driver_address = self.advanced_options.motor_driver_address
+
+            wait = 0.1
+            tol = encoder_resolution/100
+
+            current_position = int(_integrator.read_encoder())
+            position = trigger
+
+            if _np.abs(current_position - position) <= tol:
+                return True
+
+            diff = (current_position - position)
+            if rotation_direction == '-':
+                diff = diff*(-1)
+            pulses = (encoder_resolution - diff) % encoder_resolution
+            steps = int((pulses*motor_resolution)/encoder_resolution)
+
+            if not self.configure_driver(steps):
+                return False
+
+            if self.stop:
+                return False
+
+            _driver.move_motor(driver_address)
+            _time.sleep(wait)
+
+            while not _driver.ready(driver_address) and not self.stop:
+                _time.sleep(wait)
+                _QApplication.processEvents()
+
+            _time.sleep(wait)
+            
+            if self.stop:
+                return False
+
+            return True
+
+        except Exception:
+            msg = 'Failed to move motor to initial position.'
+            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            _traceback.print_exc(file=_sys.stdout)
+            return False
+
+    def plot_integrated_voltage(self):
+        """Plot integrated voltage values."""
+        with _warnings.catch_warnings():
+            _warnings.simplefilter("ignore")
+
+            show_position_1 = (
+                self.ui.chb_show_position_1.isChecked() *
+                len(self.integrated_voltage_position_1))
+
+            show_position_2 = (
+                self.ui.chb_show_position_2.isChecked() *
+                len(self.integrated_voltage_position_2))
+
+            if show_position_1:
+                n1 = self.integrated_voltage_position_1.shape[1]
+                for idx in range(n1):
+                    self.graph_position_1[idx].setData(
+                        self.integrated_voltage_position_1[:, idx])
+            else:
+                for curve in self.graph_position_1:
+                    curve.clear()
+
+            if show_position_2:
+                n2 = self.integrated_voltage_position_2.shape[1]
+                for idx in range(n2):
+                    self.graph_position_2[idx].setData(
+                        self.integrated_voltage_position_2[:, idx])
+            else:
+                for curve in self.graph_position_2:
+                    curve.clear()
+
     def read_temperature(self):
         try:
             if not _multimeter.connected:
@@ -162,7 +541,7 @@ class MeasurementWidget(_ConfigurationWidget):
             msg = 'Place temperature sensor on the magnet.'
             _QMessageBox.information(self, 'Information', msg, _QMessageBox.Ok)
 
-            _multimeter.config_temperature()
+            _multimeter.config_temperature(wait=0.5)
 
             resistance = self.advanced_options.temperature_cable_resistance
             nr_readings = self.advanced_options.temperature_nr_readings
@@ -203,206 +582,38 @@ class MeasurementWidget(_ConfigurationWidget):
             _traceback.print_exc(file=_sys.stdout)
             return False
 
-    def configure_graph(self, nr_curves):
-        """Configure graph."""
-        self.clear_graph()
-        self.legend.removeItem('Position 1')
-        self.legend.removeItem('Position 2')
-
-        for idx in range(nr_curves):
-            self.graph_position_1.append(
-                self.ui.pw_graph.plotItem.plot(
-                    _np.array([]),
-                    _np.array([]),
-                    pen=(0, 255, 0),
-                    symbol='o',
-                    symbolPen=(0, 255, 0),
-                    symbolSize=4,
-                    symbolBrush=(0, 255, 0)))
-
-            self.graph_position_2.append(
-                self.ui.pw_graph.plotItem.plot(
-                    _np.array([]),
-                    _np.array([]),
-                    pen=(0, 0, 255),
-                    symbol='o',
-                    symbolPen=(0, 0, 255),
-                    symbolSize=4,
-                    symbolBrush=(0, 0, 255)))
-
-        self.ui.pw_graph.setLabel('bottom', 'Integration Points')
-        self.ui.pw_graph.setLabel('left', 'Integrated Voltage [V.s]')
-        self.ui.pw_graph.showGrid(x=True, y=True)
-        self.legend.addItem(self.graph_position_1[0], 'Position 1')
-        self.legend.addItem(self.graph_position_2[0], 'Position 2')
-
-    def plot_integrated_voltage(self):
-        """Plot integrated voltage values."""
-        with _warnings.catch_warnings():
-            _warnings.simplefilter("ignore")
-
-            show_position_1 = (
-                self.ui.chb_show_position_1.isChecked() *
-                len(self.integrated_voltage_position_1))
-
-            show_position_2 = (
-                self.ui.chb_show_position_2.isChecked() *
-                len(self.integrated_voltage_position_2))
-
-            if show_position_1:
-                n1 = self.integrated_voltage_position_1.shape[1]
-                for idx in range(n1):
-                    self.graph_position_1[idx].setData(
-                        self.integrated_voltage_position_1[:, idx])
-            else:
-                for curve in self.graph_position_1:
-                    curve.clear()
-
-            if show_position_2:
-                n2 = self.integrated_voltage_position_2.shape[1]
-                for idx in range(n2):
-                    self.graph_position_2[idx].setData(
-                        self.integrated_voltage_position_2[:, idx])
-            else:
-                for curve in self.graph_position_2:
-                    curve.clear()
-
-    def homing(self):
+    def save_measurement_data(self):
         try:
-            wait = 0.1
-
-            steps = int(int(self.advanced_options.motor_resolution)*2)
-            encoder_direction = (
-                self.advanced_options.integrator_encoder_direction)
-            driver_address = self.advanced_options.motor_driver_address
-
-            _integrator.send_command(_integrator.commands.reset_counter)
-            _time.sleep(wait)
-
-            if not _driver.config_motor(
-                    driver_address,
-                    0,
-                    self.advanced_options.motor_rotation_direction,
-                    self.advanced_options.motor_resolution,
-                    self.advanced_options.motor_velocity,
-                    self.advanced_options.motor_acceleration,
-                    steps):
-                msg = 'Failed to send configuration to motor.'
+            if self.database_name is None:
+                msg = 'Invalid database filename.'
                 _QMessageBox.critical(
                     self, 'Failure', msg, _QMessageBox.Ok)
                 return False
 
-            _integrator.configure_homing(encoder_direction)
-
-            if self.stop:
-                return False
-
-            _driver.move_motor(driver_address)
-            _time.sleep(wait)
-            while not _driver.ready(driver_address) and not self.stop:
-                _time.sleep(wait)
-                _QApplication.processEvents()
-
+            self.measurement_data.db_update_database(
+                self.database_name,
+                mongo=self.mongo, server=self.server)
+            self.measurement_data.db_save()
             return True
 
         except Exception:
-            msg = 'Homing failed.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
             _traceback.print_exc(file=_sys.stdout)
-            return False
-
-    def configure_integrator(self, gain):
-        try:
-            nr_intervals = (
-                self.advanced_options.integration_points *
-                self.advanced_options.integration_nr_turns)
-            interval_size = int(
-                self.advanced_options.integrator_encoder_resolution /
-                self.advanced_options.integration_points)
-
-            return _integrator.configure_measurement(
-                self.advanced_options.integrator_channel,
-                self.advanced_options.integrator_encoder_resolution,
-                self.advanced_options.integrator_encoder_direction,
-                self.advanced_options.integration_trigger,
-                nr_intervals,
-                interval_size,
-                gain)
-
-        except Exception:
-            msg = 'Failed to configure integrator.'
+            msg = 'Failed to save measurement to database.'
             _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
-            _traceback.print_exc(file=_sys.stdout)
-            return False
-
-    def configure_driver(self):
-        try:
-            steps = (self.advanced_options.integration_nr_turns + 2)*(
-                self.advanced_options.motor_resolution)
-
-            return _driver.config_motor(
-                self.advanced_options.motor_driver_address,
-                0,
-                self.advanced_options.motor_rotation_direction,
-                self.advanced_options.motor_resolution,
-                self.advanced_options.motor_velocity,
-                self.advanced_options.motor_acceleration,
-                steps)
-
-        except Exception:
-            msg = 'Failed to configure driver.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
-            _traceback.print_exc(file=_sys.stdout)
             return False
 
     def start_measurement(self):
-        self.clear()
-
-        try:
-            if not _integrator.connected:
-                msg = 'Integrator not connected.'
-                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
-                return False
-
-            if not _driver.connected:
-                msg = 'Driver not connected.'
-                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
-                return False
-
-            if not self.update_configuration():
-                return False
-
-            if not self.save_db():
-                return False
-
-            if self.config.main_component == 'horizontal':
-                self.gain_position_1 = self.config.main_component_gain
-                self.gain_position_2 = self.config.residual_component_gain
-
-            elif self.config.main_component == 'vertical':
-                self.gain_position_1 = self.config.main_component_gain
-                self.gain_position_2 = self.config.residual_component_gain
-
-            elif self.config.main_component == 'longitudinal':
-                self.gain_position_1 = self.config.residual_component_gain
-                self.gain_position_2 = self.config.main_component_gain
-
-            self.offset_position_1 = 0
-            self.offset_position_2 = 0
-
-            self.block_volume = float(self.ui.le_block_volume.text())
-            self.global_config = self.config.copy()
-
-        except Exception:
-            msg = 'Measurement configuration failed.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
-            _traceback.print_exc(file=_sys.stdout)
+        if not self.configure_measurement():
             return False
-
-        self.configure_graph(
-            self.advanced_options.integration_nr_turns)
+        
         self.ui.pbt_start_measurement.setEnabled(False)
         _QApplication.processEvents()
+
+        if not self.homing(nr_turns=2):
+            return False
+
+        if not self.move_to_initial_position():
+            return False
 
         if self.global_config.measure_position_1:
             msg = 'Place the magnet in Position 1.'
@@ -412,6 +623,9 @@ class MeasurementWidget(_ConfigurationWidget):
                 self.ui.pbt_start_measurement.setEnabled(True)
                 return False
 
+        if self.stop:
+            return False
+
         if self.global_config.measure_position_2:
             msg = 'Place the magnet in Position 2.'
             _QMessageBox.information(self, 'Information', msg, _QMessageBox.Ok)
@@ -420,131 +634,46 @@ class MeasurementWidget(_ConfigurationWidget):
                 self.ui.pbt_start_measurement.setEnabled(True)
                 return False
 
+        if self.stop:
+            return False
+
         self.plot_integrated_voltage()
 
-        m, mstd = self.measurement_data.get_magnetization_components(
+        m, mstd = self.measurement_data.set_magnetization_components(
             self.global_config.main_component,
             self.integrated_voltage_position_1,
             self.integrated_voltage_position_2,
-            self.offset_position_1, self.offset_position_2,
-            1, # self.advanced_options.coil_turns,
+            self.offset_position_1,
+            self.offset_position_2,
             self.advanced_options.coil_radius*1e-3,
             self.advanced_options.coil_distance_center*1e-3,
+            self.advanced_options.coil_turns,
             self.block_volume*1e-9)
 
-        self.ui.le_avg_mx.setText(str(m[0]))
-        self.ui.le_avg_my.setText(str(m[1]))
-        self.ui.le_avg_mz.setText(str(m[2]))
+        fmt_avg = '{0:.6f}'
+        self.ui.le_avg_mx.setText(fmt_avg.format(m[0]))
+        self.ui.le_avg_my.setText(fmt_avg.format(m[1]))
+        self.ui.le_avg_mz.setText(fmt_avg.format(m[2]))
 
-        self.ui.le_std_mx.setText(str(mstd[0]))
-        self.ui.le_std_my.setText(str(mstd[1]))
-        self.ui.le_std_mz.setText(str(mstd[2]))
+        fmt_std = '{0:.2g}'
+        self.ui.le_std_mx.setText(fmt_std.format(mstd[0]))
+        self.ui.le_std_my.setText(fmt_std.format(mstd[1]))
+        self.ui.le_std_mz.setText(fmt_std.format(mstd[2]))
 
         self.ui.pbt_start_measurement.setEnabled(True)
         _QApplication.processEvents()
+
+        if self.stop:
+            return False
+
+        if not self.save_measurement_data():
+            return False
 
         msg = 'End of measurement.'
         _QMessageBox.information(
             self, 'Measurement', msg, _QMessageBox.Ok)
 
         return True
-
-    def measure_position_1(self):
-        if self.stop:
-            return False
-
-        if not self.measure(gain=self.gain_position_1):
-            return False
-
-        self.integrated_voltage_position_1 = _np.array([
-            iv for iv in self.integrated_voltage])
-
-        return True
-
-    def measure_position_2(self):
-        if self.stop:
-            return False
-
-        if not self.measure(gain=self.gain_position_2):
-            return False
-
-        self.integrated_voltage_position_2 = _np.array([
-            iv for iv in self.integrated_voltage])
-        return True
-
-    def measure(self, gain):
-        if self.stop:
-            return False
-
-        try:
-            wait = 0.1
-            self.integrated_voltage = []
-
-            if not self.advanced_options.valid_data():
-                msg = 'Invalid advanced options.'
-                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
-                return False
-
-            if not self.configure_integrator(gain):
-                return False
-
-            if not self.homing():
-                return False
-
-            if not self.configure_driver():
-                return False
-
-            _integrator.send_command(
-                _integrator.commands.stop_measurement)
-            _time.sleep(wait)
-
-            _integrator.send_command(
-                _integrator.commands.start_measurement)
-            _time.sleep(wait)
-
-            _driver.move_motor(
-                self.advanced_options.motor_driver_address)
-
-            nr_turns = self.advanced_options.integration_nr_turns
-            integration_points = self.advanced_options.integration_points
-            max_status = nr_turns*integration_points
-            step_status = int(max_status/20)
-
-            self.ui.pgb_status.setMinimum(0)
-            self.ui.pgb_status.setMaximum(max_status)
-            self.ui.pgb_status.setValue(0)
-
-            integrated_voltage = []
-            finished = False
-            while (not finished) and (not self.stop):
-                reading = _integrator.read_from_device()
-                if 'A' in reading:
-                    valor = float(reading.replace('A',''))
-                    integrated_voltage.append(valor)
-                    if len(integrated_voltage) % step_status == 0:
-                        self.ui.pgb_status.setValue(
-                            len(integrated_voltage))
-                    _QApplication.processEvents()
-
-                elif reading == '\x1a':
-                    finished = True
-
-            self.ui.pgb_status.setValue(max_status)
-
-            integrated_voltage = _np.array(integrated_voltage).reshape(
-                nr_turns, integration_points).transpose()
-
-            self.integrated_voltage = integrated_voltage*(
-                _integrator.conversion_factor/(
-                    self.advanced_options.coil_turns/2))
-
-            return True
-
-        except Exception:
-            _traceback.print_exc(file=_sys.stdout)
-            msg = 'Measurement failed.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
-            return False
 
     def stop_measurement(self):
         try:
@@ -594,17 +723,6 @@ class MeasurementWidget(_ConfigurationWidget):
                 vstr = fmt.format(m/d)
 
             self.ui.le_block_volume.setText(vstr)
-        except Exception:
-            _traceback.print_exc(file=_sys.stdout)
-
-    def load(self):
-        """Load configuration to set parameters."""
-        try:
-            rbt_name = 'rbt_' + self.config.volume_input
-            rbt = getattr(self.ui, rbt_name)
-            rbt.setChecked(True)
-            super().load()
-
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
 

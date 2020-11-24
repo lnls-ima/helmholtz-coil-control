@@ -90,6 +90,7 @@ class MeasurementConfig(_database.DatabaseAndFileDocument):
         ('density', {'dtype': float, 'not_null': True}),
         ('main_component_gain', {'dtype': int, 'not_null': True}),
         ('residual_component_gain', {'dtype': int, 'not_null': True}),
-        ('measure_position_1', {'dtype': int, 'not_null': True}),
-        ('measure_position_2', {'dtype': int, 'not_null': True}),
+        ('measure_position_1', {'dtype': int}),
+        ('measure_position_2', {'dtype': int}),
+        ('measure_position_3', {'dtype': int}),
     ])

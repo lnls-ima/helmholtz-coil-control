@@ -115,56 +115,18 @@
         <property name="rightMargin">
          <number>20</number>
         </property>
-        <item row="1" column="2">
-         <widget class="QSpinBox" name="sb_nr_steps">
-          <property name="enabled">
-           <bool>false</bool>
+        <item row="0" column="3">
+         <spacer name="horizontalSpacer_3">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
           </property>
-          <property name="font">
-           <font>
-            <weight>50</weight>
-            <bold>false</bold>
-           </font>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
           </property>
-          <property name="minimum">
-           <number>1</number>
-          </property>
-          <property name="maximum">
-           <number>500000</number>
-          </property>
-          <property name="value">
-           <number>50000</number>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="1">
-         <widget class="QRadioButton" name="rbt_nr_steps">
-          <property name="font">
-           <font>
-            <weight>50</weight>
-            <bold>false</bold>
-           </font>
-          </property>
-          <property name="text">
-           <string>&amp;Number of steps:</string>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="1">
-         <widget class="QRadioButton" name="rbt_nr_turns">
-          <property name="font">
-           <font>
-            <weight>50</weight>
-            <bold>false</bold>
-           </font>
-          </property>
-          <property name="text">
-           <string>Number of &amp;turns:</string>
-          </property>
-          <property name="checked">
-           <bool>true</bool>
-          </property>
-         </widget>
+         </spacer>
         </item>
         <item row="0" column="2">
          <widget class="QDoubleSpinBox" name="sbd_nr_turns">
@@ -188,20 +150,59 @@
           </property>
          </widget>
         </item>
-        <item row="0" column="3">
-         <spacer name="horizontalSpacer_3">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
+        <item row="4" column="0" colspan="4">
+         <widget class="QPushButton" name="pbt_stop_motor">
+          <property name="minimumSize">
            <size>
-            <width>40</width>
-            <height>20</height>
+            <width>0</width>
+            <height>50</height>
            </size>
           </property>
-         </spacer>
+          <property name="text">
+           <string>Stop Motor</string>
+          </property>
+          <property name="icon">
+           <iconset>
+            <normaloff>../../resources/img/stop.svg</normaloff>../../resources/img/stop.svg</iconset>
+          </property>
+          <property name="iconSize">
+           <size>
+            <width>24</width>
+            <height>24</height>
+           </size>
+          </property>
+         </widget>
         </item>
-        <item row="2" column="0" colspan="4">
+        <item row="1" column="1">
+         <widget class="QRadioButton" name="rbt_nr_steps">
+          <property name="font">
+           <font>
+            <weight>50</weight>
+            <bold>false</bold>
+           </font>
+          </property>
+          <property name="text">
+           <string>&amp;Number of motor steps:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QRadioButton" name="rbt_nr_turns">
+          <property name="font">
+           <font>
+            <weight>50</weight>
+            <bold>false</bold>
+           </font>
+          </property>
+          <property name="text">
+           <string>Number of &amp;turns:</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="0" colspan="4">
          <widget class="QPushButton" name="pbt_move_motor">
           <property name="minimumSize">
            <size>
@@ -224,26 +225,60 @@
           </property>
          </widget>
         </item>
-        <item row="3" column="0" colspan="4">
-         <widget class="QPushButton" name="pbt_stop_motor">
-          <property name="minimumSize">
-           <size>
-            <width>0</width>
-            <height>50</height>
-           </size>
+        <item row="1" column="2">
+         <widget class="QSpinBox" name="sb_nr_steps">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="font">
+           <font>
+            <weight>50</weight>
+            <bold>false</bold>
+           </font>
+          </property>
+          <property name="minimum">
+           <number>1</number>
+          </property>
+          <property name="maximum">
+           <number>500000</number>
+          </property>
+          <property name="value">
+           <number>50000</number>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="1">
+         <widget class="QRadioButton" name="rbt_encoder_position">
+          <property name="font">
+           <font>
+            <weight>50</weight>
+            <bold>false</bold>
+           </font>
           </property>
           <property name="text">
-           <string>Stop Motor</string>
+           <string>Encoder position:</string>
           </property>
-          <property name="icon">
-           <iconset>
-            <normaloff>../../resources/img/stop.svg</normaloff>../../resources/img/stop.svg</iconset>
+         </widget>
+        </item>
+        <item row="2" column="2">
+         <widget class="QSpinBox" name="sb_encoder_position">
+          <property name="enabled">
+           <bool>false</bool>
           </property>
-          <property name="iconSize">
-           <size>
-            <width>24</width>
-            <height>24</height>
-           </size>
+          <property name="font">
+           <font>
+            <weight>50</weight>
+            <bold>false</bold>
+           </font>
+          </property>
+          <property name="minimum">
+           <number>0</number>
+          </property>
+          <property name="maximum">
+           <number>50000</number>
+          </property>
+          <property name="value">
+           <number>1</number>
           </property>
          </widget>
         </item>

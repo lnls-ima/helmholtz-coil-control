@@ -11,18 +11,15 @@ from imautils.db import database as _database
 class MeasurementData(_database.DatabaseAndFileDocument):
     """Read, write and stored measurement data."""
 
-    label = 'Measurement'
-    collection_name = 'measurement'
+    label = 'HelmholtzMeasurement'
+    collection_name = 'helmholtz_measurement'
     db_dict = _collections.OrderedDict([
         ('idn', {'field': 'id', 'dtype': int, 'not_null': True}),
         ('date', {'dtype': str, 'not_null': True}),
         ('hour', {'dtype': str, 'not_null': True}),
         ('block_name', {'dtype': str, 'not_null': True}),
         ('main_component', {'dtype': str, 'not_null': True}),
-        ('block_temperature', {'dtype': float, 'not_null': True}),
-        ('block_volume', {'dtype': float, 'not_null': True}),
-        ('motor_integrator_id', {'dtype': int}),
-        ('offset_id', {'dtype': int}),
+        ('advanced_options_id', {'dtype': int}),
         ('configuration_id', {'dtype': int}),
         ('mx_avg', {'dtype': float}),
         ('my_avg', {'dtype': float}),
@@ -30,13 +27,34 @@ class MeasurementData(_database.DatabaseAndFileDocument):
         ('mx_std', {'dtype': float}),
         ('my_std', {'dtype': float}),
         ('mz_std', {'dtype': float}),
-        ('integrated_voltage', {'dtype': str}),
+        ('coil_radius', {'dtype': float}),
+        ('coil_distance_center', {'dtype': float}),
+        ('coil_turns', {'dtype': int}),
+        ('block_volume', {'dtype': float}),
+        ('block_temperature', {'dtype': float}),
+        ('offset_position_1', {'dtype': float}),
+        ('offset_position_2', {'dtype': float}),
+        ('offset_position_3', {'dtype': float}),
+        ('integrated_voltage_position_1', {'dtype': _np.ndarray}),
+        ('integrated_voltage_position_2', {'dtype': _np.ndarray}),
+        ('integrated_voltage_position_3', {'dtype': _np.ndarray}),
     ])
+
+    @property
+    def default_filename(self):
+        """Return the default filename."""
+        filename = super().default_filename
+        
+        if self.block_name is not None and len(self.block_name) != 0:
+            filename = filename.replace(self.label, self.block_name)
+        
+        return filename
 
     @staticmethod
     def calc_magnetization(
-            integrated_voltage, offset, coil_turns,
-            radius, dist_center, block_volume):
+            integrated_voltage, offset,
+            coil_radius, coil_distance_center,
+            coil_turns, block_volume):
         if len(integrated_voltage) == 0:
             return 0, 0, 0, 0
 
@@ -55,8 +73,9 @@ class MeasurementData(_database.DatabaseAndFileDocument):
 
             mu0 = 4*_np.pi*1e-7
             dtheta = 2*_np.pi/npts
-            geometric_factor = coil_turns*(
-                radius**2)/((radius**2 + dist_center**2)**(3/2))
+            geometric_factor = (coil_turns/2)*(
+                coil_radius**2)/(
+                    (coil_radius**2 + coil_distance_center**2)**(3/2))
             s = _np.sin(dtheta)
             c = 1 - _np.cos(dtheta)
 
@@ -77,21 +96,86 @@ class MeasurementData(_database.DatabaseAndFileDocument):
 
         return mag_axis_avg, mag_perp_avg, mag_axis_std, mag_perp_std
 
-    @classmethod
-    def get_magnetization_components(
-            cls, main_component,
-            integrated_voltage_position_1, integrated_voltage_position_2,
-            offset_position_1, offset_position_2,
-            coil_turns, radius, dist_center, block_volume):
-        mx1, my, mx1_std, my_std = cls.calc_magnetization(
-            integrated_voltage_position_1, offset_position_1,
-            coil_turns, radius,
-            dist_center, block_volume)
+    def save_file(self, filename):
+        """Save data to file.
+        Args:
+            filename (str): file fullpath.
+        """
+        if not self.valid_data():
+            message = 'Invalid data.'
+            raise ValueError(message)
 
-        mz, mx2, mz_std, mx2_std = cls.calc_magnetization(
-            integrated_voltage_position_2, offset_position_2,
-            coil_turns, radius,
-            dist_center, block_volume)
+        columns = [
+            'integrated_voltage_position_1',
+            'integrated_voltage_position_2',
+            'integrated_voltage_position_3']
+        return super().save_file(filename, columns=columns)
+
+    def read_file(self, filename):
+        """Read from file.
+
+        Args:
+        ----
+            filename (str): filepath.
+
+        """
+        return super().read_file(filename, check_nr_columns=False)
+
+    def set_magnetization_components(
+            self,
+            main_component,
+            integrated_voltage_position_1,
+            integrated_voltage_position_2,
+            offset_position_1, offset_position_2,
+            coil_radius, coil_distance_center, coil_turns,
+            block_volume):       
+        self.main_component = main_component
+        self.integrated_voltage_position_1 = integrated_voltage_position_1
+        self.integrated_voltage_position_2 = integrated_voltage_position_2
+        self.integrated_voltage_position_3 = []
+        self.offset_position_1 = offset_position_1
+        self.offset_position_2 = offset_position_2
+        self.offset_position_3 = 0
+        self.coil_radius = coil_radius
+        self.coil_distance_center = coil_distance_center
+        self.coil_turns = coil_turns
+        self.block_volume = block_volume
+
+        my, mx1, my_std, mx1_std = self.calc_magnetization(
+            self.integrated_voltage_position_1,
+            self.offset_position_1,
+            self.coil_radius,
+            self.coil_distance_center,
+            self.coil_turns,
+            self.block_volume)
+
+        mx2, mz, mx2_std, mz_std = self.calc_magnetization(
+            self.integrated_voltage_position_2,
+            self.offset_position_2,
+            self.coil_radius,
+            self.coil_distance_center,
+            self.coil_turns,
+            self.block_volume)
+
+        npts1 = len(self.integrated_voltage_position_1)
+        npts2 = len(self.integrated_voltage_position_2)
+        npts3 = len(self.integrated_voltage_position_3)
+
+        if npts1 != 0:
+            shape = self.integrated_voltage_position_1.shape
+        elif npts2 != 0:
+            shape = self.integrated_voltage_position_2.shape
+        else:
+            shape = self.integrated_voltage_position_3.shape
+
+        if npts1 == 0:
+            self.integrated_voltage_position_1 = _np.zeros(shape)
+
+        if npts2 == 0:
+            self.integrated_voltage_position_2 = _np.zeros(shape)
+
+        if npts3 == 0:
+            self.integrated_voltage_position_3 = _np.zeros(shape)
 
         if mx1 == 0:
             mx = mx2
@@ -106,7 +190,15 @@ class MeasurementData(_database.DatabaseAndFileDocument):
             mx = mx1
             mx_std = mx1_std
 
-        m = [mx, my, mz]
-        mstd = [mx_std, my_std, mz_std]
+        self.mx_avg = mx
+        self.my_avg = my
+        self.mz_avg = mz
+
+        self.mx_std = mx_std
+        self.my_std = my_std
+        self.mz_std = mz_std
+
+        m = [self.mx_avg, self.my_avg, self.mz_avg]
+        mstd = [self.mx_std, self.my_std, self.mz_std]
 
         return m, mstd

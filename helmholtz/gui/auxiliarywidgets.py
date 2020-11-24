@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
+import os as _os
 import sys as _sys
+import time as _time
 import numpy as _np
 import datetime as _datetime
 import warnings as _warnings
@@ -330,9 +332,11 @@ class TableAnalysisDialog(_QDialog):
 class TablePlotWidget(_QWidget):
     """Table and Plot widget."""
 
+    _monitor_name = ''
     _bottom_axis_label = 'Time interval [s]'
+    _bottom_axis_format = '{0:.3f}'
     _is_timestamp = True
-
+    
     _left_axis_1_label = ''
     _right_axis_1_label = ''
     _right_axis_2_label = ''
@@ -349,7 +353,9 @@ class TablePlotWidget(_QWidget):
     _right_axis_1_data_colors = []
     _right_axis_2_data_colors = []
 
-    def __init__(self, parent=None, show_legend=True):
+    _show_legend = True
+
+    def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle(
             _QCoreApplication.translate('', "Table and Plot"))
@@ -358,6 +364,7 @@ class TablePlotWidget(_QWidget):
         self.setFont(_font)
 
         # variables initialisation
+        self.filename = None
         self._xvalues = []
         self._legend_items = []
         self._graphs = {}
@@ -382,8 +389,7 @@ class TablePlotWidget(_QWidget):
         self.table_analysis_dialog = TableAnalysisDialog()
 
         # add legend to plot
-        self.show_legend = show_legend
-        if self.show_legend:
+        if self._show_legend:
             self.legend = _pyqtgraph.LegendItem(offset=(70, 30))
             self.legend.setParentItem(self.pw_plot.graphicsItem())
             self.legend.setAutoFillBackground(1)
@@ -427,16 +433,14 @@ class TablePlotWidget(_QWidget):
         self.tbl_table.setRowCount(n)
 
         if self._is_timestamp:
-            dt = _datetime.datetime.fromtimestamp(self._xvalues[-1])
-            date = dt.strftime("%d/%m/%Y")
-            hour = dt.strftime("%H:%M:%S")
-            self.tbl_table.setItem(n-1, 0, _QTableWidgetItem(date))
-            self.tbl_table.setItem(n-1, 1, _QTableWidgetItem(hour))
-            jadd = 2
+            dt = self._xvalues[-1] - self._xvalues[0]
+            self.tbl_table.setItem(
+                n-1, 0, _QTableWidgetItem(
+                    self._bottom_axis_format.format(dt)))            
         else:
             self.tbl_table.setItem(
-                n-1, 0, _QTableWidgetItem(str(self._xvalues[-1])))
-            jadd = 1
+                n-1, 0, _QTableWidgetItem(
+                    self._bottom_axis_format.format(self._xvalues[-1])))
 
         for j, label in enumerate(self._data_labels):
             fmt = self._data_formats[j]
@@ -444,11 +448,36 @@ class TablePlotWidget(_QWidget):
             if reading is None:
                 reading = _np.nan
             self.tbl_table.setItem(
-                n-1, j+jadd, _QTableWidgetItem(fmt.format(reading)))
+                n-1, j+1, _QTableWidgetItem(fmt.format(reading)))
 
         vbar = self.tbl_table.verticalScrollBar()
         vbar.setValue(vbar.maximum())
 
+    def add_last_value_to_file(self):
+        """Add the last value read to file."""
+        if len(self._xvalues) == 0:
+            return
+
+        if self.filename is None:
+            return
+
+        line = []
+        if self._is_timestamp:
+            dt = self._xvalues[-1] - self._xvalues[0]
+            line.append(self._bottom_axis_format.format(dt))
+        else:
+            line.append(self._bottom_axis_format.format(self._xvalues[-1]))
+
+        for j, label in enumerate(self._data_labels):
+            fmt = self._data_formats[j]
+            reading = self._readings[label][-1]
+            if reading is None:
+                reading = _np.nan
+            line.append(fmt.format(reading))
+
+        with open(self.filename, '+a') as f:
+            f.write('\t'.join(line)+'\n')
+            
     def add_widgets(self):
         """Add widgets and layouts."""
         # Layouts
@@ -485,28 +514,19 @@ class TablePlotWidget(_QWidget):
         self.pbt_monitor.setChecked(False)
         self.vertical_layout_2.addWidget(self.pbt_monitor)
 
-        # Monitor step
+        # Monitor frequency
         label = _QLabel(
-            _QCoreApplication.translate('', "Step"))
+            _QCoreApplication.translate('', "Frequency [Hz]:"))
         label.setAlignment(
             _Qt.AlignRight | _Qt.AlignTrailing | _Qt.AlignVCenter)
         self.horizontal_layout_3.addWidget(label)
 
-        self.sbd_monitor_step = _QDoubleSpinBox()
-        self.sbd_monitor_step.setDecimals(1)
-        self.sbd_monitor_step.setMinimum(0.1)
-        self.sbd_monitor_step.setMaximum(60.0)
-        self.sbd_monitor_step.setProperty("value", 10.0)
-        self.horizontal_layout_3.addWidget(self.sbd_monitor_step)
-
-        self.cmb_monitor_unit = _QComboBox()
-        self.cmb_monitor_unit.addItem(
-            _QCoreApplication.translate('', "sec"))
-        self.cmb_monitor_unit.addItem(
-            _QCoreApplication.translate('', "min"))
-        self.cmb_monitor_unit.addItem(
-            _QCoreApplication.translate('', "hour"))
-        self.horizontal_layout_3.addWidget(self.cmb_monitor_unit)
+        self.sbd_monitor_freq = _QDoubleSpinBox()
+        self.sbd_monitor_freq.setDecimals(2)
+        self.sbd_monitor_freq.setMinimum(0.01)
+        self.sbd_monitor_freq.setMaximum(100.00)
+        self.sbd_monitor_freq.setProperty("value", 1)
+        self.horizontal_layout_3.addWidget(self.sbd_monitor_freq)
         self.vertical_layout_2.addLayout(self.horizontal_layout_3)
 
         # Group box with read and monitor buttons
@@ -572,8 +592,7 @@ class TablePlotWidget(_QWidget):
         self.pbt_remove.setIcon(_utils.get_icon(_delete_icon_file))
         self.pbt_remove.setIconSize(_icon_size)
         self.pbt_remove.setToolTip(
-            _QCoreApplication.translate(
-                '', 'Remove selected lines from table.'))
+            _QCoreApplication.translate('', 'Remove selected lines from table.'))
         self.vertical_layout_3.addWidget(self.pbt_remove)
 
         self.tbt_clear = _QToolButton()
@@ -631,7 +650,7 @@ class TablePlotWidget(_QWidget):
 
     def clear_legend_items(self):
         """Clear plot legend."""
-        if self.show_legend:
+        if self._show_legend:
             for label in self._legend_items:
                 self.legend.removeItem(label)
 
@@ -668,7 +687,6 @@ class TablePlotWidget(_QWidget):
     def configure_plot(self):
         """Configure data plots."""
         self.pw_plot.clear()
-
         self.pw_plot.setLabel('bottom', self._bottom_axis_label)
         self.pw_plot.showGrid(x=True, y=True)
 
@@ -732,10 +750,7 @@ class TablePlotWidget(_QWidget):
 
     def configure_table(self):
         """Configure table."""
-        if self._is_timestamp:
-            col_labels = ['Date', 'Time']
-        else:
-            col_labels = [self._bottom_axis_label]
+        col_labels = [self._bottom_axis_label]
 
         for label in self._data_labels:
             col_labels.append(label)
@@ -747,9 +762,7 @@ class TablePlotWidget(_QWidget):
         """Create signal/slot connections."""
         self.pbt_read.clicked.connect(lambda: self.read_value(monitor=False))
         self.pbt_monitor.toggled.connect(self.monitor_value)
-        self.sbd_monitor_step.valueChanged.connect(
-            self.update_monitor_interval)
-        self.cmb_monitor_unit.currentIndexChanged.connect(
+        self.sbd_monitor_freq.valueChanged.connect(
             self.update_monitor_interval)
         self.tbt_autorange.toggled.connect(self.enable_autorange)
         self.tbt_save.clicked.connect(self.save_to_file)
@@ -797,9 +810,31 @@ class TablePlotWidget(_QWidget):
     def monitor_value(self, checked):
         """Monitor values."""
         if checked:
+            try:
+                folder = _os.path.join(_utils.BASEPATH, 'monitor')
+                timestamp = _time.strftime(
+                    '%Y-%m-%d_%H-%M-%S', _time.localtime())
+                filename = '{0:s}_{1:s}_{2:s}.txt'.format(
+                    timestamp, 'monitor', self._monitor_name)
+                filename = _os.path.join(folder, filename)
+                
+                col_labels = [self._bottom_axis_label]
+                for label in self._data_labels:
+                    col_labels.append(label)
+                
+                with open(filename, 'w') as f:
+                    f.write('\t'.join(col_labels) + '\n')
+                self.filename = filename
+            
+            except Exception:
+                self.filename = None
+                _traceback.print_exc(file=_sys.stdout)
+                
             self.pbt_read.setEnabled(False)
             self.timer.start()
+
         else:
+            self.filename = None
             self.timer.stop()
             self.pbt_read.setEnabled(True)
 
@@ -866,7 +901,7 @@ class TablePlotWidget(_QWidget):
 
     def update_legend_items(self):
         """Update legend items."""
-        if self.show_legend:
+        if self._show_legend:
             self.clear_legend_items()
             self._legend_items = []
             for label in self._data_labels:
@@ -876,14 +911,7 @@ class TablePlotWidget(_QWidget):
 
     def update_monitor_interval(self):
         """Update monitor interval value."""
-        index = self.cmb_monitor_unit.currentIndex()
-        if index == 0:
-            mf = 1000
-        elif index == 1:
-            mf = 1000*60
-        else:
-            mf = 1000*3600
-        self.timer.setInterval(self.sbd_monitor_step.value()*mf)
+        self.timer.setInterval(1000/self.sbd_monitor_freq.value())
 
     def update_plot(self):
         """Update plot values."""
@@ -897,7 +925,7 @@ class TablePlotWidget(_QWidget):
             _warnings.simplefilter("ignore")
             if self._is_timestamp:
                 timeinterval = _np.array(self._xvalues) - self._xvalues[0]
-
+            
             for label in self._data_labels:
                 readings = []
                 for r in self._readings[label]:
@@ -906,7 +934,7 @@ class TablePlotWidget(_QWidget):
                     else:
                         readings.append(_np.nan)
                 readings = _np.array(readings)
-
+                
                 if self._is_timestamp:
                     x = timeinterval[_np.isfinite(readings)]
                 else:
@@ -936,16 +964,14 @@ class TablePlotWidget(_QWidget):
 
         for i in range(n):
             if self._is_timestamp:
-                dt = _datetime.datetime.fromtimestamp(self._xvalues[i])
-                date = dt.strftime("%d/%m/%Y")
-                hour = dt.strftime("%H:%M:%S")
-                self.tbl_table.setItem(i, 0, _QTableWidgetItem(date))
-                self.tbl_table.setItem(i, 1, _QTableWidgetItem(hour))
-                jadd = 2
+                dt = self._xvalues[i] - self._xvalues[0]
+                self.tbl_table.setItem(
+                    i, 0, _QTableWidgetItem(
+                        self._bottom_axis_format.format(dt)))
             else:
                 self.tbl_table.setItem(
-                    i, 0, _QTableWidgetItem(str(self._xvalues[i])))
-                jadd = 1
+                    i, 0, _QTableWidgetItem(
+                        self._bottom_axis_format.format(self._xvalues[i])))
 
             for j, label in enumerate(self._data_labels):
                 fmt = self._data_formats[j]
@@ -953,7 +979,7 @@ class TablePlotWidget(_QWidget):
                 if reading is None:
                     reading = _np.nan
                 self.tbl_table.setItem(
-                    i, j+jadd, _QTableWidgetItem(fmt.format(reading)))
+                    i, j+1, _QTableWidgetItem(fmt.format(reading)))
 
         vbar = self.tbl_table.verticalScrollBar()
         vbar.setValue(vbar.maximum())
@@ -1018,7 +1044,8 @@ class ConfigurationWidget(_QWidget):
         self.ui.cmb_idn.currentIndexChanged.connect(self.enable_load_db)
         self.ui.tbt_update_idn.clicked.connect(self.update_ids)
         self.ui.pbt_load_db.clicked.connect(self.load_db)
-        self.ui.tbt_save_db.clicked.connect(self.save_db)
+        self.ui.tbt_save_db.clicked.connect(
+            lambda: self.save_db(force=True))
 
     def enable_load_db(self):
         """Enable button to load configuration from database."""
@@ -1116,8 +1143,9 @@ class ConfigurationWidget(_QWidget):
             msg = 'Failed to load configuration.'
             _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
 
-    def save_db(self):
+    def save_db(self, force=False):
         """Save parameters to database."""
+        current_text = self.ui.cmb_idn.currentText()
         self.ui.cmb_idn.setCurrentIndex(-1)
 
         try:
@@ -1132,7 +1160,20 @@ class ConfigurationWidget(_QWidget):
                 self.config.db_update_database(
                     self.database_name,
                     mongo=self.mongo, server=self.server)
-                idn = self.config.db_save()
+
+                selected_config = self.config.copy()
+                selected_config.clear()
+                       
+                if len(current_text) != 0:
+                    selected_idn = int(current_text)
+                    selected_config.db_read(selected_idn)
+                
+                if self.config == selected_config and not force:
+                    idn = selected_idn
+                    self.config.idn = idn
+                else:
+                    idn = self.config.db_save()
+                
                 self.ui.cmb_idn.addItem(str(idn))
                 self.ui.cmb_idn.setCurrentIndex(self.ui.cmb_idn.count()-1)
                 self.ui.pbt_load_db.setEnabled(False)

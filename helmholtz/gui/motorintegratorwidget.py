@@ -4,6 +4,7 @@
 
 import sys as _sys
 import time as _time
+import numpy as _np
 import traceback as _traceback
 from qtpy.QtWidgets import (
     QWidget as _QWidget,
@@ -46,6 +47,8 @@ class MotorIntegratorWidget(_QWidget):
             self.enable_encoder_reading)
         self.ui.rbt_nr_turns.toggled.connect(self.disable_invalid_widgets)
         self.ui.rbt_nr_steps.toggled.connect(self.disable_invalid_widgets)
+        self.ui.rbt_encoder_position.toggled.connect(
+            self.disable_invalid_widgets)
         self.ui.pbt_move_motor.clicked.connect(self.move_motor)
         self.ui.pbt_stop_motor.clicked.connect(self.stop_motor)
 
@@ -115,6 +118,46 @@ class MotorIntegratorWidget(_QWidget):
             _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
             return
 
+    def get_steps_for_encoder_position(self, encoder_position):
+        try:
+            if not _integrator.connected:
+                msg = 'Integrator not connected.'
+                _QMessageBox.critical(
+                    self, 'Failure', msg, _QMessageBox.Ok)
+                return None
+
+            encoder_resolution = self.advanced_options.integrator_encoder_resolution
+            motor_resolution = self.advanced_options.motor_resolution
+            rotation_direction = self.advanced_options.motor_rotation_direction
+            current_encoder_position = int(_integrator.read_encoder())
+            
+            tol = 20
+            if current_encoder_position > encoder_resolution + tol:
+                msg = 'Invalid initial encoder position. Performe homing procedure.'
+                _QMessageBox.critical(
+                    self, 'Failure', msg, _QMessageBox.Ok)
+                return None
+            
+            if encoder_position > encoder_resolution + tol:
+                msg = 'Invalid final encoder position.'
+                _QMessageBox.critical(
+                    self, 'Failure', msg, _QMessageBox.Ok)
+                return None
+
+            diff = (current_encoder_position - encoder_position)
+            if rotation_direction == '-':
+                diff = diff*(-1)
+            pulses = (encoder_resolution - diff) % encoder_resolution
+            steps = int((pulses*motor_resolution)/encoder_resolution)
+            return steps
+
+        except Exception:
+            _traceback.print_exc(file=_sys.stdout)
+            msg = 'Failed to calculated number of motor steps.'
+            _QMessageBox.critical(
+                self, 'Failure', msg, _QMessageBox.Ok)
+            return None
+
     def move_motor(self):
         self.stop = False
 
@@ -130,11 +173,15 @@ class MotorIntegratorWidget(_QWidget):
             rotation_direction = self.advanced_options.motor_rotation_direction
             velocity = self.advanced_options.motor_velocity
             acceleration = self.advanced_options.motor_acceleration
-
             mode = 0
 
             if self.ui.rbt_nr_steps.isChecked():
                 steps = self.ui.sb_nr_steps.value()
+            elif self.ui.rbt_encoder_position.isChecked():
+                encoder_position = self.ui.sb_encoder_position.value()
+                steps = self.get_steps_for_encoder_position(encoder_position)
+                if steps is None:
+                    return
             else:
                 steps = int(int(resolution)*self.ui.sbd_nr_turns.value())
 
@@ -176,11 +223,17 @@ class MotorIntegratorWidget(_QWidget):
 
     def disable_invalid_widgets(self):
         if self.ui.rbt_nr_steps.isChecked():
-            self.ui.sb_nr_steps.setEnabled(True)
             self.ui.sbd_nr_turns.setEnabled(False)
-        else:
+            self.ui.sb_nr_steps.setEnabled(True)
+            self.ui.sb_encoder_position.setEnabled(False)
+        elif self.ui.rbt_encoder_position.isChecked():
+            self.ui.sbd_nr_turns.setEnabled(False)
             self.ui.sb_nr_steps.setEnabled(False)
+            self.ui.sb_encoder_position.setEnabled(True)
+        else:
             self.ui.sbd_nr_turns.setEnabled(True)
+            self.ui.sb_nr_steps.setEnabled(False)
+            self.ui.sb_encoder_position.setEnabled(False)
 
     def enable_encoder_reading(self):
         """Enable encoder reading."""
