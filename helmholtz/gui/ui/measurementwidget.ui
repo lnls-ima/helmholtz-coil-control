@@ -147,7 +147,7 @@
       <item row="6" column="3">
        <widget class="QToolButton" name="tbt_read_temperature">
         <property name="enabled">
-         <bool>false</bool>
+         <bool>true</bool>
         </property>
         <property name="toolTip">
          <string>Measure block temperature</string>
@@ -308,6 +308,9 @@
           <weight>50</weight>
           <bold>false</bold>
          </font>
+        </property>
+        <property name="maximum">
+         <double>200.000000000000000</double>
         </property>
         <property name="value">
          <double>24.000000000000000</double>

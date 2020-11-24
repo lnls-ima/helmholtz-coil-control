@@ -12,6 +12,7 @@ from qtpy.QtWidgets import (
     QWidget as _QWidget,
     QMessageBox as _QMessageBox,
     QApplication as _QApplication,
+    QProgressDialog as _QProgressDialog,
     )
 from qtpy.QtCore import (
     Qt as _Qt,
@@ -28,6 +29,7 @@ import helmholtz.data.measurement as _measurement
 from helmholtz.devices import (
     driver as _driver,
     integrator as _integrator,
+    multimeter as _multimeter,
 )
 
 
@@ -78,9 +80,9 @@ class MeasurementWidget(_ConfigurationWidget):
         self.integrated_voltage = []
         self.integrated_voltage_position_1 = []
         self.integrated_voltage_position_2 = []
-        self.measurement_data = _measurement.MeasurementData()
         self.graph_position_1 = []
         self.graph_position_2 = []
+        self.measurement_data = _measurement.MeasurementData()
 
         self.legend = _pyqtgraph.LegendItem(offset=(70, 30))
         self.legend.setParentItem(self.ui.pw_graph.graphicsItem())
@@ -118,6 +120,8 @@ class MeasurementWidget(_ConfigurationWidget):
         self.ui.le_std_mx.setText('')
         self.ui.le_std_my.setText('')
         self.ui.le_std_mz.setText('')
+        self.ui.pgb_status.setValue(0)
+        self.measurement_data.clear()
         self.clear_graph()
 
     def clear_graph(self):
@@ -141,11 +145,63 @@ class MeasurementWidget(_ConfigurationWidget):
         self.ui.rbt_mass.toggled.connect(self.update_volume_page)
         self.ui.pbt_start_measurement.clicked.connect(self.start_measurement)
         self.ui.pbt_stop_measurement.clicked.connect(self.stop_measurement)
+        self.ui.tbt_read_temperature.clicked.connect(self.read_temperature)
         self.ui.pbt_clear_results.clicked.connect(self.clear)
         self.ui.chb_show_position_1.stateChanged.connect(
             self.plot_integrated_voltage)
         self.ui.chb_show_position_2.stateChanged.connect(
             self.plot_integrated_voltage)
+
+    def read_temperature(self):
+        try:
+            if not _multimeter.connected:
+                msg = 'Multimeter not connected.'
+                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                return False
+
+            msg = 'Place temperature sensor on the magnet.'
+            _QMessageBox.information(self, 'Information', msg, _QMessageBox.Ok)
+
+            _multimeter.config_temperature()
+
+            resistance = self.advanced_options.temperature_cable_resistance
+            nr_readings = self.advanced_options.temperature_nr_readings
+            freq = self.advanced_options.temperature_reading_frequency
+
+            prg_dialog = _QProgressDialog(
+                'Measuring temperature...', 'Stop', 0, nr_readings)
+            prg_dialog.setWindowTitle('Information')
+            prg_dialog.autoClose()
+            prg_dialog.show()
+
+            temperature_list = []
+            for i in range(nr_readings):
+                reading = _multimeter.read()
+                temperature = (reading - 100)/resistance
+                temperature_list.append(temperature)
+
+                for j in range(10):
+                    _time.sleep(1/freq/10)
+                    _QApplication.processEvents()
+
+                if prg_dialog.wasCanceled():
+                    break
+
+                prg_dialog.setValue(i+1)
+
+            if len(temperature_list) == 0:
+                temperature_avg = 0
+            else:
+                temperature_avg = _np.mean(temperature_list)
+
+            self.ui.sbd_block_temperature.setValue(temperature_avg)
+            self.config.block_temperature = temperature_avg
+
+        except Exception:
+            msg = 'Failed to read temperature.'
+            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            _traceback.print_exc(file=_sys.stdout)
+            return False
 
     def configure_graph(self, nr_curves):
         """Configure graph."""
@@ -449,20 +505,34 @@ class MeasurementWidget(_ConfigurationWidget):
             _driver.move_motor(
                 self.advanced_options.motor_driver_address)
 
+            nr_turns = self.advanced_options.integration_nr_turns
+            integration_points = self.advanced_options.integration_points
+            max_status = nr_turns*integration_points
+            step_status = int(max_status/20)
+
+            self.ui.pgb_status.setMinimum(0)
+            self.ui.pgb_status.setMaximum(max_status)
+            self.ui.pgb_status.setValue(0)
+
             integrated_voltage = []
             finished = False
             while (not finished) and (not self.stop):
-                tmp = _integrator.read_from_device()
-                if 'A' in tmp:
-                    valor = float(tmp.replace('A',''))
+                reading = _integrator.read_from_device()
+                if 'A' in reading:
+                    valor = float(reading.replace('A',''))
                     integrated_voltage.append(valor)
+                    if len(integrated_voltage) % step_status == 0:
+                        self.ui.pgb_status.setValue(
+                            len(integrated_voltage))
                     _QApplication.processEvents()
-                elif tmp == '\x1a':
+
+                elif reading == '\x1a':
                     finished = True
 
+            self.ui.pgb_status.setValue(max_status)
+
             integrated_voltage = _np.array(integrated_voltage).reshape(
-                self.advanced_options.integration_nr_turns,
-                self.advanced_options.integration_points).transpose()
+                nr_turns, integration_points).transpose()
 
             self.integrated_voltage = integrated_voltage*(
                 _integrator.conversion_factor/(

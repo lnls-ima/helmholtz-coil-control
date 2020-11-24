@@ -37,6 +37,9 @@ class MeasurementData(_database.DatabaseAndFileDocument):
     def calc_magnetization(
             integrated_voltage, offset, coil_turns,
             radius, dist_center, block_volume):
+        if len(integrated_voltage) == 0:
+            return 0, 0, 0, 0
+
         ivoltage = _np.array(integrated_voltage)
         shape = ivoltage.shape
         if len(shape) == 1:
@@ -49,7 +52,7 @@ class MeasurementData(_database.DatabaseAndFileDocument):
             fft = _np.fft.fft(ivoltage[:, i])/(npts/2)
             a1 = fft[1].real
             b1 = fft[1].imag
-            
+
             mu0 = 4*_np.pi*1e-7
             dtheta = 2*_np.pi/npts
             geometric_factor = coil_turns*(
@@ -77,25 +80,33 @@ class MeasurementData(_database.DatabaseAndFileDocument):
     @classmethod
     def get_magnetization_components(
             cls, main_component,
-            integrated_voltage_step1, integrated_voltage_step2,
-            offset_step1, offset_step2,
+            integrated_voltage_position_1, integrated_voltage_position_2,
+            offset_position_1, offset_position_2,
             coil_turns, radius, dist_center, block_volume):
         mx1, my, mx1_std, my_std = cls.calc_magnetization(
-            integrated_voltage_step1, offset_step1,
+            integrated_voltage_position_1, offset_position_1,
             coil_turns, radius,
             dist_center, block_volume)
 
         mz, mx2, mz_std, mx2_std = cls.calc_magnetization(
-            integrated_voltage_step2, offset_step2,
+            integrated_voltage_position_2, offset_position_2,
             coil_turns, radius,
             dist_center, block_volume)
 
-        if main_component.lower() == 'vertical':
-            m = [mx2, my, mz]
-            mstd = [mx2_std, my_std, mz_std]
-        elif main_component.lower() in (
-                'horizontal', 'longitudinal'):
-            m = [mx1, my, mz]
-            mstd = [mx1_std, my_std, mz_std]
+        if mx1 == 0:
+            mx = mx2
+            mx_std = mx2_std
+        elif mx2 == 0:
+            mx = mx1
+            mx_std = mx1_std
+        elif main_component.lower() == 'vertical':
+            mx = mx2
+            mx_std = mx2_std
+        else:
+            mx = mx1
+            mx_std = mx1_std
+
+        m = [mx, my, mz]
+        mstd = [mx_std, my_std, mz_std]
 
         return m, mstd

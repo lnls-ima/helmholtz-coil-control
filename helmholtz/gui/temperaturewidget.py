@@ -54,7 +54,7 @@ class TemperatureWidget(_TablePlotWidget):
         self.worker.finished.connect(self.get_reading)
 
     @property
-    def config(self):
+    def advanced_options(self):
         """Return global advanced options."""
         dialog = _QApplication.instance().advanced_options_dialog
         return dialog.config
@@ -89,8 +89,7 @@ class TemperatureWidget(_TablePlotWidget):
             self.blockSignals(True)
             _QApplication.setOverrideCursor(_Qt.WaitCursor)
 
-            _multimeter.reset()
-            _multimeter.send_command('CONF:RES 100,0.0001')
+            _multimeter.config_temperature()
 
             self.blockSignals(False)
             _QApplication.restoreOverrideCursor()
@@ -130,8 +129,8 @@ class TemperatureWidget(_TablePlotWidget):
             return
 
         try:
-            cable_resistance = self.config.temperature_cable_resistance
-            self.worker.cable_resistance = cable_resistance
+            resistance = self.advanced_options.temperature_cable_resistance
+            self.worker.cable_resistance = resistance
             self.wthread.start()
 
         except Exception:
@@ -159,7 +158,7 @@ class ReadValueWorker(_QObject):
             ts = _time.time()
 
             reading = _multimeter.read()
-            temperature = (float(reading) - 100)/self.cable_resistance
+            temperature = (reading - 100)/self.cable_resistance
 
             self.timestamp = ts
             self.reading.append(temperature)
