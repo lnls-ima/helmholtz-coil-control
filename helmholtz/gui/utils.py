@@ -25,6 +25,8 @@ WINDOW_WIDTH = 1200
 WINDOW_HEIGHT = 700
 FONT_SIZE = 11
 ICON_SIZE = 24
+PLOT_FONT_SIZE = 20
+PLOT_LINE_WIDTH = 3
 PACKAGE_NAME = 'helmholtz'
 DATABASE_NAME = 'helmholtz_coil_measurements.db'
 MONGO = False
@@ -97,12 +99,15 @@ def get_translators():
     if TRANSLATE:
         qm_path = _os.path.join(
             BASEPATH, _os.path.join(PACKAGE_NAME, _os.path.join('gui', 'qm')))
-        tfiles = [p for p in _os.listdir(qm_path) if p.endswith('.qm')]
         translators = []
-        for tfile in tfiles:
-            translator = _QTranslator()
-            translator.load(_os.path.join(qm_path, tfile))
-            translators.append(translator)
+        try:
+            tfiles = [p for p in _os.listdir(qm_path) if p.endswith('.qm')]
+            for tfile in tfiles:
+                translator = _QTranslator()
+                translator.load(_os.path.join(qm_path, tfile))
+                translators.append(translator)
+        except Exception:
+            pass
         return translators
 
 

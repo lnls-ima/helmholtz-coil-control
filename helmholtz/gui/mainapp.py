@@ -10,6 +10,8 @@ from helmholtz.gui import utils as _utils
 from helmholtz.gui.mainwindow import MainWindow as _MainWindow
 from helmholtz.gui.advancedoptionswidgets import AdvancedOptionsDialog \
     as _AdvancedOptionsDialog
+from helmholtz.gui.resultsdialog import ResultsDialog \
+    as _ResultsDialog
 from helmholtz.data import configuration as _configuration
 from helmholtz.data import measurement as _measurement
 
@@ -29,10 +31,12 @@ class MainApp(_QApplication):
         self.create_database()
         self.measurement_config = _configuration.MeasurementConfig()
         self.advanced_options_dialog = None
+        self.results_dialog = None
 
     def create_dialogs(self):
         """Create dialogs."""
         self.advanced_options_dialog = _AdvancedOptionsDialog()
+        self.results_dialog = _ResultsDialog()
 
     def create_database(self):
         """Create database and tables."""
