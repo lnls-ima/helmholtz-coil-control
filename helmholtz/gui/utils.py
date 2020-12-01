@@ -29,6 +29,7 @@ PLOT_FONT_SIZE = 20
 PLOT_LINE_WIDTH = 3
 PACKAGE_NAME = 'helmholtz'
 DATABASE_NAME = 'helmholtz_coil_measurements.db'
+ADVANCED_OPTIONS_ENABLED = False
 MONGO = False
 SERVER = 'localhost'
 UPDATE_ENCODER_INTERVAL = 0.5  # [s]

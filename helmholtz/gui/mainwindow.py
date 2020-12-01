@@ -86,6 +86,10 @@ class MainWindow(_QMainWindow):
         self.select_tabs_dialog.emit_tab_selection_signal()
         self.connect_signal_slots()
 
+        # disabled advanced options if necessary
+        self.ui.pbt_advanced_options.setEnabled(
+            _utils.ADVANCED_OPTIONS_ENABLED)
+
     @property
     def database_name(self):
         """Return the database name."""
