@@ -2,6 +2,7 @@
 
 import os as _os
 import sys as _sys
+import time as _time
 import numpy as _np
 import sqlite3 as _sqlite3
 import traceback as _traceback
@@ -61,6 +62,8 @@ class DatabaseWidget(_QWidget):
         self._table_page_dict = {}
         for key in self._table_object_dict.keys():
             self._table_page_dict[key] = None
+        self._table_page_dict[
+            self._measurement_table_name] = self.ui.pg_helmholtz_measurement
 
         self.short_version_hidden_tables = []
 
@@ -111,6 +114,73 @@ class DatabaseWidget(_QWidget):
         self.ui.tbt_clear.clicked.connect(self.clear)
         self.ui.twg_database.currentChanged.connect(
             self.disable_invalid_buttons)
+
+        self.ui.pbt_save_summary.clicked.connect(self.save_summary)
+
+    def save_summary(self):
+        try:
+            table_name = self.twg_database.get_current_table_name()
+            if table_name is None:
+                return
+
+            object_class = self._table_object_dict[table_name]
+
+            idns = self.twg_database.get_table_selected_ids(table_name)
+            nr_idns = len(idns)
+            if nr_idns == 0:
+                return
+
+            try:
+                data = []
+                attrs = [
+                    'idn', 'date', 'hour', 'block_name',
+                    'mx_avg', 'my_avg', 'mz_avg',
+                    'block_volume', 'block_temperature']
+                header = attrs.join('\t')
+                
+                for i in range(nr_idns):
+                    idn = idns[i]
+                    obj = object_class(
+                        database_name=self.database_name,
+                        mongo=self.mongo, server=self.server)
+                    obj.db_read(idn)
+                    values = []
+                    for attr in attrs:
+                        values.append(getattr(obj, attr))
+                    data.append(values)
+
+            except Exception:
+                _traceback.print_exc(file=_sys.stdout)
+                msg = 'Failed to read database entries.'
+                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                return
+
+            timestamp = _time.strftime(
+                '%Y-%m-%d_%H-%M-%S', _time.localtime())
+
+            default_filename = timestamp + '_Helmholtz_Measurement_Summary.txt'
+
+            filename = _QFileDialog.getSaveFileName(
+                self, caption='Save file',
+                directory=_os.path.join(self.directory, default_filename),
+                filter="Text files (*.txt *.dat)")
+
+            if isinstance(filename, tuple):
+                filename = filename[0]
+
+            if len(filename) == 0:
+                return
+
+            try:
+                _np.savetxt(filename, data, header=header)
+
+            except Exception:
+                _traceback.print_exc(file=_sys.stdout)
+                msg = 'Failed to save file.'
+                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+        
+        except Exception:
+            _traceback.print_exc(file=_sys.stdout)
 
     def disable_invalid_buttons(self):
         """Disable invalid buttons."""
