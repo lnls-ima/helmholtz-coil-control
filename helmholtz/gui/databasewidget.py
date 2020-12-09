@@ -4,6 +4,7 @@ import os as _os
 import sys as _sys
 import time as _time
 import numpy as _np
+import pandas as _pd
 import sqlite3 as _sqlite3
 import traceback as _traceback
 import qtpy.uic as _uic
@@ -131,23 +132,23 @@ class DatabaseWidget(_QWidget):
                 return
 
             try:
-                data = []
                 attrs = [
-                    'idn', 'date', 'hour', 'block_name',
+                    'date', 'hour', 'block_name',
                     'mx_avg', 'my_avg', 'mz_avg',
-                    'block_volume', 'block_temperature']
-                header = attrs.join('\t')
-                
+                    'block_volume', 'block_temperature',
+                    ]
+                df = _pd.DataFrame(columns=attrs)
                 for i in range(nr_idns):
                     idn = idns[i]
                     obj = object_class(
                         database_name=self.database_name,
                         mongo=self.mongo, server=self.server)
                     obj.db_read(idn)
-                    values = []
                     for attr in attrs:
-                        values.append(getattr(obj, attr))
-                    data.append(values)
+                        value = getattr(obj, attr)
+                        if attr == 'block_volume':
+                            value = value*1e9
+                        df.at[idn, attr] = value
 
             except Exception:
                 _traceback.print_exc(file=_sys.stdout)
@@ -158,7 +159,7 @@ class DatabaseWidget(_QWidget):
             timestamp = _time.strftime(
                 '%Y-%m-%d_%H-%M-%S', _time.localtime())
 
-            default_filename = timestamp + '_Helmholtz_Measurement_Summary.txt'
+            default_filename = timestamp + '_Helmholtz_Measurement_Summary.xlsx'
 
             filename = _QFileDialog.getSaveFileName(
                 self, caption='Save file',
@@ -172,7 +173,7 @@ class DatabaseWidget(_QWidget):
                 return
 
             try:
-                _np.savetxt(filename, data, header=header)
+                df.to_excel(filename)
 
             except Exception:
                 _traceback.print_exc(file=_sys.stdout)
