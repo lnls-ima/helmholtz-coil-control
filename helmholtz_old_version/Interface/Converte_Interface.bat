@@ -1,1 +1,0 @@
-c:\Python34\Lib\site-packages\PyQt4\pyuic4.bat -o Interface_Helmholtz.py Interface_Helmholtz.ui
