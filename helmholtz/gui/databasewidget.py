@@ -136,6 +136,7 @@ class DatabaseWidget(_QWidget):
                     'date', 'hour', 'block_name',
                     'mx_avg', 'my_avg', 'mz_avg',
                     'block_volume', 'block_temperature',
+                    'comments',
                     ]
                 df = _pd.DataFrame(columns=attrs)
                 for i in range(nr_idns):
