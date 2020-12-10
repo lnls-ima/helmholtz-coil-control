@@ -46,6 +46,10 @@ class MeasurementWidget(_ConfigurationWidget):
             'block_name',
         ]
 
+        self.te_names = [
+            'comments',
+        ]
+
         self.sbd_names = [
             'block_temperature',
             'block_volume',
@@ -256,6 +260,7 @@ class MeasurementWidget(_ConfigurationWidget):
             self.measurement_data.block_temperature = self.global_config.block_temperature
             self.measurement_data.advanced_options_id = self.advanced_options.idn
             self.measurement_data.configuration_id = self.global_config.idn
+            self.measurement_data.comments = self.global_config.comments
 
             if not self.advanced_options.valid_data():
                 msg = 'Invalid advanced options.'
@@ -541,9 +546,8 @@ class MeasurementWidget(_ConfigurationWidget):
             msg = 'Place temperature sensor on the magnet.'
             _QMessageBox.information(self, 'Information', msg, _QMessageBox.Ok)
 
-            _multimeter.config_temperature(wait=0.5)
+            _multimeter.config_resistance_4w(wait=0.5)
 
-            resistance = self.advanced_options.temperature_cable_resistance
             nr_readings = self.advanced_options.temperature_nr_readings
             freq = self.advanced_options.temperature_reading_frequency
 
@@ -556,7 +560,8 @@ class MeasurementWidget(_ConfigurationWidget):
             temperature_list = []
             for i in range(nr_readings):
                 reading = _multimeter.read()
-                temperature = (reading - 100)/resistance
+                temperature = _multimeter.pt100_resistance_to_temperature(
+                    reading)
                 temperature_list.append(temperature)
 
                 for j in range(10):

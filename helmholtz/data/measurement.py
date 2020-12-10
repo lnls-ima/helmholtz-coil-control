@@ -18,6 +18,7 @@ class MeasurementData(_database.DatabaseAndFileDocument):
         ('date', {'dtype': str, 'not_null': True}),
         ('hour', {'dtype': str, 'not_null': True}),
         ('block_name', {'dtype': str, 'not_null': True}),
+        ('comments', {'dtype': str}),
         ('main_component', {'dtype': str, 'not_null': True}),
         ('advanced_options_id', {'dtype': int}),
         ('configuration_id', {'dtype': int}),

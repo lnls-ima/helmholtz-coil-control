@@ -61,7 +61,6 @@ class AdvancedOptionsWidget(_ConfigurationWidget):
             'motor_acceleration',
             'coil_radius',
             'coil_distance_center',
-            'temperature_cable_resistance',
             'temperature_reading_frequency',
         ]
 

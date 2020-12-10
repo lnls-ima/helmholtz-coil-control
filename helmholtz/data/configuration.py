@@ -63,7 +63,6 @@ class AdvancedOptions(_database.DatabaseAndFileDocument):
         ('coil_radius', {'dtype': float, 'not_null': True}),
         ('coil_distance_center', {'dtype': float, 'not_null': True}),
         ('coil_turns', {'dtype': int, 'not_null': True}),
-        ('temperature_cable_resistance', {'dtype': float, 'not_null': True}),
         ('temperature_nr_readings', {'dtype': int, 'not_null': True}),
         ('temperature_reading_frequency', {'dtype': float, 'not_null': True}),
     ])
@@ -79,6 +78,7 @@ class MeasurementConfig(_database.DatabaseAndFileDocument):
         ('date', {'dtype': str, 'not_null': True}),
         ('hour', {'dtype': str, 'not_null': True}),
         ('block_name', {'dtype': str, 'not_null': True}),
+        ('comments', {'dtype': str}),
         ('main_component', {'dtype': str, 'not_null': True}),
         ('block_temperature', {'dtype': float, 'not_null': True}),
         ('volume_input', {'dtype': str, 'not_null': True}),

@@ -23,7 +23,7 @@
     <item row="0" column="0">
      <widget class="QTabWidget" name="twg_main">
       <property name="currentIndex">
-       <number>0</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="empty_tab_1">
        <attribute name="title">
@@ -43,13 +43,13 @@
        <number>6</number>
       </property>
       <property name="topMargin">
-       <number>6</number>
+       <number>0</number>
       </property>
       <property name="rightMargin">
        <number>6</number>
       </property>
       <property name="bottomMargin">
-       <number>6</number>
+       <number>0</number>
       </property>
       <item>
        <widget class="QFrame" name="frame">

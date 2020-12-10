@@ -998,6 +998,7 @@ class ConfigurationWidget(_QWidget):
         self.sbd_names = []
         self.cmb_names = []
         self.le_names = []
+        self.te_names = []
         self.chb_names = []
 
     @property
@@ -1036,6 +1037,10 @@ class ConfigurationWidget(_QWidget):
         for name in self.le_names:
             le = getattr(self.ui, 'le_' + name)
             le.editingFinished.connect(self.clear_load_options)
+
+        for name in self.te_names:
+            te = getattr(self.ui, 'te_' + name)
+            te.textChanged.connect(self.clear_load_options)
 
         for name in self.chb_names:
             chb = getattr(self.ui, 'chb_' + name)
@@ -1132,6 +1137,13 @@ class ConfigurationWidget(_QWidget):
                 if value is None:
                     value = ''
                 le.setText(str(value))
+            
+            for name in self.te_names:
+                te = getattr(self.ui, 'te_' + name)
+                value = getattr(self.config, name)
+                if value is None:
+                    value = ''
+                te.setText(str(value))
 
             for name in self.chb_names:
                 chb = getattr(self.ui, 'chb_' + name)
@@ -1229,6 +1241,11 @@ class ConfigurationWidget(_QWidget):
             for name in self.le_names:
                 le = getattr(self.ui, 'le_' + name)
                 setattr(self.config, name, le.text().strip())
+
+            for name in self.te_names:
+                te = getattr(self.ui, 'te_' + name)
+                setattr(
+                    self.config, name, te.toPlainText().strip())
 
             for name in self.chb_names:
                 chb = getattr(self.ui, 'chb_' + name)

@@ -20,6 +20,7 @@ from qtpy.QtCore import (
     Signal as _Signal,
     )
 
+from helmholtz.gui import utils as _utils    
 from helmholtz.gui.auxiliarywidgets import (
     TablePlotWidget as _TablePlotWidget
     )
@@ -91,8 +92,7 @@ class TemperatureWidget(_TablePlotWidget):
         try:
             self.blockSignals(True)
             _QApplication.setOverrideCursor(_Qt.WaitCursor)
-
-            _multimeter.config_temperature()
+            _multimeter.config_resistance_4w()
 
             self.blockSignals(False)
             _QApplication.restoreOverrideCursor()
@@ -133,8 +133,6 @@ class TemperatureWidget(_TablePlotWidget):
             return
 
         try:
-            resistance = self.advanced_options.temperature_cable_resistance
-            self.worker.cable_resistance = resistance
             self.wthread.start()
 
         except Exception:
@@ -148,7 +146,6 @@ class ReadValueWorker(_QObject):
 
     def __init__(self):
         """Initialize object."""
-        self.cable_resistance = None
         self.timestamp = None
         self.reading = []
         super().__init__()
@@ -162,7 +159,8 @@ class ReadValueWorker(_QObject):
             ts = _time.time()
 
             reading = _multimeter.read()
-            temperature = (reading - 100)/self.cable_resistance
+            temperature = _multimeter.pt100_resistance_to_temperature(
+                reading)
 
             self.timestamp = ts
             self.reading.append(temperature)
