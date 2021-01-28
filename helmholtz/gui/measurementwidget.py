@@ -418,6 +418,9 @@ class MeasurementWidget(_ConfigurationWidget):
             integrated_voltage = _np.array(integrated_voltage).reshape(
                 nr_turns, integration_points).transpose()
 
+            if nr_turns > 3:
+                integrated_voltage = integrated_voltage[:, 1:-1]
+
             self.integrated_voltage = integrated_voltage*(
                 _integrator.conversion_factor)
 

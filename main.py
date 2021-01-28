@@ -7,7 +7,6 @@ from helmholtz.gui import mainapp
 
 THREAD = False
 
-
 if THREAD:
     thread = mainapp.run_in_thread()
 else:
