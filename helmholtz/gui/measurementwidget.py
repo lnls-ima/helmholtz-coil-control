@@ -3,10 +3,10 @@
 """Measurement widget for the control application."""
 
 import sys as _sys
-import numpy as _np
 import time as _time
 import warnings as _warnings
 import traceback as _traceback
+import numpy as _np
 import pyqtgraph as _pyqtgraph
 from qtpy.QtWidgets import (
     QWidget as _QWidget,
@@ -191,20 +191,13 @@ class MeasurementWidget(_ConfigurationWidget):
 
     def configure_integrator(self, gain):
         try:
-            nr_intervals = (
-                self.advanced_options.integration_points *
-                self.advanced_options.integration_nr_turns)
-            interval_size = int(
-                self.advanced_options.integrator_encoder_resolution /
-                self.advanced_options.integration_points)
-
             return _integrator.configure_measurement(
                 self.advanced_options.integrator_channel,
                 self.advanced_options.integrator_encoder_resolution,
                 self.advanced_options.integrator_encoder_direction,
                 self.advanced_options.integration_trigger,
-                nr_intervals,
-                interval_size,
+                self.advanced_options.integration_points,
+                self.advanced_options.integration_nr_turns,
                 gain)
 
         except Exception:
@@ -236,17 +229,19 @@ class MeasurementWidget(_ConfigurationWidget):
             self.global_config = self.config.copy()
 
             if self.config.main_component == 'horizontal':
-                self.gain_position_1 = self.global_config.main_component_gain
-                self.gain_position_2 = self.global_config.residual_component_gain
+                gain1 = self.global_config.main_component_gain
+                gain2 = self.global_config.residual_component_gain
 
             elif self.config.main_component == 'vertical':
-                self.gain_position_1 = self.global_config.main_component_gain
-                self.gain_position_2 = self.global_config.residual_component_gain
+                gain1 = self.global_config.main_component_gain
+                gain2 = self.global_config.residual_component_gain
 
             elif self.config.main_component == 'longitudinal':
-                self.gain_position_1 = self.global_config.residual_component_gain
-                self.gain_position_2 = self.global_config.main_component_gain
+                gain1 = self.global_config.residual_component_gain
+                gain2 = self.global_config.main_component_gain
 
+            self.gain_position_1 = gain1
+            self.gain_position_2 = gain2
             self.offset_position_1 = 0
             self.offset_position_2 = 0
 
@@ -257,8 +252,10 @@ class MeasurementWidget(_ConfigurationWidget):
                 return False
 
             self.measurement_data.block_name = self.global_config.block_name
-            self.measurement_data.block_temperature = self.global_config.block_temperature
-            self.measurement_data.advanced_options_id = self.advanced_options.idn
+            temp = self.global_config.block_temperature
+            self.measurement_data.block_temperature = temp
+            idn = self.advanced_options.idn
+            self.measurement_data.advanced_options_id = idn
             self.measurement_data.configuration_id = self.global_config.idn
             self.measurement_data.comments = self.global_config.comments
 
@@ -269,7 +266,7 @@ class MeasurementWidget(_ConfigurationWidget):
 
             self.configure_graph(
                 self.advanced_options.integration_nr_turns)
-            
+
             return True
 
         except Exception:
@@ -352,7 +349,6 @@ class MeasurementWidget(_ConfigurationWidget):
             if self.stop:
                 return False
 
-            wait = 0.1
             self.integrated_voltage = []
             steps = int((self.advanced_options.integration_nr_turns + 1.75)*(
                 self.advanced_options.motor_resolution))
@@ -369,22 +365,13 @@ class MeasurementWidget(_ConfigurationWidget):
             driver_address = self.advanced_options.motor_driver_address
             nr_turns = self.advanced_options.integration_nr_turns
             integration_points = self.advanced_options.integration_points
-            max_status = nr_turns*integration_points
-            step_status = int(max_status/20)
+            total_npts = nr_turns*integration_points
+            step_status = int(total_npts/20)
 
-            _integrator.send_command(
-                _integrator.commands.stop_measurement)
-            _time.sleep(wait)
-
-            _integrator.send_command(
-                _integrator.commands.start_measurement)
-            _time.sleep(wait)
-
-            reading = _integrator.read_from_device()
-            if reading == '\x1a':
+            if not _integrator.start_measurement():
                 msg = 'Incorrect integrator status.'
-                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
-                return False
+                _QMessageBox.critical(
+                    self, 'Failure', msg, _QMessageBox.Ok)
 
             if self.stop:
                 return False
@@ -392,34 +379,62 @@ class MeasurementWidget(_ConfigurationWidget):
             _driver.move_motor(driver_address)
 
             self.ui.pgb_status.setMinimum(0)
-            self.ui.pgb_status.setMaximum(max_status)
+            self.ui.pgb_status.setMaximum(total_npts)
             self.ui.pgb_status.setValue(0)
 
             integrated_voltage = []
-            finished = False
-            while (not finished) and (not self.stop):
-                _QApplication.processEvents()
-                reading = _integrator.read_from_device()
-                if 'A' in reading:
-                    valor = float(reading.replace('A',''))
-                    integrated_voltage.append(valor)
-                    if len(integrated_voltage) % step_status == 0:
-                        self.ui.pgb_status.setValue(
-                            len(integrated_voltage))
 
-                elif reading == '\x1a':
-                    finished = True
+            # # PDI Integrator
+            # finished = False
+            # while (not finished) and (not self.stop):
+            #     _QApplication.processEvents()
+            #     reading = _integrator.read_from_device()
+            #     if 'A' in reading:
+            #         valor = float(reading.replace('A', ''))
+            #         integrated_voltage.append(valor)
+            #         if len(integrated_voltage) % step_status == 0:
+            #             self.ui.pgb_status.setValue(
+            #                 len(integrated_voltage))
+
+            #     elif reading == '\x1a':
+            #         finished = True
+
+            # FDI Integrator
+            count = 0
+            while (count < total_npts) and (not self.stop):
+                _QApplication.processEvents()
+                count = _integrator.get_data_count()
+                if count % step_status == 0:
+                    self.ui.pgb_status.setValue(count)
+
+            data = _integrator.get_data()
+            if 'nan' in data.lower():
+                msg = (
+                    'Integrator over-range.\n' +
+                    'Please configure a lower gain.'
+                    )
+                _QMessageBox.warning(self, 'Warning', msg, _QMessageBox.Ok)
+                return False
+
+            data_split = data.strip('\n').split(',')
+            for value_str in data_split:
+                try:
+                    value = float(value_str.strip(' WB').strip(' V'))
+                    integrated_voltage.append(value)
+                except Exception:
+                    _traceback.print_exc(file=_sys.stdout)
+                    return False
 
             if self.stop:
                 return False
 
-            self.ui.pgb_status.setValue(max_status)
+            self.ui.pgb_status.setValue(total_npts)
 
             integrated_voltage = _np.array(integrated_voltage).reshape(
                 nr_turns, integration_points).transpose()
 
             if nr_turns > 3:
-                integrated_voltage = integrated_voltage[:, 1:-1]
+                integrated_voltage = integrated_voltage
 
             self.integrated_voltage = integrated_voltage*(
                 _integrator.conversion_factor)
@@ -453,7 +468,7 @@ class MeasurementWidget(_ConfigurationWidget):
 
         self.integrated_voltage_position_2 = _np.array([
             iv for iv in self.integrated_voltage])
-        
+
         return True
 
     def move_to_initial_position(self):
@@ -462,13 +477,13 @@ class MeasurementWidget(_ConfigurationWidget):
                 return False
 
             trigger = self.advanced_options.integration_trigger
-            encoder_resolution = self.advanced_options.integrator_encoder_resolution
+            encoder_res = self.advanced_options.integrator_encoder_resolution
             motor_resolution = self.advanced_options.motor_resolution
             rotation_direction = self.advanced_options.motor_rotation_direction
             driver_address = self.advanced_options.motor_driver_address
 
             wait = 0.1
-            tol = encoder_resolution/100
+            tol = encoder_res/100
 
             current_position = int(_integrator.read_encoder())
             position = trigger
@@ -479,8 +494,8 @@ class MeasurementWidget(_ConfigurationWidget):
             diff = (current_position - position)
             if rotation_direction == '-':
                 diff = diff*(-1)
-            pulses = (encoder_resolution - diff) % encoder_resolution
-            steps = int((pulses*motor_resolution)/encoder_resolution)
+            pulses = (encoder_res - diff) % encoder_res
+            steps = int((pulses*motor_resolution)/encoder_res)
 
             if not self.configure_driver(steps):
                 return False
@@ -496,7 +511,7 @@ class MeasurementWidget(_ConfigurationWidget):
                 _QApplication.processEvents()
 
             _time.sleep(wait)
-            
+
             if self.stop:
                 return False
 
@@ -613,7 +628,7 @@ class MeasurementWidget(_ConfigurationWidget):
     def start_measurement(self):
         if not self.configure_measurement():
             return False
-        
+
         self.ui.pbt_start_measurement.setEnabled(False)
         _QApplication.processEvents()
 

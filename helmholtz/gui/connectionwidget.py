@@ -56,7 +56,7 @@ class ConnectionWidget(_ConfigurationWidget):
             'multimeter_baudrate',
             'multimeter_parity',
             'multimeter_stopbits',
-        ]   
+        ]
 
         self.chb_names = [
             'display_enable',

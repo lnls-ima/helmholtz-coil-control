@@ -98,9 +98,9 @@ class MotorIntegratorWidget(_QWidget):
                     self, 'Failure', msg, _QMessageBox.Ok)
                 return
 
-            encoder_direction = self.advanced_options.integrator_encoder_direction
+            encoder_dir = self.advanced_options.integrator_encoder_direction
 
-            _integrator.configure_homing(encoder_direction)
+            _integrator.configure_homing(encoder_dir)
             _time.sleep(wait)
 
             if self.stop:
@@ -126,19 +126,22 @@ class MotorIntegratorWidget(_QWidget):
                     self, 'Failure', msg, _QMessageBox.Ok)
                 return None
 
-            encoder_resolution = self.advanced_options.integrator_encoder_resolution
+            encoder_res = self.advanced_options.integrator_encoder_resolution
             motor_resolution = self.advanced_options.motor_resolution
             rotation_direction = self.advanced_options.motor_rotation_direction
             current_encoder_position = int(_integrator.read_encoder())
-            
+
             tol = 20
-            if current_encoder_position > encoder_resolution + tol:
-                msg = 'Invalid initial encoder position. Performe homing procedure.'
+            if current_encoder_position > encoder_res + tol:
+                msg = (
+                    'Invalid initial encoder position.\n' +
+                    'Please, perform homing procedure.'
+                    )
                 _QMessageBox.critical(
                     self, 'Failure', msg, _QMessageBox.Ok)
                 return None
-            
-            if encoder_position > encoder_resolution + tol:
+
+            if encoder_position > encoder_res + tol:
                 msg = 'Invalid final encoder position.'
                 _QMessageBox.critical(
                     self, 'Failure', msg, _QMessageBox.Ok)
@@ -147,8 +150,8 @@ class MotorIntegratorWidget(_QWidget):
             diff = (current_encoder_position - encoder_position)
             if rotation_direction == '-':
                 diff = diff*(-1)
-            pulses = (encoder_resolution - diff) % encoder_resolution
-            steps = int((pulses*motor_resolution)/encoder_resolution)
+            pulses = (encoder_res - diff) % encoder_res
+            steps = int((pulses*motor_resolution)/encoder_res)
             return steps
 
         except Exception:
@@ -238,6 +241,8 @@ class MotorIntegratorWidget(_QWidget):
     def enable_encoder_reading(self):
         """Enable encoder reading."""
         try:
+            encoder_res = self.advanced_options.integrator_encoder_resolution
+
             if self.ui.chb_encoder.isChecked():
                 if not _integrator.connected:
                     msg = 'Integrator not connected.'
@@ -248,9 +253,7 @@ class MotorIntegratorWidget(_QWidget):
                     self.ui.chb_encoder.setChecked(False)
                     return
 
-                encoder_resolution = self.advanced_options.integrator_encoder_resolution
-
-                if _integrator.configure_encoder_reading(encoder_resolution):
+                if _integrator.configure_encoder_reading(encoder_res):
                     self.stop_encoder_update = False
                     self.timer.start(self._update_encoder_interval*1000)
                     self.ui.lcd_encoder.setEnabled(True)
