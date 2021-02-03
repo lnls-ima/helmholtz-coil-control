@@ -375,7 +375,6 @@ class MeasurementWidget(_ConfigurationWidget):
             #         if len(integrated_voltage) % step_status == 0:
             #             self.ui.pgb_status.setValue(
             #                 len(integrated_voltage))
-
             #     elif reading == '\x1a':
             #         finished = True
 
@@ -386,24 +385,15 @@ class MeasurementWidget(_ConfigurationWidget):
                 count = _integrator.get_data_count()
                 if count % step_status == 0:
                     self.ui.pgb_status.setValue(count)
-
-            data = _integrator.get_data()
-            if 'nan' in data.lower():
+            data = _integrator.get_data_array()
+            if any(_np.isnan(di) for di in data):
                 msg = (
                     'Integrator over-range.\n' +
                     'Please configure a lower gain.'
                     )
                 _QMessageBox.warning(self, 'Warning', msg, _QMessageBox.Ok)
                 return False
-
-            data_split = data.strip('\n').split(',')
-            for value_str in data_split:
-                try:
-                    value = float(value_str.strip(' WB').strip(' V'))
-                    integrated_voltage.append(value)
-                except Exception:
-                    _traceback.print_exc(file=_sys.stdout)
-                    return False
+            integrated_voltage = data
 
             if self.stop:
                 return False
