@@ -89,7 +89,7 @@ class MeasurementConfig(_database.DatabaseAndFileDocument):
         ('density', {'dtype': float, 'not_null': True}),
         ('gain_position_1', {'dtype': int, 'not_null': True}),
         ('gain_position_2', {'dtype': int, 'not_null': True}),
-        ('gain_position_3', {'dtype': int, 'not_null': True}),
+        ('gain_position_3', {'dtype': int}),
         ('measure_position_1', {'dtype': int}),
         ('measure_position_2', {'dtype': int}),
         ('measure_position_3', {'dtype': int}),
