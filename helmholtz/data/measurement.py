@@ -19,7 +19,6 @@ class MeasurementData(_database.DatabaseAndFileDocument):
         ('hour', {'dtype': str, 'not_null': True}),
         ('block_name', {'dtype': str, 'not_null': True}),
         ('comments', {'dtype': str}),
-        ('main_component', {'dtype': str, 'not_null': True}),
         ('advanced_options_id', {'dtype': int}),
         ('configuration_id', {'dtype': int}),
         ('mx_avg', {'dtype': float}),
@@ -45,10 +44,10 @@ class MeasurementData(_database.DatabaseAndFileDocument):
     def default_filename(self):
         """Return the default filename."""
         filename = super().default_filename
-        
+
         if self.block_name is not None and len(self.block_name) != 0:
             filename = filename.replace(self.label, self.block_name)
-        
+
         return filename
 
     @staticmethod
@@ -124,13 +123,11 @@ class MeasurementData(_database.DatabaseAndFileDocument):
 
     def set_magnetization_components(
             self,
-            main_component,
             integrated_voltage_position_1,
             integrated_voltage_position_2,
             offset_position_1, offset_position_2,
             coil_radius, coil_distance_center, coil_turns,
-            block_volume):       
-        self.main_component = main_component
+            block_volume):
         self.integrated_voltage_position_1 = integrated_voltage_position_1
         self.integrated_voltage_position_2 = integrated_voltage_position_2
         self.integrated_voltage_position_3 = []
@@ -184,7 +181,7 @@ class MeasurementData(_database.DatabaseAndFileDocument):
         elif mx2 == 0:
             mx = mx1
             mx_std = mx1_std
-        elif main_component.lower() == 'vertical':
+        elif _np.abs(my) > _np.abs(mz):
             mx = mx2
             mx_std = mx2_std
         else:

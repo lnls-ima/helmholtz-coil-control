@@ -61,9 +61,8 @@ class MeasurementWidget(_ConfigurationWidget):
         ]
 
         self.cmb_names = [
-            'main_component',
-            'main_component_gain',
-            'residual_component_gain',
+            'gain_position_1',
+            'gain_position_2',
         ]
 
         self.chb_names = [
@@ -77,8 +76,6 @@ class MeasurementWidget(_ConfigurationWidget):
 
         self.stop = False
         self.block_volume = None
-        self.gain_position_1 = None
-        self.gain_position_2 = None
         self.offset_position_1 = None
         self.offset_position_2 = None
         self.integrated_voltage = []
@@ -111,8 +108,6 @@ class MeasurementWidget(_ConfigurationWidget):
         """Clear."""
         self.stop = False
         self.block_volume = None
-        self.gain_position_1 = None
-        self.gain_position_2 = None
         self.offset_position_1 = None
         self.offset_position_2 = None
         self.integrated_voltage = []
@@ -227,21 +222,6 @@ class MeasurementWidget(_ConfigurationWidget):
                 return False
 
             self.global_config = self.config.copy()
-
-            if self.config.main_component == 'horizontal':
-                gain1 = self.global_config.main_component_gain
-                gain2 = self.global_config.residual_component_gain
-
-            elif self.config.main_component == 'vertical':
-                gain1 = self.global_config.main_component_gain
-                gain2 = self.global_config.residual_component_gain
-
-            elif self.config.main_component == 'longitudinal':
-                gain1 = self.global_config.residual_component_gain
-                gain2 = self.global_config.main_component_gain
-
-            self.gain_position_1 = gain1
-            self.gain_position_2 = gain2
             self.offset_position_1 = 0
             self.offset_position_2 = 0
 
@@ -454,7 +434,7 @@ class MeasurementWidget(_ConfigurationWidget):
             return False
 
     def measure_position_1(self):
-        if not self.measure(gain=self.gain_position_1):
+        if not self.measure(gain=self.global_config.gain_position_1):
             return False
 
         self.integrated_voltage_position_1 = _np.array([
@@ -463,7 +443,7 @@ class MeasurementWidget(_ConfigurationWidget):
         return True
 
     def measure_position_2(self):
-        if not self.measure(gain=self.gain_position_2):
+        if not self.measure(gain=self.global_config.gain_position_2):
             return False
 
         self.integrated_voltage_position_2 = _np.array([
@@ -663,7 +643,6 @@ class MeasurementWidget(_ConfigurationWidget):
         self.plot_integrated_voltage()
 
         m, mstd = self.measurement_data.set_magnetization_components(
-            self.global_config.main_component,
             self.integrated_voltage_position_1,
             self.integrated_voltage_position_2,
             self.offset_position_1,
