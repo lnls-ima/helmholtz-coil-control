@@ -96,6 +96,11 @@ class MeasurementWidget(_ConfigurationWidget):
         return dialog.config
 
     @property
+    def scan_parameter_dialog(self):
+        """Return scan parameter dialog."""
+        return _QApplication.instance().scan_parameter_dialog
+
+    @property
     def global_config(self):
         """Return the global measurement configuration."""
         return _QApplication.instance().measurement_config
@@ -275,6 +280,19 @@ class MeasurementWidget(_ConfigurationWidget):
             self.plot_integrated_voltage)
         self.ui.chb_show_position_2.stateChanged.connect(
             self.plot_integrated_voltage)
+        self.ui.chb_scan_parameter.stateChanged.connect(
+            self.enable_scan_configuration)
+        self.ui.pbt_configure_scan.clicked.connect(
+            self.show_scan_parameter_dialog)
+
+    def enable_scan_configuration(self):
+        if self.ui.chb_scan_parameter.isChecked():
+            self.ui.pbt_configure_scan.setEnabled(True)
+        else:
+            self.ui.pbt_configure_scan.setEnabled(False)
+
+    def show_scan_parameter_dialog(self):
+        self.scan_parameter_dialog.show()
 
     def homing(self, nr_turns=1.25):
         try:
@@ -402,9 +420,6 @@ class MeasurementWidget(_ConfigurationWidget):
 
             integrated_voltage = _np.array(integrated_voltage).reshape(
                 nr_turns, integration_points).transpose()
-
-            if nr_turns > 3:
-                integrated_voltage = integrated_voltage
 
             self.integrated_voltage = integrated_voltage*(
                 _integrator.conversion_factor)

@@ -12,6 +12,8 @@ from helmholtz.gui.advancedoptionswidgets import AdvancedOptionsDialog \
     as _AdvancedOptionsDialog
 from helmholtz.gui.resultsdialog import ResultsDialog \
     as _ResultsDialog
+from helmholtz.gui.scanparameterdialog import ScanParameterDialog \
+    as _ScanParameterDialog
 from helmholtz.data import configuration as _configuration
 from helmholtz.data import measurement as _measurement
 
@@ -32,11 +34,13 @@ class MainApp(_QApplication):
         self.measurement_config = _configuration.MeasurementConfig()
         self.advanced_options_dialog = None
         self.results_dialog = None
+        self.scan_parameter_dialog = None
 
     def create_dialogs(self):
         """Create dialogs."""
         self.advanced_options_dialog = _AdvancedOptionsDialog()
         self.results_dialog = _ResultsDialog()
+        self.scan_parameter_dialog = _ScanParameterDialog()
 
     def create_database(self):
         """Create database and tables."""
@@ -84,8 +88,6 @@ class GUIThread(_threading.Thread):
             self.app.create_dialogs()
             self.window = _MainWindow(
                 width=_utils.WINDOW_WIDTH, height=_utils.WINDOW_HEIGHT)
-            self.app.advanced_options_dialog = (
-                self.window.advanced_options_dialog)
             self.window.show()
             self.window.centralize_window()
             _sys.exit(self.app.exec_())
@@ -102,7 +104,6 @@ def run():
         app.create_dialogs()
         window = _MainWindow(
             width=_utils.WINDOW_WIDTH, height=_utils.WINDOW_HEIGHT)
-        app.advanced_options_dialog = window.advanced_options_dialog
         window.show()
         window.centralize_window()
         _sys.exit(app.exec_())
