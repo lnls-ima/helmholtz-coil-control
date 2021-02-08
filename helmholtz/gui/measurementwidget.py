@@ -346,7 +346,10 @@ class MeasurementWidget(_ConfigurationWidget):
             nr_turns = self.advanced_options.integration_nr_turns
             integration_points = self.advanced_options.integration_points
             total_npts = nr_turns*integration_points
-            step_status = int(total_npts/20)
+            if total_npts > 100:
+                step_status = int(total_npts/20)
+            else:
+                step_status = 1
 
             if not _integrator.start_measurement():
                 msg = 'Incorrect integrator status.'
@@ -378,7 +381,6 @@ class MeasurementWidget(_ConfigurationWidget):
             #     elif reading == '\x1a':
             #         finished = True
 
-            # FDI Integrator
             count = 0
             while (count < total_npts) and (not self.stop):
                 _QApplication.processEvents()
@@ -462,7 +464,7 @@ class MeasurementWidget(_ConfigurationWidget):
                 return True
 
             diff = (current_position - position)
-            if rotation_direction == '-':
+            if rotation_direction == '+':
                 diff = diff*(-1)
             pulses = (encoder_res - diff) % encoder_res
             steps = int((pulses*motor_resolution)/encoder_res)
