@@ -388,7 +388,6 @@ class MeasurementWidget(_ConfigurationWidget):
             self.ui.pgb_status.setMaximum(total_npts)
             self.ui.pgb_status.setValue(0)
 
-            integrated_voltage = []
             count = 0
             while (count < total_npts) and (not self.stop):
                 _QApplication.processEvents()
@@ -603,6 +602,8 @@ class MeasurementWidget(_ConfigurationWidget):
 
                     for value in scan_values:
                         setattr(self.advanced_options, scan_parameter, value)
+                        setattr(self.advanced_options, 'date', None)
+                        setattr(self.advanced_options, 'hour', None)
                         self.advanced_options.db_save()
                         self.start_one_measurement(silent=True)
 
@@ -665,7 +666,7 @@ class MeasurementWidget(_ConfigurationWidget):
         gc = self.global_config
         self.measurement_data.block_name = gc.block_name
         self.measurement_data.block_temperature = gc.block_temperature
-        self.measurement_data.advanced_options_id = gc.advanced_options.idn
+        self.measurement_data.advanced_options_id = self.advanced_options.idn
         self.measurement_data.configuration_id = gc.idn
         self.measurement_data.comments = gc.comments
 

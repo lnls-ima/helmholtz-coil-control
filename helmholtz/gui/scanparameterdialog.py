@@ -48,6 +48,7 @@ class ScanParameterDialog(_QDialog):
 
     def add_row(self):
         """Add row to values table."""
+        self.disable_led()
         idx = self.ui.tbl_values.currentRow()
         if idx == -1:
             self.ui.tbl_values.insertRow(0)
@@ -56,11 +57,13 @@ class ScanParameterDialog(_QDialog):
 
     def remove_row(self):
         """Remove row from values table."""
+        self.disable_led()
         idx = self.ui.tbl_values.currentRow()
         self.ui.tbl_values.removeRow(idx)
 
     def clear_table(self):
         """Clear values table."""
+        self.disable_led()
         self.ui.tbl_values.clearContents()
         self.ui.tbl_values.setRowCount(0)
 
@@ -71,6 +74,7 @@ class ScanParameterDialog(_QDialog):
     def connect_signal_slots(self):
         """Create signal/slot connections."""
         self.ui.cmb_parameter.currentIndexChanged.connect(self.disable_led)
+        self.ui.tbl_values.itemSelectionChanged.connect(self.disable_led)
         self.ui.pbt_add_row.clicked.connect(self.add_row)
         self.ui.pbt_remove_row.clicked.connect(self.remove_row)
         self.ui.pbt_clear_table.clicked.connect(self.clear_table)
