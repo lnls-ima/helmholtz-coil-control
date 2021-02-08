@@ -23,9 +23,24 @@ class ScanParameterDialog(_QDialog):
         self.connect_signal_slots()
         self.scan_parameter = None
         self.scan_values = []
+        self.scan_count = 0
+
+    @property
+    def valid_scan(self):
+        """Return True if the scan configuration is valid, False otherwise."""
+        if self.scan_parameter is None:
+            return False
+
+        if len(self.scan_values) == 0:
+            return False
+
+        return True
 
     def clear(self):
         """Clear."""
+        self.scan_parameter = None
+        self.scan_values = []
+        self.scan_count = 0
         self.ui.cmb_parameter.setCurrentIndex(-1)
         self.ui.tbl_values.clearContents()
         self.ui.tbl_values.setRowCount(0)
@@ -93,14 +108,10 @@ class ScanParameterDialog(_QDialog):
 
             self.scan_parameter = parameter
             self.scan_values = values
+            self.scan_count = 0
 
-            if self.scan_parameter is None:
-                return
-
-            if len(self.scan_values) == 0:
-                return
-
-            self.ui.la_updated_led.setEnabled(True)
+            if self.valid_scan:
+                self.ui.la_updated_led.setEnabled(True)
 
         except Exception:
             _traceback.print_exc(file=_sys.stdout)

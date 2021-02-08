@@ -206,18 +206,35 @@ class MeasurementWidget(_ConfigurationWidget):
             _traceback.print_exc(file=_sys.stdout)
             return False
 
+    def check_device_connection(self):
+        if not _integrator.connected:
+            msg = 'Integrator not connected.'
+            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            return False
+
+        if not _driver.connected:
+            msg = 'Driver not connected.'
+            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            return False
+
+        return True
+
+    def check_advanced_options(self):
+        if not self.advanced_options.valid_data():
+            msg = 'Invalid advanced options.'
+            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            return False
+
+        return True
+
     def configure_measurement(self):
         self.clear()
 
         try:
-            if not _integrator.connected:
-                msg = 'Integrator not connected.'
-                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            if not self.check_device_connection():
                 return False
 
-            if not _driver.connected:
-                msg = 'Driver not connected.'
-                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            if not self.check_advanced_options():
                 return False
 
             if not self.update_configuration():
@@ -229,23 +246,10 @@ class MeasurementWidget(_ConfigurationWidget):
             self.global_config = self.config.copy()
             self.offset_position_1 = 0
             self.offset_position_2 = 0
-
             self.block_volume = float(self.ui.le_block_volume.text())
+
             if self.block_volume == 0:
                 msg = 'Invalid block volume.'
-                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
-                return False
-
-            self.measurement_data.block_name = self.global_config.block_name
-            temp = self.global_config.block_temperature
-            self.measurement_data.block_temperature = temp
-            idn = self.advanced_options.idn
-            self.measurement_data.advanced_options_id = idn
-            self.measurement_data.configuration_id = self.global_config.idn
-            self.measurement_data.comments = self.global_config.comments
-
-            if not self.advanced_options.valid_data():
-                msg = 'Invalid advanced options.'
                 _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
                 return False
 
@@ -272,7 +276,7 @@ class MeasurementWidget(_ConfigurationWidget):
         self.ui.rbt_volume.toggled.connect(self.update_volume_page)
         self.ui.rbt_size.toggled.connect(self.update_volume_page)
         self.ui.rbt_mass.toggled.connect(self.update_volume_page)
-        self.ui.pbt_start_measurement.clicked.connect(self.start_measurement)
+        self.ui.pbt_start_measurement.clicked.connect(self.start_measurements)
         self.ui.pbt_stop_measurement.clicked.connect(self.stop_measurement)
         self.ui.tbt_read_temperature.clicked.connect(self.read_temperature)
         self.ui.pbt_clear_results.clicked.connect(self.clear)
@@ -342,19 +346,16 @@ class MeasurementWidget(_ConfigurationWidget):
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
 
-    def measure(self, gain):
+    def measure_position(self, gain):
         try:
             if self.stop:
                 return False
 
             self.integrated_voltage = []
-            steps = int((self.advanced_options.integration_nr_turns + 1.75)*(
+            steps = int((self.advanced_options.integration_nr_turns + 0.5)*(
                 self.advanced_options.motor_resolution))
 
             if not self.configure_integrator(gain):
-                return False
-
-            if not self.homing(nr_turns=1.25):
                 return False
 
             if not self.configure_driver(steps):
@@ -364,8 +365,11 @@ class MeasurementWidget(_ConfigurationWidget):
             nr_turns = self.advanced_options.integration_nr_turns
             integration_points = self.advanced_options.integration_points
             total_npts = nr_turns*integration_points
+
             if total_npts > 100:
                 step_status = int(total_npts/20)
+            elif total_npts > 50:
+                step_status = int(total_npts/10)
             else:
                 step_status = 1
 
@@ -373,6 +377,7 @@ class MeasurementWidget(_ConfigurationWidget):
                 msg = 'Incorrect integrator status.'
                 _QMessageBox.critical(
                     self, 'Failure', msg, _QMessageBox.Ok)
+                return False
 
             if self.stop:
                 return False
@@ -384,21 +389,6 @@ class MeasurementWidget(_ConfigurationWidget):
             self.ui.pgb_status.setValue(0)
 
             integrated_voltage = []
-
-            # # PDI Integrator
-            # finished = False
-            # while (not finished) and (not self.stop):
-            #     _QApplication.processEvents()
-            #     reading = _integrator.read_from_device()
-            #     if 'A' in reading:
-            #         valor = float(reading.replace('A', ''))
-            #         integrated_voltage.append(valor)
-            #         if len(integrated_voltage) % step_status == 0:
-            #             self.ui.pgb_status.setValue(
-            #                 len(integrated_voltage))
-            #     elif reading == '\x1a':
-            #         finished = True
-
             count = 0
             while (count < total_npts) and (not self.stop):
                 _QApplication.processEvents()
@@ -413,14 +403,13 @@ class MeasurementWidget(_ConfigurationWidget):
                     )
                 _QMessageBox.warning(self, 'Warning', msg, _QMessageBox.Ok)
                 return False
-            integrated_voltage = data
 
             if self.stop:
                 return False
 
             self.ui.pgb_status.setValue(total_npts)
 
-            integrated_voltage = _np.array(integrated_voltage).reshape(
+            integrated_voltage = _np.array(data).reshape(
                 nr_turns, integration_points).transpose()
 
             self.integrated_voltage = integrated_voltage*(
@@ -440,24 +429,6 @@ class MeasurementWidget(_ConfigurationWidget):
             _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
             return False
 
-    def measure_position_1(self):
-        if not self.measure(gain=self.global_config.gain_position_1):
-            return False
-
-        self.integrated_voltage_position_1 = _np.array([
-            iv for iv in self.integrated_voltage])
-
-        return True
-
-    def measure_position_2(self):
-        if not self.measure(gain=self.global_config.gain_position_2):
-            return False
-
-        self.integrated_voltage_position_2 = _np.array([
-            iv for iv in self.integrated_voltage])
-
-        return True
-
     def move_to_initial_position(self):
         try:
             if self.stop:
@@ -473,7 +444,7 @@ class MeasurementWidget(_ConfigurationWidget):
             tol = encoder_res/100
 
             current_position = int(_integrator.read_encoder())
-            position = trigger
+            position = trigger + 0.5*encoder_res
 
             if _np.abs(current_position - position) <= tol:
                 return True
@@ -612,42 +583,91 @@ class MeasurementWidget(_ConfigurationWidget):
             _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
             return False
 
-    def start_measurement(self):
+    def start_measurements(self):
         if not self.configure_measurement():
             return False
 
         self.ui.pbt_start_measurement.setEnabled(False)
         _QApplication.processEvents()
 
-        if not self.homing(nr_turns=2):
-            return False
+        if self.ui.chb_scan_parameter.isChecked():
+            if not self.scan_parameter_dialog.valid_scan:
+                msg = 'Invalid scan configuration.'
+                _QMessageBox.critical(
+                    self, 'Failure', msg, _QMessageBox.Ok)
+                return False
+            else:
+                try:
+                    scan_parameter = self.scan_parameter_dialog.scan_parameter
+                    scan_values = self.scan_parameter_dialog.scan_values
 
+                    for value in scan_values:
+                        setattr(self.advanced_options, scan_parameter, value)
+                        self.advanced_options.db_save()
+                        self.start_one_measurement(silent=True)
+
+                except Exception:
+                    msg = 'Set of measurements failed.'
+                    _QMessageBox.critical(
+                        self, 'Failure', msg, _QMessageBox.Ok)
+                    return False
+        else:
+            if not self.start_one_measurement():
+                return False
+
+        self.ui.pbt_start_measurement.setEnabled(True)
+        _QApplication.processEvents()
+
+        msg = 'End of measurement.'
+        _QMessageBox.information(
+            self, 'Measurement', msg, _QMessageBox.Ok)
+
+        return True
+
+    def start_one_measurement(self, silent=False):
         if not self.move_to_initial_position():
             return False
 
         if self.global_config.measure_position_1:
-            msg = 'Place the magnet in Position 1.'
-            _QMessageBox.information(self, 'Information', msg, _QMessageBox.Ok)
+            if not silent:
+                msg = 'Place the magnet in Position 1.'
+                _QMessageBox.information(
+                    self, 'Information', msg, _QMessageBox.Ok)
 
-            if not self.measure_position_1():
+            gain = self.global_config.gain_position_1
+            if not self.measure_position(gain=gain):
                 self.ui.pbt_start_measurement.setEnabled(True)
                 return False
+
+            self.integrated_voltage_position_1 = _np.array(
+                self.integrated_voltage)
 
         if self.stop:
             return False
 
         if self.global_config.measure_position_2:
-            msg = 'Place the magnet in Position 2.'
-            _QMessageBox.information(self, 'Information', msg, _QMessageBox.Ok)
+            if not silent:
+                msg = 'Place the magnet in Position 2.'
+                _QMessageBox.information(
+                    self, 'Information', msg, _QMessageBox.Ok)
 
-            if not self.measure_position_2():
+            gain = self.global_config.gain_position_2
+            if not self.measure_position(gain=gain):
                 self.ui.pbt_start_measurement.setEnabled(True)
                 return False
+
+            self.integrated_voltage_position_2 = _np.array(
+                self.integrated_voltage)
 
         if self.stop:
             return False
 
-        self.plot_integrated_voltage()
+        gc = self.global_config
+        self.measurement_data.block_name = gc.block_name
+        self.measurement_data.block_temperature = gc.block_temperature
+        self.measurement_data.advanced_options_id = gc.advanced_options.idn
+        self.measurement_data.configuration_id = gc.idn
+        self.measurement_data.comments = gc.comments
 
         m, mstd = self.measurement_data.set_magnetization_components(
             self.integrated_voltage_position_1,
@@ -659,6 +679,19 @@ class MeasurementWidget(_ConfigurationWidget):
             self.advanced_options.coil_turns,
             self.block_volume*1e-9)
 
+        if not self.save_measurement_data():
+            return False
+
+        self.update_magnetization_values(m, mstd)
+
+        self.plot_integrated_voltage()
+
+        if self.stop:
+            return False
+
+        return True
+
+    def update_magnetization_values(self, m, mstd):
         fmt_avg = '{0:.6f}'
         self.ui.le_avg_mx.setText(fmt_avg.format(m[0]))
         self.ui.le_avg_my.setText(fmt_avg.format(m[1]))
@@ -668,21 +701,6 @@ class MeasurementWidget(_ConfigurationWidget):
         self.ui.le_std_mx.setText(fmt_std.format(mstd[0]))
         self.ui.le_std_my.setText(fmt_std.format(mstd[1]))
         self.ui.le_std_mz.setText(fmt_std.format(mstd[2]))
-
-        self.ui.pbt_start_measurement.setEnabled(True)
-        _QApplication.processEvents()
-
-        if self.stop:
-            return False
-
-        if not self.save_measurement_data():
-            return False
-
-        msg = 'End of measurement.'
-        _QMessageBox.information(
-            self, 'Measurement', msg, _QMessageBox.Ok)
-
-        return True
 
     def stop_measurement(self):
         try:
