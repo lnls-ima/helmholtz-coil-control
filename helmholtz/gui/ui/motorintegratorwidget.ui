@@ -53,6 +53,9 @@
             <bold>false</bold>
            </font>
           </property>
+          <property name="digitCount">
+           <number>6</number>
+          </property>
          </widget>
         </item>
         <item row="1" column="0">
@@ -275,7 +278,7 @@
            <number>0</number>
           </property>
           <property name="maximum">
-           <number>50000</number>
+           <number>5000000</number>
           </property>
           <property name="value">
            <number>1</number>
