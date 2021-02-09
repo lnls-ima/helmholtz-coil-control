@@ -181,8 +181,11 @@
           <bold>false</bold>
          </font>
         </property>
+        <property name="minimum">
+         <number>1</number>
+        </property>
         <property name="maximum">
-         <number>100000</number>
+         <number>360000</number>
         </property>
        </widget>
       </item>
@@ -977,7 +980,7 @@
          <number>1</number>
         </property>
         <property name="maximum">
-         <number>50000000</number>
+         <number>360000</number>
         </property>
         <property name="value">
          <number>2048</number>

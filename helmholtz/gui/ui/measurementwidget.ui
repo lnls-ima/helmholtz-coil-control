@@ -777,7 +777,7 @@ Position 2</string>
          </font>
         </property>
         <property name="currentIndex">
-         <number>3</number>
+         <number>0</number>
         </property>
         <item>
          <property name="text">
@@ -812,21 +812,6 @@ Position 2</string>
         <item>
          <property name="text">
           <string>100</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>200</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>500</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>1000</string>
          </property>
         </item>
        </widget>
@@ -853,7 +838,7 @@ Position 2</string>
          </font>
         </property>
         <property name="currentIndex">
-         <number>5</number>
+         <number>0</number>
         </property>
         <item>
          <property name="text">
@@ -888,21 +873,6 @@ Position 2</string>
         <item>
          <property name="text">
           <string>100</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>200</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>500</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>1000</string>
          </property>
         </item>
        </widget>

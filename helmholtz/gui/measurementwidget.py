@@ -313,7 +313,7 @@ class MeasurementWidget(_ConfigurationWidget):
     def show_scan_parameter_dialog(self):
         self.scan_parameter_dialog.show()
 
-    def homing(self, nr_turns=1.25):
+    def homing(self, nr_turns=1):
         try:
             if self.stop:
                 return False
@@ -369,7 +369,8 @@ class MeasurementWidget(_ConfigurationWidget):
                 return False
 
             self.integrated_voltage = []
-            steps = int((self.advanced_options.integration_nr_turns + 0.5)*(
+
+            steps = int((self.advanced_options.integration_nr_turns + 1)*(
                 self.advanced_options.motor_resolution))
 
             if not self.configure_integrator(gain):
@@ -466,7 +467,7 @@ class MeasurementWidget(_ConfigurationWidget):
             tol = encoder_res/100
 
             current_position = int(_integrator.read_encoder())
-            position = trigger + 0.5*encoder_res
+            position = trigger
 
             if _np.abs(current_position - position) <= tol:
                 return True
@@ -476,6 +477,45 @@ class MeasurementWidget(_ConfigurationWidget):
                 diff = diff*(-1)
             pulses = (encoder_res - diff) % encoder_res
             steps = int((pulses*motor_resolution)/encoder_res)
+
+            if not self.configure_driver(steps):
+                return False
+
+            if self.stop:
+                return False
+
+            _driver.move_motor(driver_address)
+            _time.sleep(wait)
+
+            while not _driver.ready(driver_address) and not self.stop:
+                _time.sleep(wait)
+                _QApplication.processEvents()
+
+            _time.sleep(wait)
+
+            if self.stop:
+                return False
+
+            return True
+
+        except Exception:
+            msg = _QCoreApplication.translate(
+                '', 'Failed to move motor to initial position.')
+            title = _QCoreApplication.translate('', 'Failure')
+            _QMessageBox.critical(self, title, msg, _QMessageBox.Ok)
+            _traceback.print_exc(file=_sys.stdout)
+            return False
+
+    def move_half_turn(self):
+        try:
+            if self.stop:
+                return False
+
+            wait = 0.1
+            
+            motor_resolution = self.advanced_options.motor_resolution
+            driver_address = self.advanced_options.motor_driver_address
+            steps = int(int(motor_resolution)*0.5)
 
             if not self.configure_driver(steps):
                 return False
@@ -671,7 +711,7 @@ class MeasurementWidget(_ConfigurationWidget):
 
     def start_one_measurement(self, silent=False):
         if not self.move_to_initial_position():
-            return False
+            return False          
 
         if self.global_config.measure_position_1:
             if not silent:
@@ -680,6 +720,9 @@ class MeasurementWidget(_ConfigurationWidget):
                 title = _QCoreApplication.translate('', 'Information')
                 _QMessageBox.information(
                     self, title, msg, _QMessageBox.Ok)
+
+            if not self.move_half_turn():
+                return False  
 
             gain = self.global_config.gain_position_1
             if not self.measure_position(gain=gain):
@@ -699,6 +742,9 @@ class MeasurementWidget(_ConfigurationWidget):
                 title = _QCoreApplication.translate('', 'Information')
                 _QMessageBox.information(
                     self, title, msg, _QMessageBox.Ok)
+
+            if not self.move_half_turn():
+                return False 
 
             gain = self.global_config.gain_position_2
             if not self.measure_position(gain=gain):

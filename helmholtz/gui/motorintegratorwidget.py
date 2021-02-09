@@ -59,20 +59,30 @@ class MotorIntegratorWidget(_QWidget):
         dialog = _QApplication.instance().advanced_options_dialog
         return dialog.config
 
+    def check_integrator_connection(self):
+        if not _integrator.connected:
+            msg = _QCoreApplication.translate('',  'Integrator not connected.')
+            title = _QCoreApplication.translate('', 'Failure')
+            _QMessageBox.critical(self, title, msg, _QMessageBox.Ok)
+            return False
+        return True       
+
+    def check_driver_connection(self):
+        if not _driver.connected:
+            msg = _QCoreApplication.translate('', 'Driver not connected.')
+            title = _QCoreApplication.translate('', 'Failure')
+            _QMessageBox.critical(self, title, msg, _QMessageBox.Ok)
+            return False
+        return True       
+
     def homing(self):
         self.stop = False
 
         try:
-            if not _driver.connected:
-                msg = _QCoreApplication.translate('', 'Driver not connected.')
-                title = _QCoreApplication.translate('', 'Failure')
-                _QMessageBox.critical(self, title, msg, _QMessageBox.Ok)
+            if not self.check_driver_connection():
                 return
 
-            if not _integrator.connected:
-                msg = _QCoreApplication.translate('',  'Integrator not connected.')
-                title = _QCoreApplication.translate('', 'Failure')
-                _QMessageBox.critical(self, title, msg, _QMessageBox.Ok)
+            if not self.check_integrator_connection():
                 return
 
             wait = 0.1
@@ -84,7 +94,7 @@ class MotorIntegratorWidget(_QWidget):
             acceleration = self.advanced_options.motor_acceleration
 
             mode = 0
-            steps = int(int(resolution)*2)
+            steps = int(int(resolution))
 
             if not _driver.config_motor(
                     driver_address,
@@ -124,12 +134,7 @@ class MotorIntegratorWidget(_QWidget):
 
     def get_steps_for_encoder_position(self, encoder_position):
         try:
-            if not _integrator.connected:
-                msg = _QCoreApplication.translate(
-                    '', 'Integrator not connected.')
-                title = _QCoreApplication.translate('', 'Failure')
-                _QMessageBox.critical(
-                    self, title, msg, _QMessageBox.Ok)
+            if not self.check_integrator_connection():
                 return None
 
             encoder_res = self.advanced_options.integrator_encoder_resolution
@@ -177,12 +182,7 @@ class MotorIntegratorWidget(_QWidget):
         self.stop = False
 
         try:
-            if not _driver.connected:
-                msg = _QCoreApplication.translate(
-                    '', 'Driver not connected.')
-                title = _QCoreApplication.translate('', 'Failure')
-                _QMessageBox.critical(
-                    self, title, msg, _QMessageBox.Ok)
+            if not self.check_driver_connection():
                 return
 
             driver_address = self.advanced_options.motor_driver_address
@@ -264,12 +264,7 @@ class MotorIntegratorWidget(_QWidget):
             encoder_res = self.advanced_options.integrator_encoder_resolution
 
             if self.ui.chb_encoder.isChecked():
-                if not _integrator.connected:
-                    msg = _QCoreApplication.translate(
-                        '', 'Integrator not connected.')
-                    title = _QCoreApplication.translate('', 'Failure')
-                    _QMessageBox.critical(
-                        self, title, msg, _QMessageBox.Ok)
+                if not self.check_integrator_connection():
                     self.stop_encoder_update = True
                     self.ui.lcd_encoder.setEnabled(False)
                     self.ui.chb_encoder.setChecked(False)

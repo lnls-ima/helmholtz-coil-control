@@ -82,7 +82,7 @@ class FDIIntegrator(_FDI2056Lib.FDI2056Ethernet):
     def configure_measurement(
             self, channel, encoder_resolution, direction,
             start_trigger, integration_points, nr_turns,
-            gain):
+            gain, wait=0.1):
         if not self.connected:
             return False
 
@@ -94,6 +94,8 @@ class FDIIntegrator(_FDI2056Lib.FDI2056Ethernet):
         self.configure_trig_encoder(
             encoder_resolution, direction,
             start_trigger, integration_points, nr_turns)
+
+        _time.sleep(wait)
 
         return True
 
