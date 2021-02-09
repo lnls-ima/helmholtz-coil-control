@@ -39,24 +39,15 @@ class ResultsDialog(_QDialog):
         self.ui = _uic.loadUi(uifile, self)
 
         self.measurement_list = []
+        self.measurement_idns = []
         self.mx = []
         self.my = []
         self.mz = []
         self.graph_mx = None
         self.graph_my = None
         self.graph_mz = None
-        self.graph_right = None
         self.xmin_line = None
         self.xmax_line = None
-
-        self.axis_label_dict = {
-            'temperature': 'Temperature [degC]',
-            'volume': 'Volume [mm3]',
-        }
-
-        for key in self.axis_label_dict.keys():
-            self.ui.cmb_bottom_axis.addItem(key)
-            self.ui.cmb_right_axis.addItem(key)
 
         # Create legend
         self.legend = _pyqtgraph.LegendItem(offset=(70, 30))
@@ -92,10 +83,10 @@ class ResultsDialog(_QDialog):
             func = self.ui.cmb_fitfunction.currentText()
             if func.lower() == 'linear':
                 xfit, yfit, param, label = _linear_fit(x, y)
-            elif func.lower() == 'polynomial':
+            elif func.lower() in ('polynomial', 'polinomial'):
                 order = self.ui.sb_polyorder.value()
                 xfit, yfit, param, label = _polynomial_fit(x, y, order)
-            elif func.lower() == 'gaussian':
+            elif func.lower() in ('gaussian', 'gaussiana'):
                 xfit, yfit, param, label = _gaussian_fit(x, y)
             else:
                 xfit = []
@@ -123,6 +114,7 @@ class ResultsDialog(_QDialog):
     def clear(self):
         """Clear all."""
         self.measurement_list = []
+        self.measurement_idns = []
         self.mx = []
         self.my = []
         self.mz = []
@@ -147,38 +139,50 @@ class ResultsDialog(_QDialog):
         self.graph_mx = None
         self.graph_my = None
         self.graph_mz = None
-        self.graph_right = None
 
-    def configure_graph(self, bottom_axis_attr=None, right_axis_attr=None):
+    def configure_graph(self):
         """Configure graph."""
         self.clear_graph()
 
         color_mx = (255, 0, 0)
         color_my = (0, 255, 0)
         color_mz = (0, 0, 255)
-        color_right_axis = (0, 0, 0)
 
         width = _utils.PLOT_LINE_WIDTH
         font_str = '{0:d}px'.format(_utils.PLOT_FONT_SIZE)
         label_style = {'font-size': font_str}
         font = _QFont()
         font.setPixelSize(_utils.PLOT_FONT_SIZE)
-
+        
+        symbol_size = 8
         pen = _pyqtgraph.mkPen(color=color_mx, width=width)
         self.graph_mx = self.ui.pw_graph.plotItem.plot(
             _np.array([]),
-            _np.array([]))
+            _np.array([]),
+            symbol='o',
+            symbolPen=color_mx,
+            symbolSize=symbol_size,
+            symbolBrush=color_mx)
         self.graph_mx.setPen(pen)
-
+                           
         pen = _pyqtgraph.mkPen(color=color_my, width=width)
         self.graph_my = self.ui.pw_graph.plotItem.plot(
             _np.array([]),
-            _np.array([]))
+            _np.array([]),
+            symbol='o',
+            symbolPen=color_my,
+            symbolSize=symbol_size,
+            symbolBrush=color_my)
         self.graph_my.setPen(pen)
 
         pen = _pyqtgraph.mkPen(color=color_mz, width=width)
         self.graph_mz = self.ui.pw_graph.plotItem.plot(
-            _np.array([]), _np.array([]))
+            _np.array([]),
+            _np.array([]),
+            symbol='o',
+            symbolPen=color_mz,
+            symbolSize=symbol_size,
+            symbolBrush=color_mz)
         self.graph_mz.setPen(pen)
 
         self.legend_items = ['Mx', 'My', 'Mz']
@@ -193,56 +197,20 @@ class ResultsDialog(_QDialog):
         self.ui.pw_graph.getAxis('left').setStyle(
             tickTextOffset=_utils.PLOT_FONT_SIZE)
 
-        if bottom_axis_attr is None or bottom_axis_attr == '':
-            bottom_axis_label = ''
-        else:
-            bottom_axis_label = self.axis_label_dict[bottom_axis_attr]
         self.ui.pw_graph.setLabel(
-            'bottom', text=bottom_axis_label, **label_style)
+            'bottom', text="Database ID", **label_style)
         self.ui.pw_graph.getAxis('bottom').tickFont = font
         self.ui.pw_graph.getAxis('bottom').setStyle(
             tickTextOffset=_utils.PLOT_FONT_SIZE)
-
-        if right_axis_attr is not None and right_axis_attr != '':
-            right_axis_label = self.axis_label_dict[right_axis_attr]
-            pen = _pyqtgraph.mkPen(color=color_right_axis, width=width)
-            right_axis = _utils.plot_item_add_first_right_axis(
-                self.ui.pw_graph.plotItem)
-            self.graph_right = _pyqtgraph.PlotDataItem(
-                _np.array([]), _np.array([]))
-            self.graph_right.setPen(pen)
-            right_axis.linkedView().addItem(self.graph_right)
-
-            right_axis.setLabel(right_axis_label, **label_style)
-            right_axis.tickFont = font
-            right_axis.setStyle(
-                tickTextOffset=_utils.PLOT_FONT_SIZE)
-
-            self.legend_items.append(right_axis_attr)
-            self.legend.addItem(self.graph_right, right_axis_attr)
 
         self.ui.pw_graph.showGrid(x=True, y=True)
 
     def connect_signal_slots(self):
         """Create signal/slot connections."""
-        self.ui.cmb_bottom_axis.currentIndexChanged.connect(
-            self.update_xlimits)
         self.ui.pbt_update_plot.clicked.connect(self.update_plot)
         self.ui.chb_mx.stateChanged.connect(self.update_controls_and_plot)
         self.ui.chb_my.stateChanged.connect(self.update_controls_and_plot)
         self.ui.chb_mz.stateChanged.connect(self.update_controls_and_plot)
-        self.ui.cmb_bottom_axis.currentIndexChanged.connect(
-            self.update_controls_and_plot)
-        self.ui.cmb_right_axis.currentIndexChanged.connect(
-            self.update_controls_and_plot)
-        self.ui.chb_bottom_axis.stateChanged.connect(
-            self.update_controls_and_plot)
-        self.ui.chb_right_axis.stateChanged.connect(
-            self.update_controls_and_plot)
-        self.ui.chb_bottom_axis.stateChanged.connect(
-            self.enabled_bottom_axis_selection)
-        self.ui.chb_right_axis.stateChanged.connect(
-            self.enabled_right_axis_selection)
         self.ui.cmb_fitfunction.currentIndexChanged.connect(
             self.fit_function_changed)
         self.ui.pbt_fit.clicked.connect(self.calc_curve_fit)
@@ -252,18 +220,6 @@ class ResultsDialog(_QDialog):
         x = self.get_bottom_axis_data()
         self.ui.sbd_xmin.setValue(_np.min(x))
         self.ui.sbd_xmax.setValue(_np.max(x))
-
-    def enabled_bottom_axis_selection(self):
-        if self.ui.chb_bottom_axis.isChecked():
-            self.ui.cmb_bottom_axis.setEnabled(True)
-        else:
-            self.ui.cmb_bottom_axis.setEnabled(False)
-
-    def enabled_right_axis_selection(self):
-        if self.ui.chb_right_axis.isChecked():
-            self.ui.cmb_right_axis.setEnabled(True)
-        else:
-            self.ui.cmb_right_axis.setEnabled(False)
 
     def get_selected_plots(self):
         """Get all selected scans and components."""
@@ -275,9 +231,6 @@ class ResultsDialog(_QDialog):
                 plots.append('my')
             if self.ui.chb_mz.isChecked():
                 plots.append('mz')
-            if self.ui.chb_right_axis.isChecked():
-                plots.append(
-                    self.ui.cmb_right_axis.currentText())
             return plots
 
         except Exception:
@@ -285,38 +238,14 @@ class ResultsDialog(_QDialog):
             return None
 
     def get_bottom_axis_data(self):
-        try:
-            if self.ui.chb_bottom_axis.isChecked():
-                bottom_axis_attr = self.ui.cmb_bottom_axis.currentText()
-                x = []
-                for m in self.measurement_list:
-                    x.append(getattr(m, bottom_axis_attr))
-                return x
-            else:
-                return list(range(len(self.measurement_list)))
-
-        except Exception:
-            return list(range(len(self.measurement_list)))
-
-    def get_right_axis_data(self):
-        try:
-            if self.ui.chb_right_axis.isChecked():
-                right_axis_attr = self.ui.cmb_right_axis.currentText()
-                y = []
-                for m in self.measurement_list:
-                    y.append(getattr(m, right_axis_attr))
-                return y
-            else:
-                return []
-        except Exception:
-            return []
+        return self.measurement_idns
 
     def fit_function_changed(self):
         """Hide or show polynomial fitting order and update dict value."""
         self.clear_fit()
         self.update_plot()
         func = self.ui.cmb_fitfunction.currentText()
-        if func.lower() == 'polynomial':
+        if func.lower() in ('polynomial', 'polinomial'):
             self.ui.la_polyorder.show()
             self.ui.sb_polyorder.show()
         else:
@@ -337,12 +266,9 @@ class ResultsDialog(_QDialog):
             ydata = self.my
         elif 'mz' in plots:
             ydata = self.mz
-        else:
-            ydata = self.get_right_axis_data()
 
-        sorted_data = _np.array(sorted(zip(xdata, ydata)))
-        x = sorted_data[:, 0]
-        y = sorted_data[:, 1]
+        x = _np.array(xdata)
+        y = _np.array(ydata)
 
         xmin = self.ui.sbd_xmin.value()
         xmax = self.ui.sbd_xmax.value()
@@ -376,6 +302,7 @@ class ResultsDialog(_QDialog):
                 return
 
             self.measurement_list = measurement_list
+            self.measurement_idns = [m.idn for m in measurement_list]
 
             self.mx = []
             self.my = []
@@ -387,6 +314,7 @@ class ResultsDialog(_QDialog):
 
             self.ui.la_polyorder.hide()
             self.ui.sb_polyorder.hide()
+            self.reset_xlimits()
             self.update_controls_and_plot()
             super().show()
 
@@ -430,46 +358,18 @@ class ResultsDialog(_QDialog):
             else:
                 show_xlines = True
 
-            if self.ui.chb_bottom_axis.isChecked():
-                bottom_axis_attr = self.ui.cmb_bottom_axis.currentText()
-            else:
-                bottom_axis_attr = None
-
-            if self.ui.chb_right_axis.isChecked():
-                right_axis_attr = self.ui.cmb_right_axis.currentText()
-            else:
-                right_axis_attr = None
-
-            self.configure_graph(
-                bottom_axis_attr=bottom_axis_attr,
-                right_axis_attr=right_axis_attr)
+            self.configure_graph()
 
             with _warnings.catch_warnings():
                 _warnings.simplefilter("ignore")
                 x = self.get_bottom_axis_data()
 
                 if 'mx' in plots:
-                    sorted_data = _np.array(sorted(zip(x, self.mx)))
-                    x_sorted = sorted_data[:, 0]
-                    mx_sorted = sorted_data[:, 1]
-                    self.graph_mx.setData(x_sorted, mx_sorted)
+                    self.graph_mx.setData(x, self.mx)
                 if 'my' in plots:
-                    sorted_data = _np.array(sorted(zip(x, self.my)))
-                    x_sorted = sorted_data[:, 0]
-                    my_sorted = sorted_data[:, 1]
-                    self.graph_my.setData(x_sorted, my_sorted)
+                    self.graph_my.setData(x, self.my)
                 if 'mz' in plots:
-                    sorted_data = _np.array(sorted(zip(x, self.mz)))
-                    x_sorted = sorted_data[:, 0]
-                    mz_sorted = sorted_data[:, 1]
-                    self.graph_mz.setData(x_sorted, mz_sorted)
-
-                if right_axis_attr:
-                    right_data = self.get_right_axis_data()
-                    sorted_data = _np.array(sorted(zip(x, right_data)))
-                    x_sorted = sorted_data[:, 0]
-                    right_data_sorted = sorted_data[:, 1]
-                    self.graph_right.setData(x_sorted, right_data_sorted)
+                    self.graph_mz.setData(x, self.mz)
 
             if show_xlines:
                 xmin = self.ui.sbd_xmin.value()

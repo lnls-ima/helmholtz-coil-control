@@ -545,8 +545,10 @@ class MeasurementWidget(_ConfigurationWidget):
                 _QMessageBox.critical(self, title, msg, _QMessageBox.Ok)
                 return False
 
-            msg = 'Place temperature sensor on the magnet.'
-            _QMessageBox.information(self, 'Information', msg, _QMessageBox.Ok)
+            msg = _QCoreApplication.translate(
+                '', 'Place temperature sensor on the magnet.')
+            title = _QCoreApplication.translate('', 'Information')
+            _QMessageBox.information(self, title, msg, _QMessageBox.Ok)
 
             _multimeter.config_resistance_4w(wait=0.5)
 

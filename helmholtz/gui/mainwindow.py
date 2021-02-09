@@ -48,13 +48,23 @@ class MainWindow(_QMainWindow):
         self.ui.twg_main.clear()
 
         # define tab names and corresponding widgets
-        self.tab_names = [
-            'connection',
-            'temperature',
-            'motor_and_integrator',
-            'measurement',
-            'database',
-            ]
+        if _utils.TRANSLATE:
+            self.tab_names = [
+                'conexao',
+                'temperatura',
+                'motor_e_integrador',
+                'medida',
+                'banco_de_dados',
+                ]
+        
+        else:
+            self.tab_names = [
+                'connection',
+                'temperature',
+                'motor_and_integrator',
+                'measurement',
+                'database',
+                ]
 
         self.tab_widgets = [
             _ConnectionWidget,
@@ -66,11 +76,9 @@ class MainWindow(_QMainWindow):
 
         # add select tabs dialog
         self.select_tabs_dialog = _SelectTabsDialog(self.tab_names)
-        self.select_tabs_dialog.chb_connection.setChecked(True)
-        self.select_tabs_dialog.chb_temperature.setChecked(True)
-        self.select_tabs_dialog.chb_motor_and_integrator.setChecked(True)
-        self.select_tabs_dialog.chb_measurement.setChecked(True)
-        self.select_tabs_dialog.chb_database.setChecked(True)
+        for tab_name in self.tab_names:
+            chb = getattr(self.select_tabs_dialog, 'chb_' + tab_name)
+            chb.setChecked(True)
         self.select_tabs_dialog.tab_selection_changed.connect(self.change_tabs)
 
         self.log_dialog = _LogDialog()
