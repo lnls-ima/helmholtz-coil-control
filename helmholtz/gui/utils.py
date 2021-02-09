@@ -19,7 +19,7 @@ from qtpy.QtCore import (
 
 
 # GUI configurations
-TRANSLATE = True
+TRANSLATE = False
 WINDOW_STYLE = 'windows'
 WINDOW_WIDTH = 1200
 WINDOW_HEIGHT = 700

@@ -52,12 +52,50 @@ class MotorIntegratorWidget(_QWidget):
             self.disable_invalid_widgets)
         self.ui.pbt_move_motor.clicked.connect(self.move_motor)
         self.ui.pbt_stop_motor.clicked.connect(self.stop_motor)
+        self.ui.pbt_reset.clicked.connect(self.reset_integrator)
+        self.ui.pbt_shut_down.clicked.connect(
+            self.shut_down_integrator)
+        self.ui.pbt_short_circuit_on.clicked.connect(
+            self.turn_on_integrator_short_circuit)
+        self.ui.pbt_short_circuit_off.clicked.connect(
+            self.turn_off_integrator_short_circuit)
+        self.ui.pbt_calibrate.clicked.connect(self.calibrate_integrator)
+        self.ui.pbt_set_gain.clicked.connect(self.set_gain_integrator)
 
     @property
     def advanced_options(self):
         """Return global advanced options."""
         dialog = _QApplication.instance().advanced_options_dialog
         return dialog.config
+
+    def reset_integrator(self):
+        if self.check_integrator_connection():
+            _integrator.reset()
+
+    def shut_down_integrator(self):
+        if self.check_integrator_connection():
+            _integrator.shut_down()
+
+    def turn_on_integrator_short_circuit(self):
+        if self.check_integrator_connection():
+            _integrator.short_circuit_on()
+
+    def turn_off_integrator_short_circuit(self):
+        if self.check_integrator_connection():
+            _integrator.short_circuit_off()
+
+    def calibrate_integrator(self):
+        if self.check_integrator_connection():
+            _integrator.calibrate()
+
+    def set_gain_integrator(self):
+        try:
+            if self.check_integrator_connection():
+                gain = int(self.ui.cmb_gain.currentText())
+                _integrator.configure_gain(gain)
+        except Exception:
+            _traceback.print_exc(file=_sys.stdout)
+            return
 
     def check_integrator_connection(self):
         if not _integrator.connected:

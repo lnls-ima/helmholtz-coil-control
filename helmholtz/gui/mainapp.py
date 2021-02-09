@@ -99,8 +99,9 @@ def run():
     if not _QApplication.instance():
         app = MainApp([])
         translators = _utils.get_translators()
-        for translator in translators:
-            app.installTranslator(translator)
+        if translators is not None:
+            for translator in translators:
+                app.installTranslator(translator)
         app.create_dialogs()
         window = _MainWindow(
             width=_utils.WINDOW_WIDTH, height=_utils.WINDOW_HEIGHT)
