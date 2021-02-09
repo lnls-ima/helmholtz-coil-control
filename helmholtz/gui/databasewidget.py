@@ -8,7 +8,10 @@ import pandas as _pd
 import sqlite3 as _sqlite3
 import traceback as _traceback
 import qtpy.uic as _uic
-from qtpy.QtCore import Qt as _Qt
+from qtpy.QtCore import (
+    Qt as _Qt,
+    QCoreApplication as _QCoreApplication,
+    ) 
 from qtpy.QtWidgets import (
     QWidget as _QWidget,
     QApplication as _QApplication,
@@ -153,8 +156,10 @@ class DatabaseWidget(_QWidget):
 
             except Exception:
                 _traceback.print_exc(file=_sys.stdout)
-                msg = 'Failed to read database entries.'
-                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                msg = _QCoreApplication.translate(
+                    '', 'Failed to read database entries.')
+                title = _QCoreApplication.translate('', 'Failure')
+                _QMessageBox.critical(self, title, msg, _QMessageBox.Ok)
                 return
 
             timestamp = _time.strftime(
@@ -162,8 +167,9 @@ class DatabaseWidget(_QWidget):
 
             default_filename = timestamp + '_Helmholtz_Measurement_Summary.xlsx'
 
+            caption = _QCoreApplication.translate('', 'Save file')
             filename = _QFileDialog.getSaveFileName(
-                self, caption='Save file',
+                self, caption=caption,
                 directory=_os.path.join(self.directory, default_filename),
                 filter="Text files (*.txt *.dat)")
 
@@ -178,8 +184,10 @@ class DatabaseWidget(_QWidget):
 
             except Exception:
                 _traceback.print_exc(file=_sys.stdout)
-                msg = 'Failed to save file.'
-                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                msg = _QCoreApplication.translate(
+                    '', 'Failed to save file.')
+                title = _QCoreApplication.translate('', 'Failure')
+                _QMessageBox.critical(self, title, msg, _QMessageBox.Ok)
         
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
@@ -234,8 +242,9 @@ class DatabaseWidget(_QWidget):
 
         object_class = self._table_object_dict[table_name]
 
+        caption = _QCoreApplication.translate('', 'Read files')
         fns = _QFileDialog.getOpenFileNames(
-            self, caption='Read files', directory=self.directory,
+            self, caption=caption, directory=self.directory,
             filter="Text files (*.txt *.dat)")
 
         if isinstance(fns, tuple):
@@ -253,13 +262,17 @@ class DatabaseWidget(_QWidget):
                 obj.read_file(filename)
                 idn = obj.db_save()
                 idns.append(idn)
-            msg = 'Added to database table.\nIDs: ' + str(idns)
+            msg = _QCoreApplication.translate(
+                '', 'Added to database table.\nIDs: ' + str(idns))
             self.update_database_tables()
-            _QMessageBox.information(self, 'Information', msg, _QMessageBox.Ok)
+            title = _QCoreApplication.translate('', 'Information')
+            _QMessageBox.information(self, title, msg, _QMessageBox.Ok)
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
-            msg = 'Failed to read files and save values in database.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = _QCoreApplication.translate(
+                '', 'Failed to read files and save values in database.')
+            title = _QCoreApplication.translate('', 'Failure')
+            _QMessageBox.critical(self, title, msg, _QMessageBox.Ok)
             return
 
     def save_files(self):
@@ -291,13 +304,16 @@ class DatabaseWidget(_QWidget):
 
             except Exception:
                 _traceback.print_exc(file=_sys.stdout)
-                msg = 'Failed to read database entries.'
-                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                msg = _QCoreApplication.translate(
+                    '', 'Failed to read database entries.')
+                title = _QCoreApplication.translate('', 'Failure')
+                _QMessageBox.critical(self, title, msg, _QMessageBox.Ok)
                 return
 
             if nr_idns == 1:
+                caption = _QCoreApplication.translate('', 'Save file')
                 filename = _QFileDialog.getSaveFileName(
-                    self, caption='Save file',
+                    self, caption=caption,
                     directory=_os.path.join(self.directory, fns[0]),
                     filter="Text files (*.txt *.dat)")
 
@@ -309,8 +325,9 @@ class DatabaseWidget(_QWidget):
 
                 fns[0] = filename
             else:
+                caption = _QCoreApplication.translate('', 'Save files')
                 directory = _QFileDialog.getExistingDirectory(
-                    self, caption='Save files', directory=self.directory)
+                    self, caption=caption, directory=self.directory)
 
                 if isinstance(directory, tuple):
                     directory = directory[0]
@@ -332,8 +349,10 @@ class DatabaseWidget(_QWidget):
                     obj.save_file(filename)
             except Exception:
                 _traceback.print_exc(file=_sys.stdout)
-                msg = 'Failed to save files.'
-                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                msg = _QCoreApplication.translate(
+                    '', 'Failed to save files.')
+                title = _QCoreApplication.translate('', 'Failure')
+                _QMessageBox.critical(self, title, msg, _QMessageBox.Ok)
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
 

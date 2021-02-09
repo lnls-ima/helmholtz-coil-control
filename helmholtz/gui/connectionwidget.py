@@ -10,7 +10,10 @@ from qtpy.QtWidgets import (
     QMessageBox as _QMessageBox,
     QApplication as _QApplication,
     )
-from qtpy.QtCore import Qt as _Qt
+from qtpy.QtCore import (
+    Qt as _Qt,
+    QCoreApplication as _QCoreApplication,
+    )
 import qtpy.uic as _uic
 
 from helmholtz.gui import utils as _utils
@@ -129,16 +132,19 @@ class ConnectionWidget(_ConfigurationWidget):
             self.save_db()
 
             if not connected:
-                msg = 'Failed to connect devices.'
-                _QMessageBox.critical(
-                    self, 'Failure', msg, _QMessageBox.Ok)
+                msg = _QCoreApplication.translate(
+                    '', 'Failed to connect devices.')
+                title = _QCoreApplication.translate('', 'Failure')
+                _QMessageBox.critical(self, title, msg, _QMessageBox.Ok)
 
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
             self.blockSignals(False)
             _QApplication.restoreOverrideCursor()
-            msg = 'Failed to connect devices.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = _QCoreApplication.translate(
+                '', 'Failed to connect devices.')
+            title = _QCoreApplication.translate('', 'Failure')
+            _QMessageBox.critical(self, title, msg, _QMessageBox.Ok)
 
     def connection_status(self):
         """Return the connection status."""
@@ -183,8 +189,10 @@ class ConnectionWidget(_ConfigurationWidget):
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
             if msgbox:
-                msg = 'Failed to disconnect devices.'
-                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                msg = _QCoreApplication.translate(
+                    '', 'Failed to disconnect devices.')
+                title = _QCoreApplication.translate('', 'Failure')
+                _QMessageBox.critical(self, title, msg, _QMessageBox.Ok)
 
     def update_led_status(self):
         """Update led status."""

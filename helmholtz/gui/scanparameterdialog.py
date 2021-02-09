@@ -97,16 +97,16 @@ class ScanParameterDialog(_QDialog):
             if cmb_text == 'trigger':
                 parameter = 'integration_trigger'
                 values = [int(t) for t in text_list]
-            elif cmb_text == 'integration points':
+            elif cmb_text in ('integration points', 'pontos de integração'):
                 parameter = 'integration_points'
                 values = [int(t) for t in text_list]
-            elif cmb_text == 'number of turns':
+            elif cmb_text in ('number of turns', 'número de voltas'):
                 parameter = 'integration_nr_turns'
                 values = [int(t) for t in text_list]
-            elif cmb_text == 'maximum velocity':
+            elif cmb_text in ('maximum velocity', 'velocidade máxima'):
                 parameter = 'motor_velocity'
                 values = [float(t) for t in text_list]
-            elif cmb_text == 'acceleration':
+            elif cmb_text in ('acceleration', 'aceleração'):
                 parameter = 'motor_acceleration'
                 values = [float(t) for t in text_list]
 

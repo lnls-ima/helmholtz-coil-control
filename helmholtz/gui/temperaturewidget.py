@@ -18,6 +18,7 @@ from qtpy.QtCore import (
     QThread as _QThread,
     QObject as _QObject,
     Signal as _Signal,
+    QCoreApplication as _QCoreApplication,
     )
 
 from helmholtz.gui import utils as _utils    
@@ -45,7 +46,8 @@ class TemperatureWidget(_TablePlotWidget):
         super().__init__(parent=parent)
 
         # add configure button
-        self.pbt_configure = _QPushButton('Configure Device')
+        self.pbt_configure = _QPushButton(
+            _QCoreApplication.translate('', 'Configure Device'))
         self.pbt_configure.clicked.connect(self.configure_devices)
         self.add_widgets_next_to_table(self.pbt_configure)
 
@@ -70,7 +72,7 @@ class TemperatureWidget(_TablePlotWidget):
                 _QMessageBox.critical(
                     self,
                     'Failure',
-                    'Multimeter not connected.',
+                    _QCoreApplication.translate('', 'Multimeter not connected.'),
                     _QMessageBox.Ok)
             return False
         return True

@@ -16,7 +16,8 @@ from qtpy.QtWidgets import (
     )
 from qtpy.QtCore import (
     Qt as _Qt,
-    QTimer as _QTimer
+    QTimer as _QTimer,
+    QCoreApplication as _QCoreApplication,
 )
 import qtpy.uic as _uic
 
@@ -151,8 +152,10 @@ class MeasurementWidget(_ConfigurationWidget):
                 steps)
 
         except Exception:
-            msg = 'Failed to configure driver.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = _QCoreApplication.translate(
+                '', 'Failed to configure driver.')
+            title = _QCoreApplication.translate('', 'Failure')
+            _QMessageBox.critical(self, title, msg, _QMessageBox.Ok)
             _traceback.print_exc(file=_sys.stdout)
             return False
 
@@ -201,28 +204,36 @@ class MeasurementWidget(_ConfigurationWidget):
                 gain)
 
         except Exception:
-            msg = 'Failed to configure integrator.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = _QCoreApplication.translate(
+                '', 'Failed to configure integrator.')
+            title = _QCoreApplication.translate('', 'Failure')
+            _QMessageBox.critical(self, title, msg, _QMessageBox.Ok)
             _traceback.print_exc(file=_sys.stdout)
             return False
 
     def check_device_connection(self):
         if not _integrator.connected:
-            msg = 'Integrator not connected.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = _QCoreApplication.translate(
+                '', 'Integrator not connected.')
+            title = _QCoreApplication.translate('', 'Failure')
+            _QMessageBox.critical(self, title, msg, _QMessageBox.Ok)
             return False
 
         if not _driver.connected:
-            msg = 'Driver not connected.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = _QCoreApplication.translate(
+                '', 'Driver not connected.')
+            title = _QCoreApplication.translate('', 'Failure')
+            _QMessageBox.critical(self, title, msg, _QMessageBox.Ok)
             return False
 
         return True
 
     def check_advanced_options(self):
         if not self.advanced_options.valid_data():
-            msg = 'Invalid advanced options.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = _QCoreApplication.translate(
+                '', 'Invalid advanced options.')
+            title = _QCoreApplication.translate('', 'Failure')
+            _QMessageBox.critical(self, title, msg, _QMessageBox.Ok)
             return False
 
         return True
@@ -249,8 +260,10 @@ class MeasurementWidget(_ConfigurationWidget):
             self.block_volume = float(self.ui.le_block_volume.text())
 
             if self.block_volume == 0:
-                msg = 'Invalid block volume.'
-                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                msg = _QCoreApplication.translate(
+                    '', 'Invalid block volume.')
+                title = _QCoreApplication.translate('', 'Failure')
+                _QMessageBox.critical(self, title, msg, _QMessageBox.Ok)
                 return False
 
             self.configure_graph(
@@ -259,8 +272,10 @@ class MeasurementWidget(_ConfigurationWidget):
             return True
 
         except Exception:
-            msg = 'Measurement configuration failed.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = _QCoreApplication.translate(
+                '', 'Measurement configuration failed.')
+            title = _QCoreApplication.translate('', 'Failure')
+            _QMessageBox.critical(self, title, msg, _QMessageBox.Ok)
             _traceback.print_exc(file=_sys.stdout)
             return False
 
@@ -330,8 +345,10 @@ class MeasurementWidget(_ConfigurationWidget):
             return True
 
         except Exception:
-            msg = 'Homing failed.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = _QCoreApplication.translate(
+                '', 'Homing failed.')
+            title = _QCoreApplication.translate('', 'Failure')
+            _QMessageBox.critical(self, title, msg, _QMessageBox.Ok)
             _traceback.print_exc(file=_sys.stdout)
             return False
 
@@ -374,9 +391,11 @@ class MeasurementWidget(_ConfigurationWidget):
                 step_status = 1
 
             if not _integrator.start_measurement():
-                msg = 'Incorrect integrator status.'
+                msg = _QCoreApplication.translate(
+                    '', 'Incorrect integrator status.')
+                title = _QCoreApplication.translate('', 'Failure')
                 _QMessageBox.critical(
-                    self, 'Failure', msg, _QMessageBox.Ok)
+                    self, title, msg, _QMessageBox.Ok)
                 return False
 
             if self.stop:
@@ -396,11 +415,13 @@ class MeasurementWidget(_ConfigurationWidget):
                     self.ui.pgb_status.setValue(count)
             data = _integrator.get_data_array()
             if any(_np.isnan(di) for di in data):
-                msg = (
+                msg = _QCoreApplication.translate(
+                    '', (
                     'Integrator over-range.\n' +
                     'Please configure a lower gain.'
-                    )
-                _QMessageBox.warning(self, 'Warning', msg, _QMessageBox.Ok)
+                    ))
+                title = _QCoreApplication.translate('', 'Warning')
+                _QMessageBox.warning(self, title, msg, _QMessageBox.Ok)
                 return False
 
             if self.stop:
@@ -424,8 +445,10 @@ class MeasurementWidget(_ConfigurationWidget):
             _driver.stop_motor(
                 self.advanced_options.motor_driver_address)
             self.ui.pgb_status.setValue(0)
-            msg = 'Measurement failed.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = _QCoreApplication.translate(
+                '', 'Measurement failed.')
+            title = _QCoreApplication.translate('', 'Failure')
+            _QMessageBox.critical(self, title, msg, _QMessageBox.Ok)
             return False
 
     def move_to_initial_position(self):
@@ -475,8 +498,10 @@ class MeasurementWidget(_ConfigurationWidget):
             return True
 
         except Exception:
-            msg = 'Failed to move motor to initial position.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = _QCoreApplication.translate(
+                '', 'Failed to move motor to initial position.')
+            title = _QCoreApplication.translate('', 'Failure')
+            _QMessageBox.critical(self, title, msg, _QMessageBox.Ok)
             _traceback.print_exc(file=_sys.stdout)
             return False
 
@@ -514,8 +539,10 @@ class MeasurementWidget(_ConfigurationWidget):
     def read_temperature(self):
         try:
             if not _multimeter.connected:
-                msg = 'Multimeter not connected.'
-                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                msg = _QCoreApplication.translate(
+                    '', 'Multimeter not connected.')
+                title = _QCoreApplication.translate('', 'Failure')
+                _QMessageBox.critical(self, title, msg, _QMessageBox.Ok)
                 return False
 
             msg = 'Place temperature sensor on the magnet.'
@@ -526,9 +553,12 @@ class MeasurementWidget(_ConfigurationWidget):
             nr_readings = self.advanced_options.temperature_nr_readings
             freq = self.advanced_options.temperature_reading_frequency
 
+            msg = _QCoreApplication.translate(
+                '', 'Measuring temperature...')
             prg_dialog = _QProgressDialog(
-                'Measuring temperature...', 'Stop', 0, nr_readings)
-            prg_dialog.setWindowTitle('Information')
+                msg, _QCoreApplication.translate('', 'Stop'), 0, nr_readings)
+            prg_dialog.setWindowTitle(_QCoreApplication.translate(
+                '', 'Information'))
             prg_dialog.autoClose()
             prg_dialog.show()
 
@@ -557,17 +587,21 @@ class MeasurementWidget(_ConfigurationWidget):
             self.config.block_temperature = temperature_avg
 
         except Exception:
-            msg = 'Failed to read temperature.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = _QCoreApplication.translate(
+                '', 'Failed to read temperature.')
+            title = _QCoreApplication.translate('', 'Failure')
+            _QMessageBox.critical(self, title, msg, _QMessageBox.Ok)
             _traceback.print_exc(file=_sys.stdout)
             return False
 
     def save_measurement_data(self):
         try:
             if self.database_name is None:
-                msg = 'Invalid database filename.'
+                msg = _QCoreApplication.translate(
+                    '', 'Invalid database filename.')
+                title = _QCoreApplication.translate('', 'Failure')
                 _QMessageBox.critical(
-                    self, 'Failure', msg, _QMessageBox.Ok)
+                    self, title, msg, _QMessageBox.Ok)
                 return False
 
             self.measurement_data.db_update_database(
@@ -578,8 +612,10 @@ class MeasurementWidget(_ConfigurationWidget):
 
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
-            msg = 'Failed to save measurement to database.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = _QCoreApplication.translate(
+                '', 'Failed to save measurement to database.')
+            title = _QCoreApplication.translate('', 'Failure')
+            _QMessageBox.critical(self, title, msg, _QMessageBox.Ok)
             return False
 
     def start_measurements(self):
@@ -591,9 +627,11 @@ class MeasurementWidget(_ConfigurationWidget):
 
         if self.ui.chb_scan_parameter.isChecked():
             if not self.scan_parameter_dialog.valid_scan:
-                msg = 'Invalid scan configuration.'
+                msg = _QCoreApplication.translate(
+                    '', 'Invalid scan configuration.')
+                title = _QCoreApplication.translate('', 'Failure')
                 _QMessageBox.critical(
-                    self, 'Failure', msg, _QMessageBox.Ok)
+                    self, title, msg, _QMessageBox.Ok)
                 return False
             else:
                 try:
@@ -608,9 +646,11 @@ class MeasurementWidget(_ConfigurationWidget):
                         self.start_one_measurement(silent=True)
 
                 except Exception:
-                    msg = 'Set of measurements failed.'
+                    msg = _QCoreApplication.translate(
+                        '', 'Set of measurements failed.')
+                    title = _QCoreApplication.translate('', 'Failure')
                     _QMessageBox.critical(
-                        self, 'Failure', msg, _QMessageBox.Ok)
+                        self, title, msg, _QMessageBox.Ok)
                     return False
         else:
             if not self.start_one_measurement():
@@ -619,9 +659,11 @@ class MeasurementWidget(_ConfigurationWidget):
         self.ui.pbt_start_measurement.setEnabled(True)
         _QApplication.processEvents()
 
-        msg = 'End of measurement.'
+        msg = _QCoreApplication.translate(
+            '', 'End of measurement.')
+        title = _QCoreApplication.translate('', 'Information')
         _QMessageBox.information(
-            self, 'Measurement', msg, _QMessageBox.Ok)
+            self, title, msg, _QMessageBox.Ok)
 
         return True
 
@@ -631,9 +673,11 @@ class MeasurementWidget(_ConfigurationWidget):
 
         if self.global_config.measure_position_1:
             if not silent:
-                msg = 'Place the magnet in Position 1.'
+                msg = _QCoreApplication.translate(
+                    '', 'Place the magnet in Position 1.')
+                title = _QCoreApplication.translate('', 'Information')
                 _QMessageBox.information(
-                    self, 'Information', msg, _QMessageBox.Ok)
+                    self, title, msg, _QMessageBox.Ok)
 
             gain = self.global_config.gain_position_1
             if not self.measure_position(gain=gain):
@@ -648,9 +692,11 @@ class MeasurementWidget(_ConfigurationWidget):
 
         if self.global_config.measure_position_2:
             if not silent:
-                msg = 'Place the magnet in Position 2.'
+                msg = _QCoreApplication.translate(
+                    '', 'Place the magnet in Position 2.')
+                title = _QCoreApplication.translate('', 'Information')
                 _QMessageBox.information(
-                    self, 'Information', msg, _QMessageBox.Ok)
+                    self, title, msg, _QMessageBox.Ok)
 
             gain = self.global_config.gain_position_2
             if not self.measure_position(gain=gain):
@@ -709,15 +755,19 @@ class MeasurementWidget(_ConfigurationWidget):
             self.ui.pbt_start_measurement.setEnabled(True)
             _driver.stop_motor(
                 self.advanced_options.motor_driver_address)
-            msg = 'The user stopped the measurements.'
+            msg = _QCoreApplication.translate(
+                '', 'The user stopped the measurements.')
+            title = _QCoreApplication.translate('', 'Abort')
             _QMessageBox.information(
-                self, 'Abort', msg, _QMessageBox.Ok)
+                self, title, msg, _QMessageBox.Ok)
 
         except Exception:
             self.stop = True
             _traceback.print_exc(file=_sys.stdout)
-            msg = 'Failed to stop measurements.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = _QCoreApplication.translate(
+                '', 'Failed to stop measurements.')
+            title = _QCoreApplication.translate('', 'Failure')
+            _QMessageBox.critical(self, title, msg, _QMessageBox.Ok)
 
     def update_volume_page(self):
         try:

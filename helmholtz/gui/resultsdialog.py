@@ -18,7 +18,10 @@ from qtpy.QtWidgets import (
     QTableWidgetItem as _QTableWidgetItem,
     )
 from qtpy.QtGui import QFont as _QFont
-from qtpy.QtCore import Qt as _Qt
+from qtpy.QtCore import (
+    Qt as _Qt,
+    QCoreApplication as _QCoreApplication,
+    )   
 import qtpy.uic as _uic
 import pyqtgraph as _pyqtgraph
 
@@ -367,8 +370,9 @@ class ResultsDialog(_QDialog):
         """Update data and show dialog."""
         try:
             if measurement_list is None or len(measurement_list) == 0:
-                msg = 'Invalid data list.'
-                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                msg = _QCoreApplication.translate('', 'Invalid data list.')
+                title = _QCoreApplication.translate('', 'Failure')
+                _QMessageBox.critical(self, title, msg, _QMessageBox.Ok)
                 return
 
             self.measurement_list = measurement_list
@@ -388,7 +392,8 @@ class ResultsDialog(_QDialog):
 
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
-            msg = 'Failed to show dialog.'
+            msg = _QCoreApplication.translate('', 'Failed to show dialog.')
+            title = _QCoreApplication.translate('', 'Failure')
             _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
             return
 
