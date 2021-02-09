@@ -37,6 +37,12 @@ class ConnectionConfig(_database.DatabaseAndFileDocument):
         ('integrator_enable', {'dtype': int, 'not_null': True}),
         ('integrator_address', {'dtype': int, 'not_null': True}),
         ('integrator_board', {'dtype': int, 'not_null': True}),
+        ('balance_enable', {'dtype': int, 'not_null': True}),
+        ('balance_port', {'dtype': str}),
+        ('balance_baudrate', {'dtype': int, 'not_null': True}),
+        ('balance_bytesize', {'dtype': int, 'not_null': True}),
+        ('balance_parity', {'dtype': str, 'not_null': True}),
+        ('balance_stopbits', {'dtype': str, 'not_null': True}),
     ])
 
 

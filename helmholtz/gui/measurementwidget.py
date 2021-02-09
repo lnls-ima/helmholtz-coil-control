@@ -31,6 +31,7 @@ from helmholtz.devices import (
     driver as _driver,
     integrator as _integrator,
     multimeter as _multimeter,
+    balance as _balance,
 )
 
 
@@ -303,6 +304,7 @@ class MeasurementWidget(_ConfigurationWidget):
             self.enable_scan_configuration)
         self.ui.pbt_configure_scan.clicked.connect(
             self.show_scan_parameter_dialog)
+        self.ui.tbt_measure_mass.clicked.connect(self.read_mass)
 
     def enable_scan_configuration(self):
         if self.ui.chb_scan_parameter.isChecked():
@@ -635,6 +637,32 @@ class MeasurementWidget(_ConfigurationWidget):
         except Exception:
             msg = _QCoreApplication.translate(
                 '', 'Failed to read temperature.')
+            title = _QCoreApplication.translate('', 'Failure')
+            _QMessageBox.critical(self, title, msg, _QMessageBox.Ok)
+            _traceback.print_exc(file=_sys.stdout)
+            return False
+
+    def read_mass(self):
+        try:
+            if not _balance.connected:
+                msg = _QCoreApplication.translate(
+                    '', 'Balance not connected.')
+                title = _QCoreApplication.translate('', 'Failure')
+                _QMessageBox.critical(self, title, msg, _QMessageBox.Ok)
+                return False
+
+            msg = _QCoreApplication.translate(
+                '', 'Place the magnet on the balance.')
+            title = _QCoreApplication.translate('', 'Information')
+            _QMessageBox.information(self, title, msg, _QMessageBox.Ok)
+
+            mass = _balance.read_weight()
+
+            self.ui.sbd_block_mass.setValue(mass)
+
+        except Exception:
+            msg = _QCoreApplication.translate(
+                '', 'Failed to read mass.')
             title = _QCoreApplication.translate('', 'Failure')
             _QMessageBox.critical(self, title, msg, _QMessageBox.Ok)
             _traceback.print_exc(file=_sys.stdout)

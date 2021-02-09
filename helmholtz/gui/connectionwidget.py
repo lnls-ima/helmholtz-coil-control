@@ -26,6 +26,7 @@ from helmholtz.devices import (
     driver as _driver,
     multimeter as _multimeter,
     integrator as _integrator,
+    balance as _balance,
     )
 
 
@@ -42,6 +43,7 @@ class ConnectionWidget(_ConfigurationWidget):
             'display_bytesize',
             'driver_bytesize',
             'multimeter_bytesize',
+            'balance_bytesize',
             'integrator_address',
             'integrator_board',
         ]
@@ -59,6 +61,10 @@ class ConnectionWidget(_ConfigurationWidget):
             'multimeter_baudrate',
             'multimeter_parity',
             'multimeter_stopbits',
+            'balance_port',
+            'balance_baudrate',
+            'balance_parity',
+            'balance_stopbits',
         ]
 
         self.chb_names = [
@@ -66,6 +72,7 @@ class ConnectionWidget(_ConfigurationWidget):
             'driver_enable',
             'multimeter_enable',
             'integrator_enable',
+            'balance_enable',
         ]
 
         self.connect_signal_slots()
@@ -123,6 +130,15 @@ class ConnectionWidget(_ConfigurationWidget):
                     board=self.config.integrator_board,
                     )
 
+            if self.config.balance_enable:
+                _balance.connect(
+                    self.config.balance_port,
+                    self.config.balance_baudrate,
+                    bytesize=self.config.balance_bytesize,
+                    stopbits=float(self.config.balance_stopbits),
+                    parity=self.config.balance_parity[0],
+                    )
+
             self.update_led_status()
             connected = self.connection_status()
 
@@ -165,6 +181,10 @@ class ConnectionWidget(_ConfigurationWidget):
                     not _integrator.connected):
                 return False
 
+            if (self.config.balance_enable and
+                    not _balance.connected):
+                return False
+
             return True
 
         except Exception:
@@ -184,6 +204,7 @@ class ConnectionWidget(_ConfigurationWidget):
             _driver.disconnect()
             _multimeter.disconnect()
             _integrator.disconnect()
+            _balance.disconnect()
             self.update_led_status()
 
         except Exception:
@@ -201,6 +222,7 @@ class ConnectionWidget(_ConfigurationWidget):
             self.ui.la_driver_led.setEnabled(_driver.connected)
             self.ui.la_multimeter_led.setEnabled(_multimeter.connected)
             self.ui.la_integrator_led.setEnabled(_integrator.connected)
+            self.ui.la_balance_led.setEnabled(_balance.connected)
 
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
@@ -217,3 +239,6 @@ class ConnectionWidget(_ConfigurationWidget):
 
         self.ui.cmb_multimeter_port.clear()
         self.ui.cmb_multimeter_port.addItems(ports)
+
+        self.ui.cmb_balance_port.clear()
+        self.ui.cmb_balance_port.addItems(ports)

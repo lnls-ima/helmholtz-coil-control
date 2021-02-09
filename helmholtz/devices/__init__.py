@@ -9,6 +9,7 @@ from imautils.devices import ParkerDriverLib as _ParkerDriverLib
 from imautils.devices import Agilent34401ALib as _Agilent34401ALib
 from imautils.devices import PDI5150Lib as _PDI5150Lib
 from imautils.devices import FDI2056Lib as _FDI2056Lib
+from imautils.devices import BalanceOhausLib as _BalanceOhausLib
 
 
 class PDIIntegrator(_PDI5150Lib.PDI5150GPIB):
@@ -118,3 +119,4 @@ display = _HeidenhainLib.HeidenhainSerial(log=True)
 driver = _ParkerDriverLib.ParkerDriverSerial(log=True)
 multimeter = _Agilent34401ALib.Agilent34401ASerial(log=True)
 integrator = FDIIntegrator(log=True)
+balance = _BalanceOhausLib.BalanceOhausSerial(log=True)

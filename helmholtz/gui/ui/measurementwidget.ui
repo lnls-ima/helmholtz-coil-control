@@ -1253,7 +1253,7 @@ Position 2</string>
           <item row="0" column="2">
            <widget class="QToolButton" name="tbt_measure_mass">
             <property name="enabled">
-             <bool>false</bool>
+             <bool>true</bool>
             </property>
             <property name="font">
              <font>
