@@ -201,7 +201,7 @@ class MotorIntegratorWidget(_QWidget):
                 return None
 
             diff = (current_encoder_position - encoder_position)
-            if rotation_direction == '+':
+            if rotation_direction == '-':
                 diff = diff*(-1)
             pulses = (encoder_res - diff) % encoder_res
             steps = int((pulses*motor_resolution)/encoder_res)

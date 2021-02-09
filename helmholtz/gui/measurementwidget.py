@@ -456,15 +456,17 @@ class MeasurementWidget(_ConfigurationWidget):
         try:
             if self.stop:
                 return False
-
+            
             trigger = self.advanced_options.integration_trigger
             encoder_res = self.advanced_options.integrator_encoder_resolution
             motor_resolution = self.advanced_options.motor_resolution
             rotation_direction = self.advanced_options.motor_rotation_direction
             driver_address = self.advanced_options.motor_driver_address
 
-            wait = 0.1
-            tol = encoder_res/100
+            wait = 0.3
+            tol = encoder_res/10
+
+            _time.sleep(wait)
 
             current_position = int(_integrator.read_encoder())
             position = trigger
@@ -473,7 +475,7 @@ class MeasurementWidget(_ConfigurationWidget):
                 return True
 
             diff = (current_position - position)
-            if rotation_direction == '+':
+            if rotation_direction == '-':
                 diff = diff*(-1)
             pulses = (encoder_res - diff) % encoder_res
             steps = int((pulses*motor_resolution)/encoder_res)
@@ -511,8 +513,10 @@ class MeasurementWidget(_ConfigurationWidget):
             if self.stop:
                 return False
 
-            wait = 0.1
+            wait = 0.3
             
+            _time.sleep(wait)
+
             motor_resolution = self.advanced_options.motor_resolution
             driver_address = self.advanced_options.motor_driver_address
             steps = int(int(motor_resolution)*0.5)
@@ -780,6 +784,9 @@ class MeasurementWidget(_ConfigurationWidget):
         self.update_magnetization_values(m, mstd)
 
         self.plot_integrated_voltage()
+
+        if not self.move_to_initial_position():
+            return False
 
         if self.stop:
             return False
