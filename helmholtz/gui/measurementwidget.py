@@ -58,7 +58,8 @@ class MeasurementWidget(_ConfigurationWidget):
             'block_dimension1',
             'block_dimension2',
             'block_dimension3',
-            'block_mass',
+            'block_mass_A',
+            'block_mass_B',
             'density',
         ]
 
@@ -285,7 +286,8 @@ class MeasurementWidget(_ConfigurationWidget):
         self.ui.sbd_block_dimension1.valueChanged.connect(self.update_volume)
         self.ui.sbd_block_dimension2.valueChanged.connect(self.update_volume)
         self.ui.sbd_block_dimension3.valueChanged.connect(self.update_volume)
-        self.ui.sbd_block_mass.valueChanged.connect(self.update_volume)
+        self.ui.sbd_block_mass_A.valueChanged.connect(self.update_volume)
+        self.ui.sbd_block_mass_B.valueChanged.connect(self.update_volume)
         self.ui.sbd_density.valueChanged.connect(self.update_volume)
         self.ui.rbt_volume.toggled.connect(self.update_volume_page)
         self.ui.rbt_size.toggled.connect(self.update_volume_page)
@@ -654,9 +656,21 @@ class MeasurementWidget(_ConfigurationWidget):
             title = _QCoreApplication.translate('', 'Information')
             _QMessageBox.information(self, title, msg, _QMessageBox.Ok)
 
-            mass = _balance.read_weight()
+            massA = _balance.read_weight()
+            print(massA)
+            if massA is None:
+                massA = 0
+            self.ui.sbd_block_mass_A.setValue(massA)
 
-            self.ui.sbd_block_mass.setValue(mass)
+            msg = _QCoreApplication.translate(
+                '', 'Rotate the magnet.')
+            title = _QCoreApplication.translate('', 'Information')
+            _QMessageBox.information(self, title, msg, _QMessageBox.Ok)
+
+            massB = _balance.read_weight()
+            if massB is None:
+                massB = 0
+            self.ui.sbd_block_mass_B.setValue(massB)
 
         except Exception:
             msg = _QCoreApplication.translate(
@@ -877,7 +891,14 @@ class MeasurementWidget(_ConfigurationWidget):
                 vstr = fmt.format(d1*d2*d3)
 
             elif self.ui.rbt_mass.isChecked():
-                m = self.ui.sbd_block_mass.value()
+                mA = self.ui.sbd_block_mass_A.value()
+                mB = self.ui.sbd_block_mass_B.value()
+                if mB == 0:
+                    m = mA
+                elif mA == 0:
+                    m = mB
+                else:
+                    m = (mA + mB)/2
                 d = self.ui.sbd_density.value()/1000
                 vstr = fmt.format(m/d)
 
