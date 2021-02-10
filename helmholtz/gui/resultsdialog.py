@@ -45,6 +45,9 @@ class ResultsDialog(_QDialog):
         self.measurement_list = []
         self.measurement_idns = []
         self.integration_trigger_list = []
+        self.volume_list = []
+        self.temperature_list = []
+
         self.mx = []
         self.my = []
         self.mz = []
@@ -53,6 +56,17 @@ class ResultsDialog(_QDialog):
         self.graph_mz = None
         self.xmin_line = None
         self.xmax_line = None
+        self.graph_vol = None
+        self.graph_temp = None
+
+        # Plot parameters
+        self.graph_linewidth = _utils.PLOT_LINE_WIDTH
+        self.graph_symbolsize = _utils.PLOT_MARKER_SIZE
+        self.graph_fontsize = _utils.PLOT_FONT_SIZE
+        self.graph_label_style = {
+            'font-size': '{0:d}px'.format(self.graph_fontsize)}
+        self.graph_font = _QFont()
+        self.graph_font.setPixelSize(self.graph_fontsize)
 
         # Create legends
         self.legend_mag = _pyqtgraph.LegendItem(offset=(70, 30))
@@ -140,6 +154,8 @@ class ResultsDialog(_QDialog):
         self.measurement_list = []
         self.measurement_idns = []
         self.integration_trigger_list = []
+        self.volume_list = []
+        self.temperature_list = []
         self.mx = []
         self.my = []
         self.mz = []
@@ -177,7 +193,12 @@ class ResultsDialog(_QDialog):
 
     def clear_plot_vol_temp(self):
         """Clear volume and temperature plots."""
-        pass
+        self.ui.pw_graph_vol.plotItem.curves.clear()
+        self.ui.pw_graph_vol.clear()
+        self.ui.pw_graph_temp.plotItem.curves.clear()
+        self.ui.pw_graph_temp.clear()
+        self.graph_vol = None
+        self.graph_temp = None
 
     def configure_plot_iv(self):
         """Configure integrated voltage plot."""
@@ -187,6 +208,59 @@ class ResultsDialog(_QDialog):
         """Configure integrated voltage plot."""
         self.clear_plot_vol_temp()
 
+        color_vol = (0, 255, 0)
+        color_temp = (0, 0, 255)
+
+        # Configure volume plot
+        pen = _pyqtgraph.mkPen(color=color_vol, width=self.graph_linewidth)
+        self.graph_vol = self.ui.pw_graph_vol.plotItem.plot(
+            _np.array([]),
+            _np.array([]),
+            symbol='o',
+            symbolPen=color_vol,
+            symbolSize=self.graph_symbolsize,
+            symbolBrush=color_vol)
+        self.graph_vol.setPen(pen)
+
+        self.ui.pw_graph_vol.setLabel(
+            'left', text='Volume [mm3]', **self.graph_label_style)
+        self.ui.pw_graph_vol.getAxis('left').tickFont = self.graph_font
+        self.ui.pw_graph_vol.getAxis('left').setStyle(
+            tickTextOffset=self.graph_fontsize)
+
+        self.ui.pw_graph_vol.setLabel(
+            'bottom', text='Database ID', **self.graph_label_style)
+        self.ui.pw_graph_vol.getAxis('bottom').tickFont = self.graph_font
+        self.ui.pw_graph_vol.getAxis('bottom').setStyle(
+            tickTextOffset=self.graph_fontsize)
+
+        self.ui.pw_graph_vol.showGrid(x=True, y=True)
+
+        # Configure temperature plot
+        pen = _pyqtgraph.mkPen(color=color_temp, width=self.graph_linewidth)
+        self.graph_temp = self.ui.pw_graph_temp.plotItem.plot(
+            _np.array([]),
+            _np.array([]),
+            symbol='o',
+            symbolPen=color_temp,
+            symbolSize=self.graph_symbolsize,
+            symbolBrush=color_temp)
+        self.graph_temp.setPen(pen)
+
+        self.ui.pw_graph_temp.setLabel(
+            'left', text='Temperature [degC]', **self.graph_label_style)
+        self.ui.pw_graph_temp.getAxis('left').tickFont = self.graph_font
+        self.ui.pw_graph_temp.getAxis('left').setStyle(
+            tickTextOffset=self.graph_fontsize)
+
+        self.ui.pw_graph_temp.setLabel(
+            'bottom', text='Database ID', **self.graph_label_style)
+        self.ui.pw_graph_temp.getAxis('bottom').tickFont = self.graph_font
+        self.ui.pw_graph_temp.getAxis('bottom').setStyle(
+            tickTextOffset=self.graph_fontsize)
+
+        self.ui.pw_graph_temp.showGrid(x=True, y=True)
+
     def configure_plot_mag(self):
         """Configure magnetization plot."""
         self.clear_plot_mag()
@@ -195,40 +269,33 @@ class ResultsDialog(_QDialog):
         color_my = (0, 255, 0)
         color_mz = (0, 0, 255)
 
-        width = _utils.PLOT_LINE_WIDTH
-        font_str = '{0:d}px'.format(_utils.PLOT_FONT_SIZE)
-        label_style = {'font-size': font_str}
-        font = _QFont()
-        font.setPixelSize(_utils.PLOT_FONT_SIZE)
-
-        symbol_size = 8
-        pen = _pyqtgraph.mkPen(color=color_mx, width=width)
+        pen = _pyqtgraph.mkPen(color=color_mx, width=self.graph_linewidth)
         self.graph_mx = self.ui.pw_graph_mag.plotItem.plot(
             _np.array([]),
             _np.array([]),
             symbol='o',
             symbolPen=color_mx,
-            symbolSize=symbol_size,
+            symbolSize=self.graph_symbolsize,
             symbolBrush=color_mx)
         self.graph_mx.setPen(pen)
 
-        pen = _pyqtgraph.mkPen(color=color_my, width=width)
+        pen = _pyqtgraph.mkPen(color=color_my, width=self.graph_linewidth)
         self.graph_my = self.ui.pw_graph_mag.plotItem.plot(
             _np.array([]),
             _np.array([]),
             symbol='o',
             symbolPen=color_my,
-            symbolSize=symbol_size,
+            symbolSize=self.graph_symbolsize,
             symbolBrush=color_my)
         self.graph_my.setPen(pen)
 
-        pen = _pyqtgraph.mkPen(color=color_mz, width=width)
+        pen = _pyqtgraph.mkPen(color=color_mz, width=self.graph_linewidth)
         self.graph_mz = self.ui.pw_graph_mag.plotItem.plot(
             _np.array([]),
             _np.array([]),
             symbol='o',
             symbolPen=color_mz,
-            symbolSize=symbol_size,
+            symbolSize=self.graph_symbolsize,
             symbolBrush=color_mz)
         self.graph_mz.setPen(pen)
 
@@ -238,18 +305,18 @@ class ResultsDialog(_QDialog):
         self.legend_mag.addItem(self.graph_mz, self.legend_mag_items[2])
 
         self.ui.pw_graph_mag.setLabel(
-            'left', text='Magnetization [T]', **label_style)
+            'left', text='Magnetization [T]', **self.graph_label_style)
 
-        self.ui.pw_graph_mag.getAxis('left').tickFont = font
+        self.ui.pw_graph_mag.getAxis('left').tickFont = self.graph_font
         self.ui.pw_graph_mag.getAxis('left').setStyle(
-            tickTextOffset=_utils.PLOT_FONT_SIZE)
+            tickTextOffset=self.graph_fontsize)
 
         xlabel = self.get_bottom_axis_label()
         self.ui.pw_graph_mag.setLabel(
-            'bottom', text=xlabel, **label_style)
-        self.ui.pw_graph_mag.getAxis('bottom').tickFont = font
+            'bottom', text=xlabel, **self.graph_label_style)
+        self.ui.pw_graph_mag.getAxis('bottom').tickFont = self.graph_font
         self.ui.pw_graph_mag.getAxis('bottom').setStyle(
-            tickTextOffset=_utils.PLOT_FONT_SIZE)
+            tickTextOffset=self.graph_fontsize)
 
         self.ui.pw_graph_mag.showGrid(x=True, y=True)
 
@@ -402,6 +469,11 @@ class ResultsDialog(_QDialog):
                 item = self.cmb_idns.model().item(index, 0)
                 item.setCheckState(_Qt.Checked)
 
+            self.volume_list = [
+                m.block_volume*1e9 for m in self.measurement_list]
+            self.temperature_list =  [
+                m.block_temperature for m in self.measurement_list]
+
             self.integration_trigger_list = []
             for m in self.measurement_list:
                 adv_opt_idn = m.advanced_options_id
@@ -526,7 +598,19 @@ class ResultsDialog(_QDialog):
         pass
 
     def update_plot_vol_temp(self):
-        pass
+        try:
+            self.clear_plot_vol_temp()
+            self.configure_plot_vol_temp()
+
+            with _warnings.catch_warnings():
+                _warnings.simplefilter("ignore")
+                x = self.measurement_idns
+                self.graph_vol.setData(x, self.volume_list)
+                self.graph_temp.setData(x, self.temperature_list)
+
+        except Exception:
+            _traceback.print_exc(file=_sys.stdout)
+            return
 
     def update_xmax_spin_box(self):
         """Update xmax value."""
