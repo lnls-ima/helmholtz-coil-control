@@ -79,6 +79,13 @@ class MainWindow(_QMainWindow):
         for tab_name in self.tab_names:
             chb = getattr(self.select_tabs_dialog, 'chb_' + tab_name)
             chb.setChecked(True)
+        
+        if _utils.SIMPLE:
+            for tab_idx in [1, 4]:
+                tab_name = self.tab_names[tab_idx]
+                chb = getattr(self.select_tabs_dialog, 'chb_' + tab_name)
+                chb.setChecked(False)
+        
         self.select_tabs_dialog.tab_selection_changed.connect(self.change_tabs)
 
         self.log_dialog = _LogDialog()
@@ -90,9 +97,7 @@ class MainWindow(_QMainWindow):
         self.select_tabs_dialog.emit_tab_selection_signal()
         self.connect_signal_slots()
 
-        # disabled advanced options if necessary
-        self.ui.pbt_advanced_options.setEnabled(
-            _utils.ADVANCED_OPTIONS_ENABLED)
+        self.configure_gui_visualization()
 
     @property
     def database_name(self):
@@ -112,6 +117,12 @@ class MainWindow(_QMainWindow):
     def advanced_options_dialog(self):
         """Advanced options dialog."""
         return _QApplication.instance().advanced_options_dialog
+
+    def configure_gui_visualization(self):
+        if _utils.SIMPLE:
+            self.ui.fm_options.hide()
+        else:
+            self.ui.fm_options.show()
 
     def closeEvent(self, event):
         """Close main window and dialogs."""

@@ -19,7 +19,8 @@ from qtpy.QtCore import (
 
 
 # GUI configurations
-TRANSLATE = False
+TRANSLATE = True
+SIMPLE = False
 WINDOW_STYLE = 'windows'
 WINDOW_WIDTH = 1200
 WINDOW_HEIGHT = 700
@@ -30,7 +31,6 @@ PLOT_LINE_WIDTH = 2
 PLOT_MARKER_SIZE = 8
 PACKAGE_NAME = 'helmholtz'
 DATABASE_NAME = 'helmholtz_coil_measurements.db'
-ADVANCED_OPTIONS_ENABLED = True
 MONGO = False
 SERVER = 'localhost'
 UPDATE_ENCODER_INTERVAL = 0.5  # [s]

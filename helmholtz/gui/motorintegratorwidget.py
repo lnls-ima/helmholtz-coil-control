@@ -41,6 +41,24 @@ class MotorIntegratorWidget(_QWidget):
         self.timer = _QTimer()
         self.timer.timeout.connect(self.update_encoder_reading)
 
+        self.configure_gui_visualization()
+
+    @property
+    def advanced_options(self):
+        """Return global advanced options."""
+        dialog = _QApplication.instance().advanced_options_dialog
+        return dialog.config
+
+    def configure_gui_visualization(self):
+        if _utils.SIMPLE:
+            self.ui.gb_gain.hide()
+            self.ui.gb_calibration.hide()
+            self.ui.gb_shut_down.hide()
+        else:
+            self.ui.gb_gain.show()
+            self.ui.gb_calibration.show()
+            self.ui.gb_shut_down.show()
+
     def connect_signal_slots(self):
         """Create signal/slot connections."""
         self.ui.pbt_homing.clicked.connect(self.homing)
@@ -61,12 +79,6 @@ class MotorIntegratorWidget(_QWidget):
             self.turn_off_integrator_short_circuit)
         self.ui.pbt_calibrate.clicked.connect(self.calibrate_integrator)
         self.ui.pbt_set_gain.clicked.connect(self.set_gain_integrator)
-
-    @property
-    def advanced_options(self):
-        """Return global advanced options."""
-        dialog = _QApplication.instance().advanced_options_dialog
-        return dialog.config
 
     def reset_integrator(self):
         if self.check_integrator_connection():

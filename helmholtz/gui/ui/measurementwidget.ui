@@ -26,7 +26,7 @@
   </property>
   <layout class="QGridLayout" name="gridLayout_3">
    <item row="0" column="0">
-    <widget class="QGroupBox" name="groupBox_7">
+    <widget class="QGroupBox" name="gb_load_db">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
        <horstretch>0</horstretch>
@@ -821,7 +821,7 @@ Position 2</string>
          </sizepolicy>
         </property>
         <property name="currentIndex">
-         <number>0</number>
+         <number>2</number>
         </property>
         <widget class="QWidget" name="pg_volume">
          <layout class="QGridLayout" name="gridLayout_7">
@@ -1272,7 +1272,7 @@ Position 2</string>
     </widget>
    </item>
    <item row="4" column="0">
-    <widget class="QGroupBox" name="groupBox_4">
+    <widget class="QGroupBox" name="gb_scan_parameter">
      <property name="title">
       <string/>
      </property>

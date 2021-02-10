@@ -92,6 +92,8 @@ class MeasurementWidget(_ConfigurationWidget):
         self.legend.setParentItem(self.ui.pw_graph.graphicsItem())
         self.legend.setAutoFillBackground(1)
 
+        self.configure_gui_visualization()
+
     @property
     def advanced_options(self):
         """Return global advanced options."""
@@ -111,6 +113,18 @@ class MeasurementWidget(_ConfigurationWidget):
     @global_config.setter
     def global_config(self, value):
         _QApplication.instance().measurement_config = value
+
+    def configure_gui_visualization(self):
+        if _utils.SIMPLE:
+            self.ui.gb_scan_parameter.hide()
+            self.ui.chb_show_position_1.hide()
+            self.ui.chb_show_position_2.hide()
+            self.ui.gb_load_db.hide()
+        else:
+            self.ui.gb_scan_parameter.show()
+            self.ui.chb_show_position_1.show()
+            self.ui.chb_show_position_2.show()
+            self.ui.gb_load_db.hide()
 
     def clear(self):
         """Clear."""
@@ -465,9 +479,10 @@ class MeasurementWidget(_ConfigurationWidget):
             rotation_direction = self.advanced_options.motor_rotation_direction
             driver_address = self.advanced_options.motor_driver_address
 
-            wait = 0.3
+            wait = 0.5
             tol = encoder_res/10
 
+            _driver.stop_motor(driver_address)
             _time.sleep(wait)
 
             current_position = int(_integrator.read_encoder())
@@ -515,13 +530,14 @@ class MeasurementWidget(_ConfigurationWidget):
             if self.stop:
                 return False
 
-            wait = 0.3
-            
-            _time.sleep(wait)
-
+            wait = 0.5
+                       
             motor_resolution = self.advanced_options.motor_resolution
             driver_address = self.advanced_options.motor_driver_address
             steps = int(int(motor_resolution)*0.5)
+
+            _driver.stop_motor(driver_address)
+            _time.sleep(wait)
 
             if not self.configure_driver(steps):
                 return False
@@ -656,7 +672,7 @@ class MeasurementWidget(_ConfigurationWidget):
             title = _QCoreApplication.translate('', 'Information')
             _QMessageBox.information(self, title, msg, _QMessageBox.Ok)
 
-            massA = _balance.read_weight()
+            massA = _balance.read_mass()
             print(massA)
             if massA is None:
                 massA = 0
@@ -667,7 +683,7 @@ class MeasurementWidget(_ConfigurationWidget):
             title = _QCoreApplication.translate('', 'Information')
             _QMessageBox.information(self, title, msg, _QMessageBox.Ok)
 
-            massB = _balance.read_weight()
+            massB = _balance.read_mass()
             if massB is None:
                 massB = 0
             self.ui.sbd_block_mass_B.setValue(massB)

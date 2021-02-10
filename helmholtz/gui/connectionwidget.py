@@ -78,6 +78,13 @@ class ConnectionWidget(_ConfigurationWidget):
         self.connect_signal_slots()
         self.update_serial_ports()
         self.load_last_db_entry()
+        self.configure_gui_visualization()
+
+    def configure_gui_visualization(self):
+        if _utils.SIMPLE:
+            self.ui.fm_load_db.hide()
+        else:
+            self.ui.fm_load_db.show()
 
     def closeEvent(self, event):
         """Close widget."""

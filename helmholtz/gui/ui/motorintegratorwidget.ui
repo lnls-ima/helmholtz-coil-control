@@ -25,7 +25,7 @@
    <item row="0" column="1">
     <layout class="QVBoxLayout" name="verticalLayout_2">
      <item>
-      <widget class="QGroupBox" name="groupBox_4">
+      <widget class="QGroupBox" name="gb_gain">
        <property name="font">
         <font>
          <weight>75</weight>
@@ -113,7 +113,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QGroupBox" name="groupBox_5">
+      <widget class="QGroupBox" name="gb_calibration">
        <property name="font">
         <font>
          <weight>75</weight>
@@ -185,7 +185,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QGroupBox" name="groupBox">
+      <widget class="QGroupBox" name="gb_shut_down">
        <property name="font">
         <font>
          <weight>75</weight>
