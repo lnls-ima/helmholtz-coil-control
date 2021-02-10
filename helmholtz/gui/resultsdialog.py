@@ -47,7 +47,6 @@ class ResultsDialog(_QDialog):
         self.integration_trigger_list = []
         self.volume_list = []
         self.temperature_list = []
-
         self.mx = []
         self.my = []
         self.mz = []
@@ -58,6 +57,9 @@ class ResultsDialog(_QDialog):
         self.xmax_line = None
         self.graph_vol = None
         self.graph_temp = None
+        self.graph_iv_1 = None
+        self.graph_iv_2 = None
+        self.max_nr_tunrs = 10
 
         # Plot parameters
         self.graph_linewidth = _utils.PLOT_LINE_WIDTH
@@ -73,6 +75,11 @@ class ResultsDialog(_QDialog):
         self.legend_mag.setParentItem(self.ui.pw_graph_mag.graphicsItem())
         self.legend_mag.setAutoFillBackground(1)
         self.legend_mag_items = []
+
+        self.legend_iv = _pyqtgraph.LegendItem(offset=(70, 30))
+        self.legend_iv.setParentItem(self.ui.pw_graph_iv_1.graphicsItem())
+        self.legend_iv.setAutoFillBackground(1)
+        self.legend_iv_items = []
 
         # Add combo box
         self.cmb_idns = _CheckableComboBox()
@@ -189,7 +196,15 @@ class ResultsDialog(_QDialog):
 
     def clear_plot_iv(self):
         """Clear integrated voltage plots."""
-        pass
+        for item in self.legend_iv_items:
+            self.legend_iv.removeItem(item)
+        self.legend_iv_items = []
+        self.ui.pw_graph_iv_1.plotItem.curves.clear()
+        self.ui.pw_graph_iv_1.clear()
+        self.ui.pw_graph_iv_2.plotItem.curves.clear()
+        self.ui.pw_graph_iv_2.clear()
+        self.graph_iv_1 = None
+        self.graph_iv_2 = None
 
     def clear_plot_vol_temp(self):
         """Clear volume and temperature plots."""
@@ -202,7 +217,88 @@ class ResultsDialog(_QDialog):
 
     def configure_plot_iv(self):
         """Configure integrated voltage plot."""
-        self.clear_plot_iv()
+        try:
+            self.clear_plot_iv()
+
+            colors = _utils.COLOR_LIST
+            nr_idns = len(self.measurement_idns)
+            nr_turns = self.max_nr_tunrs
+
+            if nr_idns > len(colors):
+                colors = list(colors)*int(_np.ceil(nr_idns/len(colors)))
+
+            self.graph_iv_1 = []
+            self.graph_iv_2 = []
+            for i in range(nr_idns):
+                pen = _pyqtgraph.mkPen(
+                    color=colors[i], width=self.graph_linewidth)
+                
+                gl1 = []
+                gl2 = []
+                
+                if self.ui.chb_avg.isChecked():
+                    plot_data_item = self.ui.pw_graph_iv_1.plotItem.plot(
+                        _np.array([]))
+                    plot_data_item.setPen(pen)
+                    gl1.append(plot_data_item)
+
+                    plot_data_item = self.ui.pw_graph_iv_2.plotItem.plot(
+                        _np.array([]))
+                    plot_data_item.setPen(pen)
+                    gl2.append(plot_data_item)
+
+                else:
+                    for j in range(nr_turns):
+                        plot_data_item = self.ui.pw_graph_iv_1.plotItem.plot(
+                            _np.array([]))
+                        plot_data_item.setPen(pen)
+                        gl1.append(plot_data_item)
+
+                        plot_data_item = self.ui.pw_graph_iv_2.plotItem.plot(
+                            _np.array([]))
+                        plot_data_item.setPen(pen)
+                        gl2.append(plot_data_item)
+
+                self.graph_iv_1.append(gl1)
+                self.graph_iv_2.append(gl2)
+                    
+                legend_item = 'ID:{0:d}'.format(self.measurement_idns[i])
+                self.legend_iv_items.append(legend_item)
+                self.legend_iv.addItem(self.graph_iv_1[i][0], legend_item)
+
+            self.ui.pw_graph_iv_1.setLabel(
+                'left',
+                text='IV Position 1 [V.s]',
+                **self.graph_label_style)
+            self.ui.pw_graph_iv_1.getAxis('left').tickFont = self.graph_font
+            self.ui.pw_graph_iv_1.getAxis('left').setStyle(
+                tickTextOffset=self.graph_fontsize)
+
+            self.ui.pw_graph_iv_2.setLabel(
+                'left',
+                text='IV Position 2 [V.s]',
+                **self.graph_label_style)
+            self.ui.pw_graph_iv_2.getAxis('left').tickFont = self.graph_font
+            self.ui.pw_graph_iv_2.getAxis('left').setStyle(
+                tickTextOffset=self.graph_fontsize)
+
+            self.ui.pw_graph_iv_1.setLabel(
+                'bottom', text='Number of Points', **self.graph_label_style)
+            self.ui.pw_graph_iv_1.getAxis('bottom').tickFont = self.graph_font
+            self.ui.pw_graph_iv_1.getAxis('bottom').setStyle(
+                tickTextOffset=self.graph_fontsize)
+
+            self.ui.pw_graph_iv_2.setLabel(
+                'bottom', text='Number of Points', **self.graph_label_style)
+            self.ui.pw_graph_iv_2.getAxis('bottom').tickFont = self.graph_font
+            self.ui.pw_graph_iv_2.getAxis('bottom').setStyle(
+                tickTextOffset=self.graph_fontsize)
+
+            self.ui.pw_graph_iv_1.showGrid(x=True, y=True)
+            self.ui.pw_graph_iv_2.showGrid(x=True, y=True)
+        
+        except Exception:
+            _traceback.print_exc(file=_sys.stdout)
 
     def configure_plot_vol_temp(self):
         """Configure integrated voltage plot."""
@@ -223,7 +319,7 @@ class ResultsDialog(_QDialog):
         self.graph_vol.setPen(pen)
 
         self.ui.pw_graph_vol.setLabel(
-            'left', text='Volume [mm3]', **self.graph_label_style)
+            'left', text='Volume [cm3]', **self.graph_label_style)
         self.ui.pw_graph_vol.getAxis('left').tickFont = self.graph_font
         self.ui.pw_graph_vol.getAxis('left').setStyle(
             tickTextOffset=self.graph_fontsize)
@@ -383,6 +479,17 @@ class ResultsDialog(_QDialog):
             _traceback.print_exc(file=_sys.stdout)
             return None
 
+    def get_selected_plots_iv(self):
+        """Get all selected IDs."""
+        try:
+            selected_idns = [
+                int(t) for t in self.cmb_idns.checked_items_text()]
+            return selected_idns
+
+        except Exception:
+            _traceback.print_exc(file=_sys.stdout)
+            return None
+
     def get_bottom_axis_data(self):
         text = self.ui.cmb_bottom_axis.currentText().lower()
         data = self.measurement_idns
@@ -469,11 +576,19 @@ class ResultsDialog(_QDialog):
                 item = self.cmb_idns.model().item(index, 0)
                 item.setCheckState(_Qt.Checked)
 
-            self.volume_list = [
-                m.block_volume*1e9 for m in self.measurement_list]
-            self.temperature_list =  [
-                m.block_temperature for m in self.measurement_list]
+            self.mx = []
+            self.my = []
+            self.mz = []
+            self.volume_list = []
+            self.temperature_list = []
+            for m in self.measurement_list:
+                self.mx.append(m.mx_avg)
+                self.my.append(m.my_avg)
+                self.mz.append(m.mz_avg)
+                self.volume_list.append(m.block_volume*1e6)
+                self.temperature_list.append(m.block_temperature)
 
+            self.max_nr_tunrs = 10
             self.integration_trigger_list = []
             for m in self.measurement_list:
                 adv_opt_idn = m.advanced_options_id
@@ -488,14 +603,8 @@ class ResultsDialog(_QDialog):
                     break
 
                 self.integration_trigger_list.append(trigger)
-
-            self.mx = []
-            self.my = []
-            self.mz = []
-            for m in measurement_list:
-                self.mx.append(m.mx_avg)
-                self.my.append(m.my_avg)
-                self.mz.append(m.mz_avg)
+                if adv_opt.integration_nr_turns > self.max_nr_tunrs:
+                    self.max_nr_tunrs = adv_opt.integration_nr_turns
 
             self.ui.la_polyorder.hide()
             self.ui.sb_polyorder.hide()
@@ -595,7 +704,44 @@ class ResultsDialog(_QDialog):
             return
 
     def update_plot_iv(self):
-        pass
+        try:
+            self.clear_plot_iv()
+
+            selected_idns = self.get_selected_plots_iv()
+            if len(selected_idns) == 0:
+                return
+
+            self.configure_plot_iv()
+
+            with _warnings.catch_warnings():
+                _warnings.simplefilter("ignore")
+
+                count = 0
+                for m in self.measurement_list:
+                    if m.idn in selected_idns:
+                        iv1 = m.integrated_voltage_position_1
+                        iv2 = m.integrated_voltage_position_2
+                        
+                        if self.ui.chb_avg.isChecked():
+                            self.graph_iv_1[count][0].setData(
+                                _np.mean(iv1, axis=1))
+                            
+                            self.graph_iv_2[count][0].setData(
+                                _np.mean(iv2, axis=1))
+                        else:
+                            for j in range(iv1.shape[1]):
+                                self.graph_iv_1[count][j].setData(
+                                    iv1[:, j])
+
+                            for j in range(iv2.shape[1]):
+                                self.graph_iv_2[count][j].setData(
+                                    iv2[:, j])
+                        
+                        count += 1
+
+        except Exception:
+            _traceback.print_exc(file=_sys.stdout)
+            return
 
     def update_plot_vol_temp(self):
         try:

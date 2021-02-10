@@ -170,7 +170,6 @@ class MeasurementWidget(_ConfigurationWidget):
             self.graph_position_1.append(
                 self.ui.pw_graph.plotItem.plot(
                     _np.array([]),
-                    _np.array([]),
                     pen=(0, 255, 0),
                     symbol='o',
                     symbolPen=(0, 255, 0),
@@ -179,7 +178,6 @@ class MeasurementWidget(_ConfigurationWidget):
 
             self.graph_position_2.append(
                 self.ui.pw_graph.plotItem.plot(
-                    _np.array([]),
                     _np.array([]),
                     pen=(0, 0, 255),
                     symbol='o',

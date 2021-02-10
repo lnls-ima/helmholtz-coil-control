@@ -186,7 +186,7 @@ class DatabaseWidget(_QWidget):
                     for attr in attrs:
                         value = getattr(obj, attr)
                         if attr == 'block_volume':
-                            value = value*1e9
+                            value = value*1e6
                         df.at[idn, attr] = value
 
             except Exception:

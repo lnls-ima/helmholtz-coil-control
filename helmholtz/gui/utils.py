@@ -26,7 +26,7 @@ WINDOW_HEIGHT = 700
 FONT_SIZE = 11
 ICON_SIZE = 24
 PLOT_FONT_SIZE = 20
-PLOT_LINE_WIDTH = 3
+PLOT_LINE_WIDTH = 2
 PLOT_MARKER_SIZE = 8
 PACKAGE_NAME = 'helmholtz'
 DATABASE_NAME = 'helmholtz_coil_measurements.db'
@@ -39,6 +39,10 @@ TABLE_NUMBER_ROWS = 1000
 TABLE_MAX_NUMBER_ROWS = 100
 TABLE_MAX_STR_SIZE = 100
 
+COLOR_LIST = [
+    (230, 25, 75), (60, 180, 75), (0, 130, 200), (245, 130, 48),
+    (145, 30, 180), (255, 225, 25), (70, 240, 240), (240, 50, 230),
+    (170, 110, 40), (128, 0, 0), (0, 0, 0), (128, 128, 128), (0, 255, 0)]
 
 BASEPATH = _os.path.dirname(
     _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))

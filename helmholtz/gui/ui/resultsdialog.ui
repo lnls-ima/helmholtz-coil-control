@@ -539,7 +539,7 @@ Limits</string>
           <number>20</number>
          </property>
          <item>
-          <widget class="PlotWidget" name="pw_graph_iv_pos1">
+          <widget class="PlotWidget" name="pw_graph_iv_1">
            <property name="backgroundBrush">
             <brush brushstyle="SolidPattern">
              <color alpha="255">
@@ -561,7 +561,7 @@ Limits</string>
           </widget>
          </item>
          <item>
-          <widget class="PlotWidget" name="pw_graph_iv_pos2">
+          <widget class="PlotWidget" name="pw_graph_iv_2">
            <property name="backgroundBrush">
             <brush brushstyle="SolidPattern">
              <color alpha="255">
@@ -596,6 +596,25 @@ Limits</string>
           <string>Configure Plot</string>
          </property>
          <layout class="QGridLayout" name="gridLayout_7">
+          <item row="2" column="0" rowspan="2">
+           <widget class="QPushButton" name="pbt_update_plot_iv">
+            <property name="minimumSize">
+             <size>
+              <width>200</width>
+              <height>60</height>
+             </size>
+            </property>
+            <property name="font">
+             <font>
+              <weight>75</weight>
+              <bold>true</bold>
+             </font>
+            </property>
+            <property name="text">
+             <string>Update Plot</string>
+            </property>
+           </widget>
+          </item>
           <item row="0" column="0" colspan="2">
            <layout class="QHBoxLayout" name="hlt_select_ids">
             <item>
@@ -619,12 +638,12 @@ Limits</string>
             </item>
            </layout>
           </item>
-          <item row="1" column="0" rowspan="2">
-           <widget class="QPushButton" name="pbt_update_plot_iv">
+          <item row="3" column="1">
+           <widget class="QPushButton" name="pbt_clear_all">
             <property name="minimumSize">
              <size>
-              <width>200</width>
-              <height>60</height>
+              <width>0</width>
+              <height>40</height>
              </size>
             </property>
             <property name="font">
@@ -634,11 +653,11 @@ Limits</string>
              </font>
             </property>
             <property name="text">
-             <string>Update Plot</string>
+             <string>Clear All</string>
             </property>
            </widget>
           </item>
-          <item row="1" column="1">
+          <item row="2" column="1">
            <widget class="QPushButton" name="pbt_select_all">
             <property name="minimumSize">
              <size>
@@ -657,22 +676,22 @@ Limits</string>
             </property>
            </widget>
           </item>
-          <item row="2" column="1">
-           <widget class="QPushButton" name="pbt_clear_all">
-            <property name="minimumSize">
-             <size>
-              <width>0</width>
-              <height>40</height>
-             </size>
+          <item row="1" column="0" colspan="2">
+           <widget class="QCheckBox" name="chb_avg">
+            <property name="enabled">
+             <bool>true</bool>
             </property>
             <property name="font">
              <font>
-              <weight>75</weight>
-              <bold>true</bold>
+              <weight>50</weight>
+              <bold>false</bold>
              </font>
             </property>
             <property name="text">
-             <string>Clear All</string>
+             <string>Average over number of turns</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
             </property>
            </widget>
           </item>
