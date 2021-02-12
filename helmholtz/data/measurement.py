@@ -80,11 +80,13 @@ class MeasurementData(_database.DatabaseAndFileDocument):
             c = 1 - _np.cos(dtheta)
 
             moment_axis = (1/(mu0*geometric_factor))*(a1*s + b1*c)/(2*c)
-            moment_perp = (1/(mu0*geometric_factor))*(-b1*s + a1*c)/(2*c)
+            moment_perp = -(1/(mu0*geometric_factor))*(-b1*s + a1*c)/(2*c)
 
             mag_axis = mu0*moment_axis/block_volume
             mag_perp = mu0*moment_perp/block_volume
 
+            print(i)
+            print(mag_axis)
             mag_axis_list.append(mag_axis)
             mag_perp_list.append(mag_perp)
 
@@ -139,7 +141,7 @@ class MeasurementData(_database.DatabaseAndFileDocument):
         self.coil_turns = coil_turns
         self.block_volume = block_volume
 
-        my, mx1, my_std, mx1_std = self.calc_magnetization(
+        mx1, my, mx1_std, my_std = self.calc_magnetization(
             self.integrated_voltage_position_1,
             self.offset_position_1,
             self.coil_radius,
@@ -154,6 +156,8 @@ class MeasurementData(_database.DatabaseAndFileDocument):
             self.coil_distance_center,
             self.coil_turns,
             self.block_volume)
+
+        mz = (-1)*mz
 
         npts1 = len(self.integrated_voltage_position_1)
         npts2 = len(self.integrated_voltage_position_2)
@@ -181,12 +185,12 @@ class MeasurementData(_database.DatabaseAndFileDocument):
         elif mx2 == 0:
             mx = mx1
             mx_std = mx1_std
-        elif _np.abs(my) > _np.abs(mz):
-            mx = mx2
-            mx_std = mx2_std
-        else:
+        elif _np.abs(mx1_std) <= _np.abs(mx2_std):
             mx = mx1
             mx_std = mx1_std
+        else:
+            mx = mx2
+            mx_std = mx2_std
 
         self.mx_avg = mx
         self.my_avg = my

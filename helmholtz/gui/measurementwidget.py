@@ -444,6 +444,8 @@ class MeasurementWidget(_ConfigurationWidget):
             if self.stop:
                 return False
 
+            _driver.stop_motor(driver_address)
+
             self.ui.pgb_status.setValue(total_npts)
 
             integrated_voltage = _np.array(data).reshape(
@@ -672,8 +674,7 @@ class MeasurementWidget(_ConfigurationWidget):
             title = _QCoreApplication.translate('', 'Information')
             _QMessageBox.information(self, title, msg, _QMessageBox.Ok)
 
-            massA = _balance.read_mass()
-            print(massA)
+            massA = _balance.read_mass(wait=1)
             if massA is None:
                 massA = 0
             self.ui.sbd_block_mass_A.setValue(massA)
@@ -683,10 +684,18 @@ class MeasurementWidget(_ConfigurationWidget):
             title = _QCoreApplication.translate('', 'Information')
             _QMessageBox.information(self, title, msg, _QMessageBox.Ok)
 
-            massB = _balance.read_mass()
+            massB = _balance.read_mass(wait=1)
             if massB is None:
                 massB = 0
             self.ui.sbd_block_mass_B.setValue(massB)
+
+            tol_mass = _utils.MASS_DIFF_TOLERANCE
+            if massA != 0 and massB != 0:
+                if _np.abs(massA - massB) > tol_mass:
+                    msg = _QCoreApplication.translate(
+                        '', 'Mass diference outside tolerance.')
+                    title = _QCoreApplication.translate('', 'Warning')
+                    _QMessageBox.warning(self, title, msg, _QMessageBox.Ok)
 
         except Exception:
             msg = _QCoreApplication.translate(
@@ -795,6 +804,9 @@ class MeasurementWidget(_ConfigurationWidget):
         if self.stop:
             return False
 
+        if not self.move_to_initial_position():
+            return False 
+
         if self.global_config.measure_position_2:
             if not silent:
                 msg = _QCoreApplication.translate(
@@ -833,6 +845,16 @@ class MeasurementWidget(_ConfigurationWidget):
             self.advanced_options.coil_distance_center*1e-3,
             self.advanced_options.coil_turns,
             self.block_volume*1e-9)
+
+        std_tol = _utils.STD_TOLERANCE
+        if any([v > std_tol for v in mstd]):
+            msg = _QCoreApplication.translate(
+                '', "Standard deviation outside tolerance. Continue measurement?")
+            title = _QCoreApplication.translate('', 'Warning')
+            reply = _QMessageBox.question(
+                self, title, msg, _QMessageBox.No, _QMessageBox.Yes)
+            if reply == _QMessageBox.No:
+                return False
 
         if not self.save_measurement_data():
             return False

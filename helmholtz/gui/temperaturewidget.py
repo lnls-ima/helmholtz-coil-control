@@ -161,12 +161,13 @@ class ReadValueWorker(_QObject):
             ts = _time.time()
 
             reading = _multimeter.read()
-            temperature = _multimeter.pt100_resistance_to_temperature(
-                reading)
+            if reading is not None:
+                temperature = _multimeter.pt100_resistance_to_temperature(
+                    reading)
 
-            self.timestamp = ts
-            self.reading.append(temperature)
-            self.finished.emit(True)
+                self.timestamp = ts
+                self.reading.append(temperature)
+                self.finished.emit(True)
 
         except Exception:
             _traceback.print_exc(file=_sys.stdout)

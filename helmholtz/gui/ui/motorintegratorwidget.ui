@@ -65,6 +65,11 @@
           </item>
           <item>
            <property name="text">
+            <string>4</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
             <string>5</string>
            </property>
           </item>
@@ -76,6 +81,11 @@
           <item>
            <property name="text">
             <string>20</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>40</string>
            </property>
           </item>
           <item>

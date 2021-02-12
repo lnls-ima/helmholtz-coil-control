@@ -215,13 +215,13 @@ class ResultsDialog(_QDialog):
         self.graph_vol = None
         self.graph_temp = None
 
-    def configure_plot_iv(self):
+    def configure_plot_iv(self, selected_idns):
         """Configure integrated voltage plot."""
         try:
             self.clear_plot_iv()
 
             colors = _utils.COLOR_LIST
-            nr_idns = len(self.measurement_idns)
+            nr_idns = len(selected_idns)
             nr_turns = self.max_nr_tunrs
 
             if nr_idns > len(colors):
@@ -262,7 +262,7 @@ class ResultsDialog(_QDialog):
                 self.graph_iv_1.append(gl1)
                 self.graph_iv_2.append(gl2)
                     
-                legend_item = 'ID:{0:d}'.format(self.measurement_idns[i])
+                legend_item = 'ID:{0:d}'.format(selected_idns[i])
                 self.legend_iv_items.append(legend_item)
                 self.legend_iv.addItem(self.graph_iv_1[i][0], legend_item)
 
@@ -711,7 +711,7 @@ class ResultsDialog(_QDialog):
             if len(selected_idns) == 0:
                 return
 
-            self.configure_plot_iv()
+            self.configure_plot_iv(selected_idns)
 
             with _warnings.catch_warnings():
                 _warnings.simplefilter("ignore")
