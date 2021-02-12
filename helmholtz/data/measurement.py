@@ -85,8 +85,6 @@ class MeasurementData(_database.DatabaseAndFileDocument):
             mag_axis = mu0*moment_axis/block_volume
             mag_perp = mu0*moment_perp/block_volume
 
-            print(i)
-            print(mag_axis)
             mag_axis_list.append(mag_axis)
             mag_perp_list.append(mag_perp)
 

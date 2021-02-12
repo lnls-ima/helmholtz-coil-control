@@ -27,6 +27,8 @@ from helmholtz.gui.measurementwidget import MeasurementWidget \
     as _MeasurementWidget
 from helmholtz.gui.databasewidget import DatabaseWidget \
     as _DatabaseWidget
+from helmholtz.gui.blockpositionwidget import BlockPositionWidget \
+    as _BlockPositionWidget
 from helmholtz.devices import logfile as _logfile
 
 
@@ -55,6 +57,7 @@ class MainWindow(_QMainWindow):
                 'motor_e_integrador',
                 'medida',
                 'banco_de_dados',
+                'posicionamento_do_bloco',
                 ]
         
         else:
@@ -64,6 +67,7 @@ class MainWindow(_QMainWindow):
                 'motor_and_integrator',
                 'measurement',
                 'database',
+                'block_position',
                 ]
 
         self.tab_widgets = [
@@ -72,6 +76,7 @@ class MainWindow(_QMainWindow):
             _MotorIntegratorWidget,
             _MeasurementWidget,
             _DatabaseWidget,
+            _BlockPositionWidget,
             ]
 
         # add select tabs dialog
@@ -79,13 +84,7 @@ class MainWindow(_QMainWindow):
         for tab_name in self.tab_names:
             chb = getattr(self.select_tabs_dialog, 'chb_' + tab_name)
             chb.setChecked(True)
-        
-        if _utils.SIMPLE:
-            for tab_idx in [1, 4]:
-                tab_name = self.tab_names[tab_idx]
-                chb = getattr(self.select_tabs_dialog, 'chb_' + tab_name)
-                chb.setChecked(False)
-        
+       
         self.select_tabs_dialog.tab_selection_changed.connect(self.change_tabs)
 
         self.log_dialog = _LogDialog()

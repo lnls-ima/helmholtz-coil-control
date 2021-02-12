@@ -166,26 +166,40 @@ Limits</string>
           <string>Configure Plot</string>
          </property>
          <layout class="QGridLayout" name="gridLayout_3">
-          <item row="2" column="0" colspan="2">
-           <widget class="QPushButton" name="pbt_update_plot_mag">
-            <property name="minimumSize">
-             <size>
-              <width>0</width>
-              <height>60</height>
-             </size>
-            </property>
-            <property name="font">
-             <font>
-              <weight>75</weight>
-              <bold>true</bold>
-             </font>
-            </property>
-            <property name="text">
-             <string>Update Plot</string>
-            </property>
-           </widget>
-          </item>
           <item row="0" column="0" colspan="2">
+           <layout class="QHBoxLayout" name="horizontalLayout_2">
+            <item>
+             <widget class="QRadioButton" name="rbt_avg">
+              <property name="font">
+               <font>
+                <weight>50</weight>
+                <bold>false</bold>
+               </font>
+              </property>
+              <property name="text">
+               <string>Average</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QRadioButton" name="rbt_std">
+              <property name="font">
+               <font>
+                <weight>50</weight>
+                <bold>false</bold>
+               </font>
+              </property>
+              <property name="text">
+               <string>Standard Deviation</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item row="1" column="0" colspan="2">
            <layout class="QHBoxLayout" name="horizontalLayout">
             <item>
              <widget class="QLabel" name="label_9">
@@ -256,7 +270,7 @@ Limits</string>
             </item>
            </layout>
           </item>
-          <item row="1" column="0">
+          <item row="2" column="0">
            <widget class="QLabel" name="label_2">
             <property name="font">
              <font>
@@ -269,7 +283,7 @@ Limits</string>
             </property>
            </widget>
           </item>
-          <item row="1" column="1">
+          <item row="2" column="1">
            <widget class="QComboBox" name="cmb_bottom_axis">
             <property name="minimumSize">
              <size>
@@ -293,6 +307,45 @@ Limits</string>
               <string>Integration Trigger</string>
              </property>
             </item>
+            <item>
+             <property name="text">
+              <string>Integration Points</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Integration Nr Turns</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Motor Velocity</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Motor Acceleration</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+          <item row="3" column="0" colspan="2">
+           <widget class="QPushButton" name="pbt_update_plot_mag">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>60</height>
+             </size>
+            </property>
+            <property name="font">
+             <font>
+              <weight>75</weight>
+              <bold>true</bold>
+             </font>
+            </property>
+            <property name="text">
+             <string>Update Plot</string>
+            </property>
            </widget>
           </item>
          </layout>

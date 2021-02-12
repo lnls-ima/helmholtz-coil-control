@@ -45,11 +45,18 @@ class ResultsDialog(_QDialog):
         self.measurement_list = []
         self.measurement_idns = []
         self.integration_trigger_list = []
+        self.integration_points_list = []
+        self.integration_nr_turns_list = []
+        self.motor_velocity_list = []
+        self.motor_acceleration_list = []
         self.volume_list = []
         self.temperature_list = []
         self.mx = []
         self.my = []
         self.mz = []
+        self.std_mx = []
+        self.std_my = []
+        self.std_mz = []      
         self.graph_mx = None
         self.graph_my = None
         self.graph_mz = None
@@ -161,11 +168,18 @@ class ResultsDialog(_QDialog):
         self.measurement_list = []
         self.measurement_idns = []
         self.integration_trigger_list = []
+        self.integration_points_list = []
+        self.integration_nr_turns_list = []
+        self.motor_velocity_list = []
+        self.motor_acceleration_list = []
         self.volume_list = []
         self.temperature_list = []
         self.mx = []
         self.my = []
         self.mz = []
+        self.std_mx = []
+        self.std_my = []
+        self.std_mz = []      
         self.xmin_line = None
         self.xmax_line = None
         self.clear_fit()
@@ -400,8 +414,12 @@ class ResultsDialog(_QDialog):
         self.legend_mag.addItem(self.graph_my, self.legend_mag_items[1])
         self.legend_mag.addItem(self.graph_mz, self.legend_mag_items[2])
 
-        self.ui.pw_graph_mag.setLabel(
-            'left', text='Magnetization [T]', **self.graph_label_style)
+        if self.ui.rbt_std.isChecked():
+            self.ui.pw_graph_mag.setLabel(
+                'left', text='Magnetization STD [G]', **self.graph_label_style)
+        else:
+            self.ui.pw_graph_mag.setLabel(
+                'left', text='Magnetization [T]', **self.graph_label_style)
 
         self.ui.pw_graph_mag.getAxis('left').tickFont = self.graph_font
         self.ui.pw_graph_mag.getAxis('left').setStyle(
@@ -424,6 +442,10 @@ class ResultsDialog(_QDialog):
         self.ui.chb_my.stateChanged.connect(
             self.enable_limits_and_update_plot_mag)
         self.ui.chb_mz.stateChanged.connect(
+            self.enable_limits_and_update_plot_mag)
+        self.ui.rbt_avg.toggled.connect(
+            self.enable_limits_and_update_plot_mag)
+        self.ui.rbt_std.toggled.connect(
             self.enable_limits_and_update_plot_mag)
         self.ui.cmb_fitfunction.currentIndexChanged.connect(
             self.fit_function_changed)
@@ -468,11 +490,23 @@ class ResultsDialog(_QDialog):
         try:
             plots = []
             if self.ui.chb_mx.isChecked():
-                plots.append('mx')
+                if self.ui.rbt_std.isChecked():
+                    plots.append('std_mx')
+                else:
+                    plots.append('mx')
+            
             if self.ui.chb_my.isChecked():
-                plots.append('my')
+                if self.ui.rbt_std.isChecked():
+                    plots.append('std_my')
+                else:
+                    plots.append('my')
+            
             if self.ui.chb_mz.isChecked():
-                plots.append('mz')
+                if self.ui.rbt_std.isChecked():
+                    plots.append('std_mz')
+                else:
+                    plots.append('mz')
+            
             return plots
 
         except Exception:
@@ -491,19 +525,43 @@ class ResultsDialog(_QDialog):
             return None
 
     def get_bottom_axis_data(self):
-        text = self.ui.cmb_bottom_axis.currentText().lower()
+        text = self.ui.cmb_bottom_axis.currentText()
         data = self.measurement_idns
-        if text in ('integration trigger',):
+        if text.lower() in ('integration trigger',):
             if len(self.integration_trigger_list) > 0:
                 data = self.integration_trigger_list
+        elif text.lower() in ('integration points',):
+            if len(self.integration_points_list) > 0:
+                data = self.integration_points_list
+        elif text.lower() in ('integration nr turns',):
+            if len(self.integration_nr_turns_list) > 0:
+                data = self.integration_nr_turns_list
+        elif text.lower() in ('motor velocity',):
+            if len(self.motor_velocity_list) > 0:
+                data = self.motor_velocity_list
+        elif text.lower() in ('motor acceleration',):
+            if len(self.motor_acceleration_list) > 0:
+                data = self.motor_acceleration_list
         return data
 
     def get_bottom_axis_label(self):
         text = self.ui.cmb_bottom_axis.currentText().lower()
         label = 'Database ID'
-        if text in ('integration trigger',):
+        if text.lower() in ('integration trigger',):
             if len(self.integration_trigger_list) > 0:
-                label = 'Integration Trigger'
+                label = text
+        elif text.lower() in ('integration points',):
+            if len(self.integration_points_list) > 0:
+                label = text
+        elif text.lower() in ('integration nr turns',):
+            if len(self.integration_nr_turns_list) > 0:
+                label = text
+        elif text.lower() in ('motor velocity',):
+            if len(self.motor_velocity_list) > 0:
+                label = text
+        elif text.lower() in ('motor acceleration',):
+            if len(self.motor_acceleration_list) > 0:
+                label = text
         return label
 
     def fit_function_changed(self):
@@ -532,6 +590,12 @@ class ResultsDialog(_QDialog):
             ydata = self.my
         elif 'mz' in plots:
             ydata = self.mz
+        elif 'std_mx' in plots:
+            ydata = self.std_mx
+        elif 'std_my' in plots:
+            ydata = self.std_my
+        elif 'std_mz' in plots:
+            ydata = self.std_mz
 
         sorted_data = _np.array(sorted(zip(xdata, ydata)))
         x = sorted_data[:, 0]
@@ -579,17 +643,27 @@ class ResultsDialog(_QDialog):
             self.mx = []
             self.my = []
             self.mz = []
+            self.std_mx = []
+            self.std_my = []
+            self.std_mz = []            
             self.volume_list = []
             self.temperature_list = []
             for m in self.measurement_list:
                 self.mx.append(m.mx_avg)
                 self.my.append(m.my_avg)
                 self.mz.append(m.mz_avg)
+                self.std_mx.append(m.mx_std*1e4)
+                self.std_my.append(m.my_std*1e4)
+                self.std_mz.append(m.mz_std*1e4)
                 self.volume_list.append(m.block_volume*1e6)
                 self.temperature_list.append(m.block_temperature)
 
             self.max_nr_tunrs = 10
             self.integration_trigger_list = []
+            self.integration_points_list = []
+            self.integration_nr_turns_list = []
+            self.motor_velocity_list = []
+            self.motor_acceleration_list = []
             for m in self.measurement_list:
                 adv_opt_idn = m.advanced_options_id
                 adv_opt = _data.configuration.AdvancedOptions(
@@ -600,11 +674,35 @@ class ResultsDialog(_QDialog):
                 trigger = adv_opt.integration_trigger
                 if trigger is None:
                     self.integration_trigger_list = []
-                    break
+                else:
+                    self.integration_trigger_list.append(trigger)
 
-                self.integration_trigger_list.append(trigger)
-                if adv_opt.integration_nr_turns > self.max_nr_tunrs:
-                    self.max_nr_tunrs = adv_opt.integration_nr_turns
+                points = adv_opt.integration_points
+                if points is None:
+                    self.integration_points_list = []
+                else:
+                    self.integration_points_list.append(points)
+
+                nr_turns = adv_opt.integration_nr_turns
+                if nr_turns is None:
+                    self.integration_nr_turns_list = []
+                else:
+                    self.integration_nr_turns_list.append(nr_turns)
+
+                    if nr_turns > self.max_nr_tunrs:
+                        self.max_nr_tunrs = nr_turns
+
+                velocity = adv_opt.motor_velocity
+                if velocity is None:
+                    self.motor_velocity_list = []
+                else:
+                    self.motor_velocity_list.append(velocity)
+
+                acceleration = adv_opt.motor_acceleration
+                if acceleration is None:
+                    self.motor_acceleration_list = []
+                else:
+                    self.motor_acceleration_list.append(acceleration)
 
             self.ui.la_polyorder.hide()
             self.ui.sb_polyorder.hide()
@@ -664,21 +762,35 @@ class ResultsDialog(_QDialog):
                 _warnings.simplefilter("ignore")
                 x = self.get_bottom_axis_data()
 
-                if 'mx' in plots:
-                    sorted_data = _np.array(sorted(zip(x, self.mx)))
+                if 'mx' in plots or 'std_mx' in plots:
+                    if 'std_mx' in plots:                 
+                        sorted_data = _np.array(sorted(zip(x, self.std_mx)))
+                    else:
+                        sorted_data = _np.array(sorted(zip(x, self.mx)))
+
                     x_sorted = sorted_data[:, 0]
-                    mx_sorted = sorted_data[:, 1]
-                    self.graph_mx.setData(x_sorted, mx_sorted)
-                if 'my' in plots:
-                    sorted_data = _np.array(sorted(zip(x, self.my)))
+                    y_sorted = sorted_data[:, 1]
+                    self.graph_mx.setData(x_sorted, y_sorted)
+
+                if 'my' in plots or 'std_my' in plots:
+                    if 'std_my' in plots:                 
+                        sorted_data = _np.array(sorted(zip(x, self.std_my)))
+                    else:
+                        sorted_data = _np.array(sorted(zip(x, self.my)))
+
                     x_sorted = sorted_data[:, 0]
-                    my_sorted = sorted_data[:, 1]
-                    self.graph_my.setData(x_sorted, my_sorted)
-                if 'mz' in plots:
-                    sorted_data = _np.array(sorted(zip(x, self.mz)))
+                    y_sorted = sorted_data[:, 1]
+                    self.graph_my.setData(x_sorted, y_sorted)
+
+                if 'mz' in plots or 'std_mz' in plots:
+                    if 'std_mz' in plots:                 
+                        sorted_data = _np.array(sorted(zip(x, self.std_mz)))
+                    else:
+                        sorted_data = _np.array(sorted(zip(x, self.mz)))
+
                     x_sorted = sorted_data[:, 0]
-                    mz_sorted = sorted_data[:, 1]
-                    self.graph_mz.setData(x_sorted, mz_sorted)
+                    y_sorted = sorted_data[:, 1]
+                    self.graph_mz.setData(x_sorted, y_sorted)
 
             if show_xlines:
                 xmin = self.ui.sbd_xmin.value()

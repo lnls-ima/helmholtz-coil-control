@@ -252,46 +252,51 @@
          </font>
         </property>
         <property name="currentIndex">
-         <number>3</number>
+         <number>0</number>
         </property>
         <item>
          <property name="text">
-          <string>16</string>
+          <string>120</string>
          </property>
         </item>
         <item>
          <property name="text">
-          <string>32</string>
+          <string>180</string>
          </property>
         </item>
         <item>
          <property name="text">
-          <string>64</string>
+          <string>360</string>
          </property>
         </item>
         <item>
          <property name="text">
-          <string>128</string>
+          <string>600</string>
          </property>
         </item>
         <item>
          <property name="text">
-          <string>256</string>
+          <string>720</string>
          </property>
         </item>
         <item>
          <property name="text">
-          <string>512</string>
+          <string>900</string>
          </property>
         </item>
         <item>
          <property name="text">
-          <string>1024</string>
+          <string>1200</string>
          </property>
         </item>
         <item>
          <property name="text">
-          <string>2048</string>
+          <string>1800</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>3600</string>
          </property>
         </item>
        </widget>

@@ -28,7 +28,7 @@ from qtpy.QtWidgets import (
     )
 
 from imautils.gui import databasewidgets as _databasewidgets
-from helmholtz.gui.utils import get_ui_file as _get_ui_file
+from helmholtz.gui import utils as _utils
 import helmholtz.data as _data
 
 
@@ -53,7 +53,7 @@ class DatabaseWidget(_QWidget):
         super().__init__(parent)
 
         # setup the ui
-        uifile = _get_ui_file(self)
+        uifile = _utils.get_ui_file(self)
         self.ui = _uic.loadUi(uifile, self)
 
         self._table_object_dict = {
@@ -77,11 +77,12 @@ class DatabaseWidget(_QWidget):
 
         self.twg_database = _databasewidgets.DatabaseTabWidget(
             database_name=self.database_name,
-            mongo=self.mongo, server=self.server)
+            mongo=self.mongo, server=self.server, max_str_size=100)
         self.ui.lyt_database.addWidget(self.twg_database)
 
         self.connect_signal_slots()
         self.disable_invalid_buttons()
+        self.configure_gui_visualization()
 
     @property
     def database_name(self):
@@ -107,6 +108,12 @@ class DatabaseWidget(_QWidget):
     def results_dialog(self):
         """Return results dialog."""
         return _QApplication.instance().results_dialog
+
+    def configure_gui_visualization(self):
+        if _utils.SIMPLE:
+            self.ui.pbt_delete.hide()
+        else:
+            self.ui.pbt_delete.show()
 
     def clear(self):
         """Clear."""

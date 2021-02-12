@@ -120,11 +120,21 @@ class MeasurementWidget(_ConfigurationWidget):
             self.ui.chb_show_position_1.hide()
             self.ui.chb_show_position_2.hide()
             self.ui.gb_load_db.hide()
+            self.ui.rbt_mass.setChecked(True)
+            self.update_volume_page()
+            self.ui.rbt_mass.hide()
+            self.ui.rbt_size.hide()
+            self.ui.rbt_volume.hide()
+            self.ui.sbd_density.setEnabled(False)
         else:
             self.ui.gb_scan_parameter.show()
             self.ui.chb_show_position_1.show()
             self.ui.chb_show_position_2.show()
-            self.ui.gb_load_db.hide()
+            self.ui.gb_load_db.show()
+            self.ui.rbt_mass.show()
+            self.ui.rbt_size.show()
+            self.ui.rbt_volume.show()
+            self.ui.sbd_density.setEnabled(True)
 
     def clear(self):
         """Clear."""
@@ -328,45 +338,6 @@ class MeasurementWidget(_ConfigurationWidget):
 
     def show_scan_parameter_dialog(self):
         self.scan_parameter_dialog.show()
-
-    def homing(self, nr_turns=1):
-        try:
-            if self.stop:
-                return False
-
-            wait = 0.1
-
-            steps = int(self.advanced_options.motor_resolution*nr_turns)
-            encoder_direction = (
-                self.advanced_options.integrator_encoder_direction)
-            driver_address = self.advanced_options.motor_driver_address
-
-            if not self.configure_driver(steps):
-                return False
-
-            _integrator.configure_homing(encoder_direction)
-
-            if self.stop:
-                return False
-
-            _driver.move_motor(driver_address)
-            _time.sleep(wait)
-            while not _driver.ready(driver_address) and not self.stop:
-                _time.sleep(wait)
-                _QApplication.processEvents()
-
-            if self.stop:
-                return False
-
-            return True
-
-        except Exception:
-            msg = _QCoreApplication.translate(
-                '', 'Homing failed.')
-            title = _QCoreApplication.translate('', 'Failure')
-            _QMessageBox.critical(self, title, msg, _QMessageBox.Ok)
-            _traceback.print_exc(file=_sys.stdout)
-            return False
 
     def load(self):
         """Load configuration to set parameters."""
@@ -651,6 +622,14 @@ class MeasurementWidget(_ConfigurationWidget):
 
             self.ui.sbd_block_temperature.setValue(temperature_avg)
             self.config.block_temperature = temperature_avg
+
+            if len(temperature_list) != 0:
+                diff = _np.max(temperature_list) - _np.min(temperature_list)
+                if diff > _utils.TEMPERATURE_DIFF_TOLERANCE:
+                    msg = _QCoreApplication.translate(
+                        '', 'Temperature diference outside tolerance.')
+                    title = _QCoreApplication.translate('', 'Warning')
+                    _QMessageBox.warning(self, title, msg, _QMessageBox.Ok)
 
         except Exception:
             msg = _QCoreApplication.translate(
