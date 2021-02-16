@@ -24,6 +24,7 @@ setup(
         'pyqtgraph',
         'pyserial',
         'qtpy',
+        'openpyxl',
     ],
     test_suite='nose.collector',
     tests_require=['nose'],

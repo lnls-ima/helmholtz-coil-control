@@ -13,7 +13,8 @@ from qtpy.QtWidgets import (
     )
 from qtpy.QtCore import (
     Qt as _Qt,
-    QTimer as _QTimer
+    QTimer as _QTimer,
+    QCoreApplication as _QCoreApplication,
 )
 import qtpy.uic as _uic
 
@@ -40,6 +41,24 @@ class MotorIntegratorWidget(_QWidget):
         self.timer = _QTimer()
         self.timer.timeout.connect(self.update_encoder_reading)
 
+        self.configure_gui_visualization()
+
+    @property
+    def advanced_options(self):
+        """Return global advanced options."""
+        dialog = _QApplication.instance().advanced_options_dialog
+        return dialog.config
+
+    def configure_gui_visualization(self):
+        if _utils.SIMPLE:
+            self.ui.gb_gain.hide()
+            self.ui.gb_calibration.hide()
+            self.ui.gb_shut_down.hide()
+        else:
+            self.ui.gb_gain.show()
+            self.ui.gb_calibration.show()
+            self.ui.gb_shut_down.show()
+
     def connect_signal_slots(self):
         """Create signal/slot connections."""
         self.ui.pbt_homing.clicked.connect(self.homing)
@@ -51,27 +70,69 @@ class MotorIntegratorWidget(_QWidget):
             self.disable_invalid_widgets)
         self.ui.pbt_move_motor.clicked.connect(self.move_motor)
         self.ui.pbt_stop_motor.clicked.connect(self.stop_motor)
+        self.ui.pbt_reset.clicked.connect(self.reset_integrator)
+        self.ui.pbt_shut_down.clicked.connect(
+            self.shut_down_integrator)
+        self.ui.pbt_short_circuit_on.clicked.connect(
+            self.turn_on_integrator_short_circuit)
+        self.ui.pbt_short_circuit_off.clicked.connect(
+            self.turn_off_integrator_short_circuit)
+        self.ui.pbt_calibrate.clicked.connect(self.calibrate_integrator)
+        self.ui.pbt_set_gain.clicked.connect(self.set_gain_integrator)
 
-    @property
-    def advanced_options(self):
-        """Return global advanced options."""
-        dialog = _QApplication.instance().advanced_options_dialog
-        return dialog.config
+    def reset_integrator(self):
+        if self.check_integrator_connection():
+            _integrator.reset()
+
+    def shut_down_integrator(self):
+        if self.check_integrator_connection():
+            _integrator.shut_down()
+
+    def turn_on_integrator_short_circuit(self):
+        if self.check_integrator_connection():
+            _integrator.short_circuit_on()
+
+    def turn_off_integrator_short_circuit(self):
+        if self.check_integrator_connection():
+            _integrator.short_circuit_off()
+
+    def calibrate_integrator(self):
+        if self.check_integrator_connection():
+            _integrator.calibrate()
+
+    def set_gain_integrator(self):
+        try:
+            if self.check_integrator_connection():
+                gain = int(self.ui.cmb_gain.currentText())
+                _integrator.configure_gain(gain)
+        except Exception:
+            _traceback.print_exc(file=_sys.stdout)
+            return
+
+    def check_integrator_connection(self):
+        if not _integrator.connected:
+            msg = _QCoreApplication.translate('',  'Integrator not connected.')
+            title = _QCoreApplication.translate('', 'Failure')
+            _QMessageBox.critical(self, title, msg, _QMessageBox.Ok)
+            return False
+        return True       
+
+    def check_driver_connection(self):
+        if not _driver.connected:
+            msg = _QCoreApplication.translate('', 'Driver not connected.')
+            title = _QCoreApplication.translate('', 'Failure')
+            _QMessageBox.critical(self, title, msg, _QMessageBox.Ok)
+            return False
+        return True       
 
     def homing(self):
         self.stop = False
 
         try:
-            if not _driver.connected:
-                msg = 'Driver not connected.'
-                _QMessageBox.critical(
-                    self, 'Failure', msg, _QMessageBox.Ok)
+            if not self.check_driver_connection():
                 return
 
-            if not _integrator.connected:
-                msg = 'Integrator not connected.'
-                _QMessageBox.critical(
-                    self, 'Failure', msg, _QMessageBox.Ok)
+            if not self.check_integrator_connection():
                 return
 
             wait = 0.1
@@ -83,7 +144,7 @@ class MotorIntegratorWidget(_QWidget):
             acceleration = self.advanced_options.motor_acceleration
 
             mode = 0
-            steps = int(int(resolution)*2)
+            steps = int(int(resolution))
 
             if not _driver.config_motor(
                     driver_address,
@@ -93,14 +154,16 @@ class MotorIntegratorWidget(_QWidget):
                     velocity,
                     acceleration,
                     steps):
-                msg = 'Failed to send configuration to motor.'
+                msg = _QCoreApplication.translate(
+                    '', 'Failed to send configuration to motor.')
+                title = _QCoreApplication.translate('', 'Failure')
                 _QMessageBox.critical(
-                    self, 'Failure', msg, _QMessageBox.Ok)
+                    self, title, msg, _QMessageBox.Ok)
                 return
 
-            encoder_direction = self.advanced_options.integrator_encoder_direction
+            encoder_dir = self.advanced_options.integrator_encoder_direction
 
-            _integrator.configure_homing(encoder_direction)
+            _integrator.configure_homing(encoder_dir)
             _time.sleep(wait)
 
             if self.stop:
@@ -114,58 +177,62 @@ class MotorIntegratorWidget(_QWidget):
 
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
-            msg = 'Homing failed.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = _QCoreApplication.translate('', 'Homing failed.')
+            title = _QCoreApplication.translate('', 'Failure')
+            _QMessageBox.critical(self, title, msg, _QMessageBox.Ok)
             return
 
     def get_steps_for_encoder_position(self, encoder_position):
         try:
-            if not _integrator.connected:
-                msg = 'Integrator not connected.'
-                _QMessageBox.critical(
-                    self, 'Failure', msg, _QMessageBox.Ok)
+            if not self.check_integrator_connection():
                 return None
 
-            encoder_resolution = self.advanced_options.integrator_encoder_resolution
+            encoder_res = self.advanced_options.integrator_encoder_resolution
             motor_resolution = self.advanced_options.motor_resolution
             rotation_direction = self.advanced_options.motor_rotation_direction
             current_encoder_position = int(_integrator.read_encoder())
-            
+
             tol = 20
-            if current_encoder_position > encoder_resolution + tol:
-                msg = 'Invalid initial encoder position. Performe homing procedure.'
+            if current_encoder_position > encoder_res + tol:
+                msg = _QCoreApplication.translate(
+                    '', 
+                    'Invalid initial encoder position.\n' +
+                    'Please, perform homing procedure.'
+                    )
+                title = _QCoreApplication.translate('', 'Failure')
                 _QMessageBox.critical(
-                    self, 'Failure', msg, _QMessageBox.Ok)
+                    self, title, msg, _QMessageBox.Ok)
                 return None
-            
-            if encoder_position > encoder_resolution + tol:
-                msg = 'Invalid final encoder position.'
+
+            if encoder_position > encoder_res + tol:
+                msg = _QCoreApplication.translate(
+                    '', 'Invalid final encoder position.')
+                title = _QCoreApplication.translate('', 'Failure')
                 _QMessageBox.critical(
-                    self, 'Failure', msg, _QMessageBox.Ok)
+                    self, title, msg, _QMessageBox.Ok)
                 return None
 
             diff = (current_encoder_position - encoder_position)
             if rotation_direction == '-':
                 diff = diff*(-1)
-            pulses = (encoder_resolution - diff) % encoder_resolution
-            steps = int((pulses*motor_resolution)/encoder_resolution)
+            pulses = (encoder_res - diff) % encoder_res
+            steps = int((pulses*motor_resolution)/encoder_res)
             return steps
 
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
-            msg = 'Failed to calculated number of motor steps.'
+            msg = _QCoreApplication.translate(
+                '', 'Failed to calculated number of motor steps.')
+            title = _QCoreApplication.translate('', 'Failure')
             _QMessageBox.critical(
-                self, 'Failure', msg, _QMessageBox.Ok)
+                self, title, msg, _QMessageBox.Ok)
             return None
 
     def move_motor(self):
         self.stop = False
 
         try:
-            if not _driver.connected:
-                msg = 'Driver not connected.'
-                _QMessageBox.critical(
-                    self, 'Failure', msg, _QMessageBox.Ok)
+            if not self.check_driver_connection():
                 return
 
             driver_address = self.advanced_options.motor_driver_address
@@ -194,9 +261,11 @@ class MotorIntegratorWidget(_QWidget):
                     acceleration,
                     steps):
 
-                msg = 'Failed to send configuration to motor.'
+                msg = _QCoreApplication.translate(
+                    '', 'Failed to send configuration to motor.')
+                title = _QCoreApplication.translate('', 'Failure')
                 _QMessageBox.critical(
-                    self, 'Failure', msg, _QMessageBox.Ok)
+                    self, title, msg, _QMessageBox.Ok)
                 return
 
             if not self.stop:
@@ -204,8 +273,10 @@ class MotorIntegratorWidget(_QWidget):
 
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
-            msg = 'Failed to move motor.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = _QCoreApplication.translate(
+                '', 'Failed to move motor.')
+            title = _QCoreApplication.translate('', 'Failure')
+            _QMessageBox.critical(self, title, msg, _QMessageBox.Ok)
             return
 
     def stop_motor(self):
@@ -217,8 +288,10 @@ class MotorIntegratorWidget(_QWidget):
 
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
-            msg = 'Failed to stop motor.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = _QCoreApplication.translate(
+                '', 'Failed to stop motor.')
+            title = _QCoreApplication.translate('', 'Failure')
+            _QMessageBox.critical(self, title, msg, _QMessageBox.Ok)
             return
 
     def disable_invalid_widgets(self):
@@ -238,26 +311,25 @@ class MotorIntegratorWidget(_QWidget):
     def enable_encoder_reading(self):
         """Enable encoder reading."""
         try:
+            encoder_res = self.advanced_options.integrator_encoder_resolution
+
             if self.ui.chb_encoder.isChecked():
-                if not _integrator.connected:
-                    msg = 'Integrator not connected.'
-                    _QMessageBox.critical(
-                        self, 'Failure', msg, _QMessageBox.Ok)
+                if not self.check_integrator_connection():
                     self.stop_encoder_update = True
                     self.ui.lcd_encoder.setEnabled(False)
                     self.ui.chb_encoder.setChecked(False)
                     return
 
-                encoder_resolution = self.advanced_options.integrator_encoder_resolution
-
-                if _integrator.configure_encoder_reading(encoder_resolution):
+                if _integrator.configure_encoder_reading(encoder_res):
                     self.stop_encoder_update = False
                     self.timer.start(self._update_encoder_interval*1000)
                     self.ui.lcd_encoder.setEnabled(True)
                 else:
-                    msg = 'Failed to configure encoder reading.'
+                    msg = _QCoreApplication.translate(
+                        '', 'Failed to configure encoder reading.')
+                    title = _QCoreApplication.translate('', 'Failure')
                     _QMessageBox.critical(
-                        self, 'Failure', msg, _QMessageBox.Ok)
+                        self, title, msg, _QMessageBox.Ok)
                     self.stop_encoder_update = True
                     self.ui.lcd_encoder.setEnabled(False)
                     self.ui.chb_encoder.setChecked(False)

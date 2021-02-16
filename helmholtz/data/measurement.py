@@ -19,7 +19,6 @@ class MeasurementData(_database.DatabaseAndFileDocument):
         ('hour', {'dtype': str, 'not_null': True}),
         ('block_name', {'dtype': str, 'not_null': True}),
         ('comments', {'dtype': str}),
-        ('main_component', {'dtype': str, 'not_null': True}),
         ('advanced_options_id', {'dtype': int}),
         ('configuration_id', {'dtype': int}),
         ('mx_avg', {'dtype': float}),
@@ -45,10 +44,10 @@ class MeasurementData(_database.DatabaseAndFileDocument):
     def default_filename(self):
         """Return the default filename."""
         filename = super().default_filename
-        
+
         if self.block_name is not None and len(self.block_name) != 0:
             filename = filename.replace(self.label, self.block_name)
-        
+
         return filename
 
     @staticmethod
@@ -81,7 +80,7 @@ class MeasurementData(_database.DatabaseAndFileDocument):
             c = 1 - _np.cos(dtheta)
 
             moment_axis = (1/(mu0*geometric_factor))*(a1*s + b1*c)/(2*c)
-            moment_perp = (1/(mu0*geometric_factor))*(-b1*s + a1*c)/(2*c)
+            moment_perp = -(1/(mu0*geometric_factor))*(-b1*s + a1*c)/(2*c)
 
             mag_axis = mu0*moment_axis/block_volume
             mag_perp = mu0*moment_perp/block_volume
@@ -124,13 +123,11 @@ class MeasurementData(_database.DatabaseAndFileDocument):
 
     def set_magnetization_components(
             self,
-            main_component,
             integrated_voltage_position_1,
             integrated_voltage_position_2,
             offset_position_1, offset_position_2,
             coil_radius, coil_distance_center, coil_turns,
-            block_volume):       
-        self.main_component = main_component
+            block_volume):
         self.integrated_voltage_position_1 = integrated_voltage_position_1
         self.integrated_voltage_position_2 = integrated_voltage_position_2
         self.integrated_voltage_position_3 = []
@@ -142,7 +139,7 @@ class MeasurementData(_database.DatabaseAndFileDocument):
         self.coil_turns = coil_turns
         self.block_volume = block_volume
 
-        my, mx1, my_std, mx1_std = self.calc_magnetization(
+        mx1, my, mx1_std, my_std = self.calc_magnetization(
             self.integrated_voltage_position_1,
             self.offset_position_1,
             self.coil_radius,
@@ -157,6 +154,8 @@ class MeasurementData(_database.DatabaseAndFileDocument):
             self.coil_distance_center,
             self.coil_turns,
             self.block_volume)
+
+        mz = (-1)*mz
 
         npts1 = len(self.integrated_voltage_position_1)
         npts2 = len(self.integrated_voltage_position_2)
@@ -184,12 +183,12 @@ class MeasurementData(_database.DatabaseAndFileDocument):
         elif mx2 == 0:
             mx = mx1
             mx_std = mx1_std
-        elif main_component.lower() == 'vertical':
-            mx = mx2
-            mx_std = mx2_std
-        else:
+        elif _np.abs(my) >= _np.abs(mz):
             mx = mx1
             mx_std = mx1_std
+        else:
+            mx = mx2
+            mx_std = mx2_std
 
         self.mx_avg = mx
         self.my_avg = my

@@ -8,24 +8,30 @@ from imautils.devices import HeidenhainLib as _HeidenhainLib
 from imautils.devices import ParkerDriverLib as _ParkerDriverLib
 from imautils.devices import Agilent34401ALib as _Agilent34401ALib
 from imautils.devices import PDI5150Lib as _PDI5150Lib
+from imautils.devices import FDI2056Lib as _FDI2056Lib
+from imautils.devices import BalanceOhausLib as _BalanceOhausLib
 
 
-class Integrator(_PDI5150Lib.PDI5150GPIB):
+class PDIIntegrator(_PDI5150Lib.PDI5150GPIB):
 
     def configure_measurement(
             self, channel, encoder_resolution, direction,
-            start_trigger, nr_intervals,
-            interval_size, gain, wait=0.1):
+            start_trigger, integration_points, nr_turns,
+            gain, wait=0.1):
         if not self.connected:
             return False
+
+        nr_intervals = int(integration_points * nr_turns)
+        interval_size = int(encoder_resolution / integration_points)
+
         # Parar todas as coletas e preparar integrador
-        self.send_command(self.commands.stop_measurement)
+        self.send_command(self.commands.stop)
         _time.sleep(wait)
 
         r = 'A'
         while 'A' in r:
             r = self.read_from_device()
-        
+
         # Configurar canal a ser utilizado
         self.send_command(self.commands.channel + channel)
         _time.sleep(wait)
@@ -48,12 +54,48 @@ class Integrator(_PDI5150Lib.PDI5150GPIB):
         _time.sleep(wait)
 
         # Configura trigger
-        self.config_encoder_trigger(
+        self.configure_trig_encoder(
             encoder_resolution, direction,
             start_trigger, nr_intervals,
             interval_size, wait=wait)
 
-        self.send_command(self.commands.stop_measurement)
+        self.send_command(self.commands.stop)
+        _time.sleep(wait)
+
+        return True
+
+    def start_measurement(self, wait=0.1):
+        self.send_command(self.commands.stop)
+        _time.sleep(wait)
+
+        self.send_command(self.commands.start)
+        _time.sleep(wait)
+
+        reading = self.read_from_device()
+        if reading == '\x1a':
+            return False
+
+        return True
+
+
+class FDIIntegrator(_FDI2056Lib.FDI2056Ethernet):
+
+    def configure_measurement(
+            self, channel, encoder_resolution, direction,
+            start_trigger, integration_points, nr_turns,
+            gain, wait=0.1):
+        if not self.connected:
+            return False
+
+        if channel != 'A':
+            return False
+
+        self.configure_gain(gain)
+
+        self.configure_trig_encoder(
+            encoder_resolution, direction,
+            start_trigger, integration_points, nr_turns)
+
         _time.sleep(wait)
 
         return True
@@ -76,4 +118,5 @@ configure_logging(logfile)
 display = _HeidenhainLib.HeidenhainSerial(log=True)
 driver = _ParkerDriverLib.ParkerDriverSerial(log=True)
 multimeter = _Agilent34401ALib.Agilent34401ASerial(log=True)
-integrator = Integrator(log=True)
+integrator = FDIIntegrator(log=True)
+balance = _BalanceOhausLib.BalanceOhausSerial(log=True)

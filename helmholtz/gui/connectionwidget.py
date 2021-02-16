@@ -10,7 +10,10 @@ from qtpy.QtWidgets import (
     QMessageBox as _QMessageBox,
     QApplication as _QApplication,
     )
-from qtpy.QtCore import Qt as _Qt
+from qtpy.QtCore import (
+    Qt as _Qt,
+    QCoreApplication as _QCoreApplication,
+    )
 import qtpy.uic as _uic
 
 from helmholtz.gui import utils as _utils
@@ -23,6 +26,7 @@ from helmholtz.devices import (
     driver as _driver,
     multimeter as _multimeter,
     integrator as _integrator,
+    balance as _balance,
     )
 
 
@@ -39,6 +43,7 @@ class ConnectionWidget(_ConfigurationWidget):
             'display_bytesize',
             'driver_bytesize',
             'multimeter_bytesize',
+            'balance_bytesize',
             'integrator_address',
             'integrator_board',
         ]
@@ -56,18 +61,30 @@ class ConnectionWidget(_ConfigurationWidget):
             'multimeter_baudrate',
             'multimeter_parity',
             'multimeter_stopbits',
-        ]   
+            'balance_port',
+            'balance_baudrate',
+            'balance_parity',
+            'balance_stopbits',
+        ]
 
         self.chb_names = [
             'display_enable',
             'driver_enable',
             'multimeter_enable',
             'integrator_enable',
+            'balance_enable',
         ]
 
         self.connect_signal_slots()
         self.update_serial_ports()
         self.load_last_db_entry()
+        self.configure_gui_visualization()
+
+    def configure_gui_visualization(self):
+        if _utils.SIMPLE:
+            self.ui.fm_load_db.hide()
+        else:
+            self.ui.fm_load_db.show()
 
     def closeEvent(self, event):
         """Close widget."""
@@ -120,6 +137,15 @@ class ConnectionWidget(_ConfigurationWidget):
                     board=self.config.integrator_board,
                     )
 
+            if self.config.balance_enable:
+                _balance.connect(
+                    self.config.balance_port,
+                    self.config.balance_baudrate,
+                    bytesize=self.config.balance_bytesize,
+                    stopbits=float(self.config.balance_stopbits),
+                    parity=self.config.balance_parity[0],
+                    )
+
             self.update_led_status()
             connected = self.connection_status()
 
@@ -129,16 +155,19 @@ class ConnectionWidget(_ConfigurationWidget):
             self.save_db()
 
             if not connected:
-                msg = 'Failed to connect devices.'
-                _QMessageBox.critical(
-                    self, 'Failure', msg, _QMessageBox.Ok)
+                msg = _QCoreApplication.translate(
+                    '', 'Failed to connect devices.')
+                title = _QCoreApplication.translate('', 'Failure')
+                _QMessageBox.critical(self, title, msg, _QMessageBox.Ok)
 
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
             self.blockSignals(False)
             _QApplication.restoreOverrideCursor()
-            msg = 'Failed to connect devices.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = _QCoreApplication.translate(
+                '', 'Failed to connect devices.')
+            title = _QCoreApplication.translate('', 'Failure')
+            _QMessageBox.critical(self, title, msg, _QMessageBox.Ok)
 
     def connection_status(self):
         """Return the connection status."""
@@ -157,6 +186,10 @@ class ConnectionWidget(_ConfigurationWidget):
 
             if (self.config.integrator_enable and
                     not _integrator.connected):
+                return False
+
+            if (self.config.balance_enable and
+                    not _balance.connected):
                 return False
 
             return True
@@ -178,13 +211,16 @@ class ConnectionWidget(_ConfigurationWidget):
             _driver.disconnect()
             _multimeter.disconnect()
             _integrator.disconnect()
+            _balance.disconnect()
             self.update_led_status()
 
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
             if msgbox:
-                msg = 'Failed to disconnect devices.'
-                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                msg = _QCoreApplication.translate(
+                    '', 'Failed to disconnect devices.')
+                title = _QCoreApplication.translate('', 'Failure')
+                _QMessageBox.critical(self, title, msg, _QMessageBox.Ok)
 
     def update_led_status(self):
         """Update led status."""
@@ -193,6 +229,7 @@ class ConnectionWidget(_ConfigurationWidget):
             self.ui.la_driver_led.setEnabled(_driver.connected)
             self.ui.la_multimeter_led.setEnabled(_multimeter.connected)
             self.ui.la_integrator_led.setEnabled(_integrator.connected)
+            self.ui.la_balance_led.setEnabled(_balance.connected)
 
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
@@ -209,3 +246,6 @@ class ConnectionWidget(_ConfigurationWidget):
 
         self.ui.cmb_multimeter_port.clear()
         self.ui.cmb_multimeter_port.addItems(ports)
+
+        self.ui.cmb_balance_port.clear()
+        self.ui.cmb_balance_port.addItems(ports)

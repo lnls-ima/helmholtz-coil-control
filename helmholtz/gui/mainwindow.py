@@ -10,10 +10,6 @@ from qtpy.QtWidgets import (
     QApplication as _QApplication,
     QDesktopWidget as _QDesktopWidget,
     )
-from qtpy.QtCore import (
-    QTimer as _QTimer,
-    QCoreApplication as _QCoreApplication,
-    )
 import qtpy.uic as _uic
 
 from helmholtz.gui import utils as _utils
@@ -31,6 +27,8 @@ from helmholtz.gui.measurementwidget import MeasurementWidget \
     as _MeasurementWidget
 from helmholtz.gui.databasewidget import DatabaseWidget \
     as _DatabaseWidget
+from helmholtz.gui.blockpositionwidget import BlockPositionWidget \
+    as _BlockPositionWidget
 from helmholtz.devices import logfile as _logfile
 
 
@@ -52,29 +50,41 @@ class MainWindow(_QMainWindow):
         self.ui.twg_main.clear()
 
         # define tab names and corresponding widgets
-        self.tab_names = [
-            'connection',
-            'temperature',
-            'motor_and_integrator',
-            'measurement',
-            'database',
-            ]
+        if _utils.TRANSLATE:
+            self.tab_names = [
+                'conexao',
+                'temperatura',
+                'motor_e_integrador',
+                'medida',
+                'posicionamento_do_bloco',
+                'banco_de_dados',
+                ]
+        
+        else:
+            self.tab_names = [
+                'connection',
+                'temperature',
+                'motor_and_integrator',
+                'measurement',
+                'block_position',
+                'database',
+                ]
 
         self.tab_widgets = [
             _ConnectionWidget,
             _TemperatureWidget,
             _MotorIntegratorWidget,
             _MeasurementWidget,
+            _BlockPositionWidget,
             _DatabaseWidget,
             ]
 
         # add select tabs dialog
         self.select_tabs_dialog = _SelectTabsDialog(self.tab_names)
-        self.select_tabs_dialog.chb_connection.setChecked(True)
-        self.select_tabs_dialog.chb_temperature.setChecked(True)
-        self.select_tabs_dialog.chb_motor_and_integrator.setChecked(True)
-        self.select_tabs_dialog.chb_measurement.setChecked(True)
-        self.select_tabs_dialog.chb_database.setChecked(True)
+        for tab_name in self.tab_names:
+            chb = getattr(self.select_tabs_dialog, 'chb_' + tab_name)
+            chb.setChecked(True)
+       
         self.select_tabs_dialog.tab_selection_changed.connect(self.change_tabs)
 
         self.log_dialog = _LogDialog()
@@ -86,9 +96,7 @@ class MainWindow(_QMainWindow):
         self.select_tabs_dialog.emit_tab_selection_signal()
         self.connect_signal_slots()
 
-        # disabled advanced options if necessary
-        self.ui.pbt_advanced_options.setEnabled(
-            _utils.ADVANCED_OPTIONS_ENABLED)
+        self.configure_gui_visualization()
 
     @property
     def database_name(self):
@@ -108,6 +116,12 @@ class MainWindow(_QMainWindow):
     def advanced_options_dialog(self):
         """Advanced options dialog."""
         return _QApplication.instance().advanced_options_dialog
+
+    def configure_gui_visualization(self):
+        if _utils.SIMPLE:
+            self.ui.fm_options.hide()
+        else:
+            self.ui.fm_options.show()
 
     def closeEvent(self, event):
         """Close main window and dialogs."""

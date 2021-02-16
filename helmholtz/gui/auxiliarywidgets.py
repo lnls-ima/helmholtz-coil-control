@@ -659,9 +659,11 @@ class TablePlotWidget(_QWidget):
         if len(self._xvalues) == 0:
             return
 
-        msg = 'Clear table data?'
+        msg = _QCoreApplication.translate(
+            '', 'Clear table data?')
+        title = _QCoreApplication.translate('', 'Question')
         reply = _QMessageBox.question(
-            self, 'Message', msg, buttons=_QMessageBox.No | _QMessageBox.Yes,
+            self, title, msg, buttons=_QMessageBox.No | _QMessageBox.Yes,
             defaultButton=_QMessageBox.No)
 
         if reply == _QMessageBox.Yes:
@@ -864,8 +866,11 @@ class TablePlotWidget(_QWidget):
         """Save table values to file."""
         df = _utils.table_to_data_frame(self.tbl_table)
         if df is None:
+            msg = _QCoreApplication.translate(
+                '', 'Empty table.')
+            title = _QCoreApplication.translate('', 'Failure')
             _QMessageBox.critical(
-                self, 'Failure', 'Empty table.', _QMessageBox.Ok)
+                self, title, msg, _QMessageBox.Ok)
             return
 
         filename = _QFileDialog.getSaveFileName(
@@ -886,8 +891,10 @@ class TablePlotWidget(_QWidget):
 
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
-            msg = 'Failed to save data to file.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = _QCoreApplication.translate(
+                '', 'Failed to save data to file.')
+            title = _QCoreApplication.translate('', 'Failure')
+            _QMessageBox.critical(self, title, msg, _QMessageBox.Ok)
 
     def set_table_column_size(self, size):
         """Set table horizontal header default section size."""
@@ -1064,8 +1071,11 @@ class ConfigurationWidget(_QWidget):
         try:
             idn = int(self.ui.cmb_idn.currentText())
         except Exception:
+            msg = _QCoreApplication.translate(
+                '', 'Invalid database ID.')
+            title = _QCoreApplication.translate('', 'Failure')
             _QMessageBox.critical(
-                self, 'Failure', 'Invalid database ID.', _QMessageBox.Ok)
+                self, title, msg, _QMessageBox.Ok)
             return
 
         try:
@@ -1073,8 +1083,11 @@ class ConfigurationWidget(_QWidget):
             idx = self.ui.cmb_idn.findText(str(idn))
             if idx == -1:
                 self.ui.cmb_idn.setCurrentIndex(-1)
+                msg = _QCoreApplication.translate(
+                    '', 'Invalid database ID.')
+                title = _QCoreApplication.translate('', 'Failure')
                 _QMessageBox.critical(
-                    self, 'Failure', 'Invalid database ID.', _QMessageBox.Ok)
+                    self, title, msg, _QMessageBox.Ok)
                 return
 
             self.config.clear()
@@ -1083,8 +1096,10 @@ class ConfigurationWidget(_QWidget):
             self.config.db_read(idn)
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
-            msg = 'Failed to read from database.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = _QCoreApplication.translate(
+                '', 'Failed to read from database.')
+            title = _QCoreApplication.translate('', 'Failure')
+            _QMessageBox.critical(self, title, msg, _QMessageBox.Ok)
             return
 
         self.load()
@@ -1152,8 +1167,10 @@ class ConfigurationWidget(_QWidget):
 
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
-            msg = 'Failed to load configuration.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = _QCoreApplication.translate(
+                '', 'Failed to load configuration.')
+            title = _QCoreApplication.translate('', 'Failure')
+            _QMessageBox.critical(self, title, msg, _QMessageBox.Ok)
 
     def save_db(self, force=False):
         """Save parameters to database."""
@@ -1164,9 +1181,11 @@ class ConfigurationWidget(_QWidget):
             if self.update_configuration():
 
                 if self.database_name is None:
-                    msg = 'Invalid database filename.'
+                    msg = _QCoreApplication.translate(
+                        '', 'Invalid database filename.')
+                    title = _QCoreApplication.translate('', 'Failure')
                     _QMessageBox.critical(
-                        self, 'Failure', msg, _QMessageBox.Ok)
+                        self, title, msg, _QMessageBox.Ok)
                     return False
 
                 self.config.db_update_database(
@@ -1196,8 +1215,10 @@ class ConfigurationWidget(_QWidget):
 
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
-            msg = 'Failed to save to database.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = _QCoreApplication.translate(
+                '', 'Failed to save to database.')
+            title = _QCoreApplication.translate('', 'Failure')
+            _QMessageBox.critical(self, title, msg, _QMessageBox.Ok)
             return False
 
     def update_ids(self):
@@ -1255,9 +1276,11 @@ class ConfigurationWidget(_QWidget):
                 return True
 
             else:
-                msg = 'Invalid configuration.'
+                msg = _QCoreApplication.translate(
+                    '', 'Invalid configuration.')
+                title = _QCoreApplication.translate('', 'Failure')
                 _QMessageBox.critical(
-                    self, 'Failure', msg, _QMessageBox.Ok)
+                    self, title, msg, _QMessageBox.Ok)
                 return False
 
         except Exception:

@@ -5,6 +5,7 @@
 monitor/
 logs/
 measurements/
+*ts/
 
 # --------------- Default lnls-ima ---------------
 *~
