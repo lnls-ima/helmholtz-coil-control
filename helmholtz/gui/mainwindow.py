@@ -56,8 +56,8 @@ class MainWindow(_QMainWindow):
                 'temperatura',
                 'motor_e_integrador',
                 'medida',
-                'banco_de_dados',
                 'posicionamento_do_bloco',
+                'banco_de_dados',
                 ]
         
         else:
@@ -66,8 +66,8 @@ class MainWindow(_QMainWindow):
                 'temperature',
                 'motor_and_integrator',
                 'measurement',
-                'database',
                 'block_position',
+                'database',
                 ]
 
         self.tab_widgets = [
@@ -75,8 +75,8 @@ class MainWindow(_QMainWindow):
             _TemperatureWidget,
             _MotorIntegratorWidget,
             _MeasurementWidget,
-            _DatabaseWidget,
             _BlockPositionWidget,
+            _DatabaseWidget,
             ]
 
         # add select tabs dialog

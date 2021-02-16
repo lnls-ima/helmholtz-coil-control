@@ -19,8 +19,8 @@ from qtpy.QtCore import (
 
 
 # GUI configurations
-TRANSLATE = True
-SIMPLE = True
+TRANSLATE = False
+SIMPLE = False
 WINDOW_STYLE = 'windows'
 WINDOW_WIDTH = 1200
 WINDOW_HEIGHT = 700
@@ -40,7 +40,7 @@ TABLE_MAX_NUMBER_ROWS = 100
 TABLE_MAX_STR_SIZE = 100
 MASS_DIFF_TOLERANCE = 0.5  # [g]
 TEMPERATURE_DIFF_TOLERANCE = 0.1  # [degC]
-STD_TOLERANCE = 2e-4  # [T]
+STD_TOLERANCE = 1e-4  # [T]
 
 COLOR_LIST = [
     (230, 25, 75), (60, 180, 75), (0, 130, 200), (245, 130, 48),

@@ -422,6 +422,9 @@ class MeasurementWidget(_ConfigurationWidget):
             integrated_voltage = _np.array(data).reshape(
                 nr_turns, integration_points).transpose()
 
+            if nr_turns > 5:
+                integrated_voltage = integrated_voltage[:, 1:-1]
+
             self.integrated_voltage = integrated_voltage*(
                 _integrator.conversion_factor)
 
@@ -648,6 +651,9 @@ class MeasurementWidget(_ConfigurationWidget):
                 _QMessageBox.critical(self, title, msg, _QMessageBox.Ok)
                 return False
 
+            self.ui.sbd_block_mass_A.setValue(0)
+            self.ui.sbd_block_mass_B.setValue(0)
+
             msg = _QCoreApplication.translate(
                 '', 'Place the magnet on the balance.')
             title = _QCoreApplication.translate('', 'Information')
@@ -772,6 +778,8 @@ class MeasurementWidget(_ConfigurationWidget):
             if not self.move_half_turn():
                 return False  
 
+            _QApplication.processEvents()
+
             gain = self.global_config.gain_position_1
             if not self.measure_position(gain=gain):
                 self.ui.pbt_start_measurement.setEnabled(True)
@@ -796,6 +804,8 @@ class MeasurementWidget(_ConfigurationWidget):
 
             if not self.move_half_turn():
                 return False 
+
+            _QApplication.processEvents()
 
             gain = self.global_config.gain_position_2
             if not self.measure_position(gain=gain):
@@ -825,6 +835,8 @@ class MeasurementWidget(_ConfigurationWidget):
             self.advanced_options.coil_turns,
             self.block_volume*1e-9)
 
+        _QApplication.processEvents()
+
         std_tol = _utils.STD_TOLERANCE
         if any([v > std_tol for v in mstd]):
             msg = _QCoreApplication.translate(
@@ -841,6 +853,8 @@ class MeasurementWidget(_ConfigurationWidget):
         self.update_magnetization_values(m, mstd)
 
         self.plot_integrated_voltage()
+
+        _QApplication.processEvents()
 
         if not self.move_to_initial_position():
             return False

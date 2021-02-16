@@ -956,7 +956,7 @@ def _gaussian_fit(x, y):
             y0 = _np.max(y)
 
         popt, pcov = _optimize.curve_fit(
-            gaussian, x, y, p0=[y0, a, mean, sigma])
+            gaussian, x, y, p0=[y0, a, mean, sigma], maxfev=10000)
 
         xfit = _np.linspace(x[0], x[-1], 100)
         yfit = gaussian(xfit, popt[0], popt[1], popt[2], popt[3])

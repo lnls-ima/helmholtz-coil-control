@@ -183,7 +183,7 @@ class MeasurementData(_database.DatabaseAndFileDocument):
         elif mx2 == 0:
             mx = mx1
             mx_std = mx1_std
-        elif _np.abs(mx1_std) <= _np.abs(mx2_std):
+        elif _np.abs(my) >= _np.abs(mz):
             mx = mx1
             mx_std = mx1_std
         else:
