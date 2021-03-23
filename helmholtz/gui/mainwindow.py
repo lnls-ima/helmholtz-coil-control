@@ -117,6 +117,11 @@ class MainWindow(_QMainWindow):
         """Advanced options dialog."""
         return _QApplication.instance().advanced_options_dialog
 
+    @property
+    def find_trigger_dialog(self):
+        """Find trigger dialog."""
+        return _QApplication.instance().find_trigger_dialog
+
     def configure_gui_visualization(self):
         if _utils.SIMPLE:
             self.ui.fm_options.hide()

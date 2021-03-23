@@ -13,6 +13,7 @@ from qtpy.QtWidgets import (
     QMessageBox as _QMessageBox,
     QApplication as _QApplication,
     QProgressDialog as _QProgressDialog,
+    QInputDialog as _QInputDialog,
     )
 from qtpy.QtCore import (
     Qt as _Qt,
@@ -87,6 +88,10 @@ class MeasurementWidget(_ConfigurationWidget):
         self.graph_position_1 = []
         self.graph_position_2 = []
         self.measurement_data = _measurement.MeasurementData()
+        self.measurement_error_count = 0
+        self.mx_list = []
+        self.my_list = []
+        self.mz_list = []
 
         self.legend = _pyqtgraph.LegendItem(offset=(70, 30))
         self.legend.setParentItem(self.ui.pw_graph.graphicsItem())
@@ -106,6 +111,11 @@ class MeasurementWidget(_ConfigurationWidget):
         return _QApplication.instance().scan_parameter_dialog
 
     @property
+    def find_trigger_dialog(self):
+        """Return find trigger dialog."""
+        return _QApplication.instance().find_trigger_dialog
+
+    @property
     def global_config(self):
         """Return the global measurement configuration."""
         return _QApplication.instance().measurement_config
@@ -114,9 +124,20 @@ class MeasurementWidget(_ConfigurationWidget):
     def global_config(self, value):
         _QApplication.instance().measurement_config = value
 
+    def closeEvent(self, event):
+        """Close widget and dialogs."""
+        try:
+            self.scan_parameter_dialog.close()
+            self.find_trigger_dialog.close()
+            event.accept()
+        except Exception:
+            _traceback.print_exc(file=_sys.stdout)
+            event.accept()
+
     def configure_gui_visualization(self):
         if _utils.SIMPLE:
-            self.ui.gb_scan_parameter.hide()
+            self.ui.chb_scan_parameter.hide()
+            self.ui.pbt_configure_scan.hide()
             self.ui.chb_show_position_1.hide()
             self.ui.chb_show_position_2.hide()
             self.ui.gb_load_db.hide()
@@ -126,8 +147,15 @@ class MeasurementWidget(_ConfigurationWidget):
             self.ui.rbt_size.hide()
             self.ui.rbt_volume.hide()
             self.ui.sbd_density.setEnabled(False)
+            self.ui.tbt_measure_mass.hide()
+            self.ui.tbt_read_temperature.hide()
+            self.ui.sbd_block_mass_A.setEnabled(False)
+            self.ui.sbd_block_mass_B.setEnabled(False)
+            self.ui.sbd_block_temperature.setEnabled(False)
+            self.ui.le_block_name.setEnabled(False)
         else:
-            self.ui.gb_scan_parameter.show()
+            self.ui.chb_scan_parameter.show()
+            self.ui.pbt_configure_scan.show()
             self.ui.chb_show_position_1.show()
             self.ui.chb_show_position_2.show()
             self.ui.gb_load_db.show()
@@ -135,6 +163,12 @@ class MeasurementWidget(_ConfigurationWidget):
             self.ui.rbt_size.show()
             self.ui.rbt_volume.show()
             self.ui.sbd_density.setEnabled(True)
+            self.ui.tbt_measure_mass.show()
+            self.ui.tbt_read_temperature.show()
+            self.ui.sbd_block_mass_A.setEnabled(True)
+            self.ui.sbd_block_mass_B.setEnabled(True)
+            self.ui.sbd_block_temperature.setEnabled(True)
+            self.ui.le_block_name.setEnabled(True)
 
     def clear(self):
         """Clear."""
@@ -145,6 +179,9 @@ class MeasurementWidget(_ConfigurationWidget):
         self.integrated_voltage = []
         self.integrated_voltage_position_1 = []
         self.integrated_voltage_position_2 = []
+        self.mx_list = []
+        self.my_list = []
+        self.mz_list = []
         self.ui.le_avg_mx.setText('')
         self.ui.le_avg_my.setText('')
         self.ui.le_avg_mz.setText('')
@@ -152,8 +189,14 @@ class MeasurementWidget(_ConfigurationWidget):
         self.ui.le_std_my.setText('')
         self.ui.le_std_mz.setText('')
         self.ui.pgb_status.setValue(0)
+        self.measurement_error_count = 0
         self.measurement_data.clear()
         self.clear_graph()
+        if _utils.SIMPLE:
+            self.ui.sbd_block_mass_A.setValue(0)
+            self.ui.sbd_block_mass_B.setValue(0)
+            self.ui.sbd_block_temperature.setValue(0)
+            self.ui.le_block_name.setText('')
 
     def clear_graph(self):
         """Clear plots."""
@@ -263,8 +306,6 @@ class MeasurementWidget(_ConfigurationWidget):
         return True
 
     def configure_measurement(self):
-        self.clear()
-
         try:
             if not self.check_device_connection():
                 return False
@@ -326,6 +367,8 @@ class MeasurementWidget(_ConfigurationWidget):
             self.plot_integrated_voltage)
         self.ui.chb_scan_parameter.stateChanged.connect(
             self.enable_scan_configuration)
+        self.ui.chb_find_trigger.stateChanged.connect(
+            self.enable_trigger_initial_guess)
         self.ui.pbt_configure_scan.clicked.connect(
             self.show_scan_parameter_dialog)
         self.ui.tbt_measure_mass.clicked.connect(self.read_mass)
@@ -333,8 +376,18 @@ class MeasurementWidget(_ConfigurationWidget):
     def enable_scan_configuration(self):
         if self.ui.chb_scan_parameter.isChecked():
             self.ui.pbt_configure_scan.setEnabled(True)
+            self.ui.chb_find_trigger.setChecked(False)
         else:
             self.ui.pbt_configure_scan.setEnabled(False)
+
+    def enable_trigger_initial_guess(self):
+        if self.ui.chb_find_trigger.isChecked():
+            self.ui.la_trigger_initial_guess.setEnabled(True)
+            self.ui.sb_trigger_initial_guess.setEnabled(True)
+            self.ui.chb_scan_parameter.setChecked(False)
+        else:
+            self.ui.la_trigger_initial_guess.setEnabled(False)
+            self.ui.sb_trigger_initial_guess.setEnabled(False)
 
     def show_scan_parameter_dialog(self):
         self.scan_parameter_dialog.show()
@@ -448,7 +501,14 @@ class MeasurementWidget(_ConfigurationWidget):
         try:
             if self.stop:
                 return False
-            
+
+            if not _integrator.connected:
+                msg = _QCoreApplication.translate(
+                    '', 'Integrator not connected.')
+                title = _QCoreApplication.translate('', 'Failure')
+                _QMessageBox.critical(self, title, msg, _QMessageBox.Ok)
+                return False
+
             trigger = self.advanced_options.integration_trigger
             encoder_res = self.advanced_options.integrator_encoder_resolution
             motor_resolution = self.advanced_options.motor_resolution
@@ -507,7 +567,7 @@ class MeasurementWidget(_ConfigurationWidget):
                 return False
 
             wait = 0.5
-                       
+
             motor_resolution = self.advanced_options.motor_resolution
             driver_address = self.advanced_options.motor_driver_address
             steps = int(int(motor_resolution)*0.5)
@@ -586,7 +646,11 @@ class MeasurementWidget(_ConfigurationWidget):
             msg = _QCoreApplication.translate(
                 '', 'Place temperature sensor on the magnet.')
             title = _QCoreApplication.translate('', 'Information')
-            _QMessageBox.information(self, title, msg, _QMessageBox.Ok)
+            reply = _QMessageBox.information(
+                self, title, msg, _QMessageBox.Ok, _QMessageBox.Cancel)
+
+            if reply == _QMessageBox.Cancel:
+                return False
 
             _multimeter.config_resistance_4w(wait=0.5)
 
@@ -623,6 +687,9 @@ class MeasurementWidget(_ConfigurationWidget):
             else:
                 temperature_avg = _np.mean(temperature_list)
 
+            if prg_dialog.wasCanceled():
+                return False
+
             self.ui.sbd_block_temperature.setValue(temperature_avg)
             self.config.block_temperature = temperature_avg
 
@@ -633,6 +700,8 @@ class MeasurementWidget(_ConfigurationWidget):
                         '', 'Temperature diference outside tolerance.')
                     title = _QCoreApplication.translate('', 'Warning')
                     _QMessageBox.warning(self, title, msg, _QMessageBox.Ok)
+
+            return True
 
         except Exception:
             msg = _QCoreApplication.translate(
@@ -651,27 +720,50 @@ class MeasurementWidget(_ConfigurationWidget):
                 _QMessageBox.critical(self, title, msg, _QMessageBox.Ok)
                 return False
 
-            self.ui.sbd_block_mass_A.setValue(0)
-            self.ui.sbd_block_mass_B.setValue(0)
-
             msg = _QCoreApplication.translate(
                 '', 'Place the magnet on the balance.')
             title = _QCoreApplication.translate('', 'Information')
-            _QMessageBox.information(self, title, msg, _QMessageBox.Ok)
+            reply = _QMessageBox.information(
+                self, title, msg, _QMessageBox.Ok, _QMessageBox.Cancel)
 
-            massA = _balance.read_mass(wait=1)
-            if massA is None:
+            if reply == _QMessageBox.Cancel:
+                return False
+
+            _QApplication.setOverrideCursor(_Qt.WaitCursor)
+            mass_list = []
+            for i in range(10):
+                mass = _balance.read_mass(wait=0.5)
+                if mass is not None:
+                    mass_list.append(mass)
+            _QApplication.restoreOverrideCursor()
+
+            if len(mass_list) == 0:
                 massA = 0
+            else:
+                massA = _np.mean(mass_list)
             self.ui.sbd_block_mass_A.setValue(massA)
 
             msg = _QCoreApplication.translate(
                 '', 'Rotate the magnet.')
             title = _QCoreApplication.translate('', 'Information')
-            _QMessageBox.information(self, title, msg, _QMessageBox.Ok)
+            reply = _QMessageBox.information(
+                self, title, msg, _QMessageBox.Ok, _QMessageBox.Cancel)
 
-            massB = _balance.read_mass(wait=1)
-            if massB is None:
+            if reply == _QMessageBox.Cancel:
+                return False
+
+            _QApplication.setOverrideCursor(_Qt.WaitCursor)
+            mass_list = []
+            for i in range(10):
+                mass = _balance.read_mass(wait=0.5)
+                if mass is not None:
+                    mass_list.append(mass)
+            _QApplication.restoreOverrideCursor()
+
+            if len(mass_list) == 0:
                 massB = 0
+            else:
+                massB = _np.mean(mass_list)
             self.ui.sbd_block_mass_B.setValue(massB)
 
             tol_mass = _utils.MASS_DIFF_TOLERANCE
@@ -681,6 +773,8 @@ class MeasurementWidget(_ConfigurationWidget):
                         '', 'Mass diference outside tolerance.')
                     title = _QCoreApplication.translate('', 'Warning')
                     _QMessageBox.warning(self, title, msg, _QMessageBox.Ok)
+
+            return True
 
         except Exception:
             msg = _QCoreApplication.translate(
@@ -715,6 +809,22 @@ class MeasurementWidget(_ConfigurationWidget):
             return False
 
     def start_measurements(self):
+        self.clear()
+
+        if _utils.SIMPLE:
+
+            if not self.update_block_name():
+                return False
+
+            if not self.move_to_initial_position():
+                return False
+
+            if not self.read_temperature():
+                return False
+
+            if not self.read_mass():
+                return False
+
         if not self.configure_measurement():
             return False
 
@@ -748,6 +858,60 @@ class MeasurementWidget(_ConfigurationWidget):
                     _QMessageBox.critical(
                         self, title, msg, _QMessageBox.Ok)
                     return False
+        
+        elif self.ui.chb_find_trigger.isChecked():
+            try:
+                self.global_config.measure_position_1 = True
+                self.global_config.measure_position_2 = False
+                encoder_res = self.advanced_options.integrator_encoder_resolution
+                initial_guess = self.ui.sb_trigger_initial_guess.value()
+
+                scan_parameter = 'integration_trigger'
+                scan_interval = encoder_res/36
+                scan_npts = 21               
+                scan_values = _np.linspace(
+                    int(initial_guess - scan_interval/2),
+                    int(initial_guess + scan_interval/2),
+                    scan_npts) % encoder_res
+                scan_values = scan_values.astype(int)
+ 
+                for value in scan_values:
+                    setattr(self.advanced_options, scan_parameter, value)
+                    setattr(self.advanced_options, 'date', None)
+                    setattr(self.advanced_options, 'hour', None)
+                    self.advanced_options.db_save()
+                    self.start_one_measurement(silent=True)
+                mx_list_1 = [mx for mx in self.mx_list]
+
+                msg = _QCoreApplication.translate(
+                    '', 'Rotate the magnet 180 degress around the X axis.')
+                title = _QCoreApplication.translate('', 'Information')
+                reply = _QMessageBox.information(
+                    self, title, msg, _QMessageBox.Ok, _QMessageBox.Cancel)
+
+                if reply == _QMessageBox.Cancel:
+                    self.stop_measurement(silent=True)
+                    return False
+
+                for value in scan_values:
+                    setattr(self.advanced_options, scan_parameter, value)
+                    setattr(self.advanced_options, 'date', None)
+                    setattr(self.advanced_options, 'hour', None)
+                    self.advanced_options.db_save()
+                    self.start_one_measurement(silent=True)
+                mx_list_2 = [mx for mx in self.mx_list]
+
+                self.find_trigger_dialog.show(
+                    scan_values, mx_list_1, mx_list_2)
+
+            except Exception:
+                msg = _QCoreApplication.translate(
+                    '', 'Find trigger measurement failed.')
+                title = _QCoreApplication.translate('', 'Failure')
+                _QMessageBox.critical(
+                    self, title, msg, _QMessageBox.Ok)
+                return False
+
         else:
             if not self.start_one_measurement():
                 return False
@@ -763,20 +927,41 @@ class MeasurementWidget(_ConfigurationWidget):
 
         return True
 
+    def update_block_name(self):
+        title = _QCoreApplication.translate(
+            '', 'Information')
+        label = _QCoreApplication.translate(
+            '', 'Block Name:')
+        text = _QInputDialog.getText(
+            self, title, label, text=self.ui.le_block_name.text())
+
+        if isinstance(text, tuple):
+            if not text[1]:
+                return False
+
+            text = text[0]
+
+        self.ui.le_block_name.setText(text)
+        return True
+
     def start_one_measurement(self, silent=False):
         if not self.move_to_initial_position():
-            return False          
+            return False
 
         if self.global_config.measure_position_1:
             if not silent:
                 msg = _QCoreApplication.translate(
                     '', 'Place the magnet in Position 1.')
                 title = _QCoreApplication.translate('', 'Information')
-                _QMessageBox.information(
-                    self, title, msg, _QMessageBox.Ok)
+                reply = _QMessageBox.information(
+                    self, title, msg, _QMessageBox.Ok, _QMessageBox.Cancel)
+
+                if reply == _QMessageBox.Cancel:
+                    self.stop_measurement(silent=True)
+                    return False
 
             if not self.move_half_turn():
-                return False  
+                return False
 
             _QApplication.processEvents()
 
@@ -792,18 +977,22 @@ class MeasurementWidget(_ConfigurationWidget):
             return False
 
         if not self.move_to_initial_position():
-            return False 
+            return False
 
         if self.global_config.measure_position_2:
             if not silent:
                 msg = _QCoreApplication.translate(
                     '', 'Place the magnet in Position 2.')
                 title = _QCoreApplication.translate('', 'Information')
-                _QMessageBox.information(
-                    self, title, msg, _QMessageBox.Ok)
+                reply = _QMessageBox.information(
+                    self, title, msg, _QMessageBox.Ok, _QMessageBox.Cancel)
+
+                if reply == _QMessageBox.Cancel:
+                    self.stop_measurement(silent=True)
+                    return False
 
             if not self.move_half_turn():
-                return False 
+                return False
 
             _QApplication.processEvents()
 
@@ -839,18 +1028,29 @@ class MeasurementWidget(_ConfigurationWidget):
 
         std_tol = _utils.STD_TOLERANCE
         if any([v > std_tol for v in mstd]):
+            self.measurement_error_count += 1
             msg = _QCoreApplication.translate(
-                '', "Standard deviation outside tolerance. Continue measurement?")
+                '', "Standard deviation outside tolerance. Repeat measurement?")
             title = _QCoreApplication.translate('', 'Warning')
             reply = _QMessageBox.question(
                 self, title, msg, _QMessageBox.No, _QMessageBox.Yes)
-            if reply == _QMessageBox.No:
-                return False
+            if reply == _QMessageBox.Yes:
+                if self.measurement_error_count < 3:
+                    self.integrated_voltage_position_1 = []
+                    self.integrated_voltage_position_2 = []
+                    return self.start_one_measurement()
+                else:
+                    self.measurement_error_count = 0
+                    return False
 
         if not self.save_measurement_data():
             return False
 
         self.update_magnetization_values(m, mstd)
+
+        self.mx_list.append(m[0])
+        self.my_list.append(m[1])
+        self.mz_list.append(m[2])
 
         self.plot_integrated_voltage()
 
@@ -861,6 +1061,8 @@ class MeasurementWidget(_ConfigurationWidget):
 
         if self.stop:
             return False
+
+        self.measurement_error_count = 0
 
         return True
 
@@ -875,17 +1077,18 @@ class MeasurementWidget(_ConfigurationWidget):
         self.ui.le_std_my.setText(fmt_std.format(mstd[1]))
         self.ui.le_std_mz.setText(fmt_std.format(mstd[2]))
 
-    def stop_measurement(self):
+    def stop_measurement(self, silent=False):
         try:
             self.stop = True
             self.ui.pbt_start_measurement.setEnabled(True)
             _driver.stop_motor(
                 self.advanced_options.motor_driver_address)
-            msg = _QCoreApplication.translate(
-                '', 'The user stopped the measurements.')
-            title = _QCoreApplication.translate('', 'Abort')
-            _QMessageBox.information(
-                self, title, msg, _QMessageBox.Ok)
+            if not silent:
+                msg = _QCoreApplication.translate(
+                    '', 'The user stopped the measurements.')
+                title = _QCoreApplication.translate('', 'Abort')
+                _QMessageBox.information(
+                    self, title, msg, _QMessageBox.Ok)
 
         except Exception:
             self.stop = True

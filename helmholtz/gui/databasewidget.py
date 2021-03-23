@@ -115,6 +115,15 @@ class DatabaseWidget(_QWidget):
         else:
             self.ui.pbt_delete.show()
 
+    def closeEvent(self, event):
+        """Close widget and dialogs."""
+        try:
+            self.results_dialog.close()
+            event.accept()
+        except Exception:
+            _traceback.print_exc(file=_sys.stdout)
+            event.accept()
+
     def clear(self):
         """Clear."""
         try:
