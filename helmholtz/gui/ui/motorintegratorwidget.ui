@@ -364,6 +364,9 @@
         </item>
         <item row="0" column="2">
          <widget class="QDoubleSpinBox" name="sbd_nr_turns">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
           <property name="font">
            <font>
             <weight>50</weight>
@@ -432,7 +435,7 @@
            <string>Number of &amp;turns:</string>
           </property>
           <property name="checked">
-           <bool>true</bool>
+           <bool>false</bool>
           </property>
          </widget>
         </item>
@@ -492,12 +495,15 @@
           <property name="text">
            <string>Encoder position:</string>
           </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
          </widget>
         </item>
         <item row="2" column="2">
          <widget class="QSpinBox" name="sb_encoder_position">
           <property name="enabled">
-           <bool>false</bool>
+           <bool>true</bool>
           </property>
           <property name="font">
            <font>
@@ -512,7 +518,7 @@
            <number>5000000</number>
           </property>
           <property name="value">
-           <number>1</number>
+           <number>137280</number>
           </property>
          </widget>
         </item>
