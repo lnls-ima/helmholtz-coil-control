@@ -89,6 +89,9 @@ class MeasurementWidget(_ConfigurationWidget):
         self.graph_position_2 = []
         self.measurement_data = _measurement.MeasurementData()
         self.measurement_error_count = 0
+        self.mx_list = []
+        self.my_list = []
+        self.mz_list = []
 
         self.legend = _pyqtgraph.LegendItem(offset=(70, 30))
         self.legend.setParentItem(self.ui.pw_graph.graphicsItem())
@@ -108,6 +111,11 @@ class MeasurementWidget(_ConfigurationWidget):
         return _QApplication.instance().scan_parameter_dialog
 
     @property
+    def find_trigger_dialog(self):
+        """Return find trigger dialog."""
+        return _QApplication.instance().find_trigger_dialog
+
+    @property
     def global_config(self):
         """Return the global measurement configuration."""
         return _QApplication.instance().measurement_config
@@ -116,9 +124,20 @@ class MeasurementWidget(_ConfigurationWidget):
     def global_config(self, value):
         _QApplication.instance().measurement_config = value
 
+    def closeEvent(self, event):
+        """Close widget and dialogs."""
+        try:
+            self.scan_parameter_dialog.close()
+            self.find_trigger_dialog.close()
+            event.accept()
+        except Exception:
+            _traceback.print_exc(file=_sys.stdout)
+            event.accept()
+
     def configure_gui_visualization(self):
         if _utils.SIMPLE:
-            self.ui.gb_scan_parameter.hide()
+            self.ui.chb_scan_parameter.hide()
+            self.ui.pbt_configure_scan.hide()
             self.ui.chb_show_position_1.hide()
             self.ui.chb_show_position_2.hide()
             self.ui.gb_load_db.hide()
@@ -135,7 +154,8 @@ class MeasurementWidget(_ConfigurationWidget):
             self.ui.sbd_block_temperature.setEnabled(False)
             self.ui.le_block_name.setEnabled(False)
         else:
-            self.ui.gb_scan_parameter.show()
+            self.ui.chb_scan_parameter.show()
+            self.ui.pbt_configure_scan.show()
             self.ui.chb_show_position_1.show()
             self.ui.chb_show_position_2.show()
             self.ui.gb_load_db.show()
@@ -159,6 +179,9 @@ class MeasurementWidget(_ConfigurationWidget):
         self.integrated_voltage = []
         self.integrated_voltage_position_1 = []
         self.integrated_voltage_position_2 = []
+        self.mx_list = []
+        self.my_list = []
+        self.mz_list = []
         self.ui.le_avg_mx.setText('')
         self.ui.le_avg_my.setText('')
         self.ui.le_avg_mz.setText('')
@@ -344,6 +367,8 @@ class MeasurementWidget(_ConfigurationWidget):
             self.plot_integrated_voltage)
         self.ui.chb_scan_parameter.stateChanged.connect(
             self.enable_scan_configuration)
+        self.ui.chb_find_trigger.stateChanged.connect(
+            self.enable_trigger_initial_guess)
         self.ui.pbt_configure_scan.clicked.connect(
             self.show_scan_parameter_dialog)
         self.ui.tbt_measure_mass.clicked.connect(self.read_mass)
@@ -351,8 +376,18 @@ class MeasurementWidget(_ConfigurationWidget):
     def enable_scan_configuration(self):
         if self.ui.chb_scan_parameter.isChecked():
             self.ui.pbt_configure_scan.setEnabled(True)
+            self.ui.chb_find_trigger.setChecked(False)
         else:
             self.ui.pbt_configure_scan.setEnabled(False)
+
+    def enable_trigger_initial_guess(self):
+        if self.ui.chb_find_trigger.isChecked():
+            self.ui.la_trigger_initial_guess.setEnabled(True)
+            self.ui.sb_trigger_initial_guess.setEnabled(True)
+            self.ui.chb_scan_parameter.setChecked(False)
+        else:
+            self.ui.la_trigger_initial_guess.setEnabled(False)
+            self.ui.sb_trigger_initial_guess.setEnabled(False)
 
     def show_scan_parameter_dialog(self):
         self.scan_parameter_dialog.show()
@@ -694,11 +729,13 @@ class MeasurementWidget(_ConfigurationWidget):
             if reply == _QMessageBox.Cancel:
                 return False
 
+            _QApplication.setOverrideCursor(_Qt.WaitCursor)
             mass_list = []
             for i in range(10):
                 mass = _balance.read_mass(wait=0.5)
                 if mass is not None:
                     mass_list.append(mass)
+            _QApplication.restoreOverrideCursor()
 
             if len(mass_list) == 0:
                 massA = 0
@@ -715,11 +752,13 @@ class MeasurementWidget(_ConfigurationWidget):
             if reply == _QMessageBox.Cancel:
                 return False
 
+            _QApplication.setOverrideCursor(_Qt.WaitCursor)
             mass_list = []
             for i in range(10):
                 mass = _balance.read_mass(wait=0.5)
                 if mass is not None:
                     mass_list.append(mass)
+            _QApplication.restoreOverrideCursor()
 
             if len(mass_list) == 0:
                 massB = 0
@@ -819,6 +858,60 @@ class MeasurementWidget(_ConfigurationWidget):
                     _QMessageBox.critical(
                         self, title, msg, _QMessageBox.Ok)
                     return False
+        
+        elif self.ui.chb_find_trigger.isChecked():
+            try:
+                self.global_config.measure_position_1 = True
+                self.global_config.measure_position_2 = False
+                encoder_res = self.advanced_options.integrator_encoder_resolution
+                initial_guess = self.ui.sb_trigger_initial_guess.value()
+
+                scan_parameter = 'integration_trigger'
+                scan_interval = encoder_res/36
+                scan_npts = 21               
+                scan_values = _np.linspace(
+                    int(initial_guess - scan_interval/2),
+                    int(initial_guess + scan_interval/2),
+                    scan_npts) % encoder_res
+                scan_values = scan_values.astype(int)
+ 
+                for value in scan_values:
+                    setattr(self.advanced_options, scan_parameter, value)
+                    setattr(self.advanced_options, 'date', None)
+                    setattr(self.advanced_options, 'hour', None)
+                    self.advanced_options.db_save()
+                    self.start_one_measurement(silent=True)
+                mx_list_1 = [mx for mx in self.mx_list]
+
+                msg = _QCoreApplication.translate(
+                    '', 'Rotate the magnet 180 degress around the X axis.')
+                title = _QCoreApplication.translate('', 'Information')
+                reply = _QMessageBox.information(
+                    self, title, msg, _QMessageBox.Ok, _QMessageBox.Cancel)
+
+                if reply == _QMessageBox.Cancel:
+                    self.stop_measurement(silent=True)
+                    return False
+
+                for value in scan_values:
+                    setattr(self.advanced_options, scan_parameter, value)
+                    setattr(self.advanced_options, 'date', None)
+                    setattr(self.advanced_options, 'hour', None)
+                    self.advanced_options.db_save()
+                    self.start_one_measurement(silent=True)
+                mx_list_2 = [mx for mx in self.mx_list]
+
+                self.find_trigger_dialog.show(
+                    scan_values, mx_list_1, mx_list_2)
+
+            except Exception:
+                msg = _QCoreApplication.translate(
+                    '', 'Find trigger measurement failed.')
+                title = _QCoreApplication.translate('', 'Failure')
+                _QMessageBox.critical(
+                    self, title, msg, _QMessageBox.Ok)
+                return False
+
         else:
             if not self.start_one_measurement():
                 return False
@@ -954,6 +1047,10 @@ class MeasurementWidget(_ConfigurationWidget):
             return False
 
         self.update_magnetization_values(m, mstd)
+
+        self.mx_list.append(m[0])
+        self.my_list.append(m[1])
+        self.mz_list.append(m[2])
 
         self.plot_integrated_voltage()
 

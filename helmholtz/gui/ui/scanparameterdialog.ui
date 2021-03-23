@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>dl_scan_parameters</class>
- <widget class="QDialog" name="dl_scan_parameters">
+ <class>dl_scan_parameter</class>
+ <widget class="QDialog" name="dl_scan_parameter">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -100,7 +100,7 @@
      <item>
       <widget class="QRadioButton" name="rbt_table">
        <property name="text">
-        <string>Table</string>
+        <string>&amp;Table</string>
        </property>
        <property name="checked">
         <bool>true</bool>

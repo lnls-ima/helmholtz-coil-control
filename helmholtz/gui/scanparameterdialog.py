@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""Measurement widget for the control application."""
+"""Find trigger dialog."""
 
 import sys as _sys
 import traceback as _traceback
@@ -14,7 +14,7 @@ from helmholtz.gui import utils as _utils
 
 
 class ScanParameterDialog(_QDialog):
-    """Scan parameter dialog for the control application."""
+    """Scan parameter dialog."""
 
     def __init__(self, parent=None):
         """Set up the ui."""
@@ -74,6 +74,11 @@ class ScanParameterDialog(_QDialog):
         """Create signal/slot connections."""
         self.ui.cmb_parameter.currentIndexChanged.connect(self.disable_led)
         self.ui.tbl_values.itemSelectionChanged.connect(self.disable_led)
+        self.ui.rbt_table.toggled.connect(self.disable_led)
+        self.ui.rbt_step.toggled.connect(self.disable_led)
+        self.ui.sbd_start.editingFinished.connect(self.disable_led)
+        self.ui.sbd_end.editingFinished.connect(self.disable_led)
+        self.ui.sbd_step.editingFinished.connect(self.disable_led)
         self.ui.pbt_add_row.clicked.connect(self.add_row)
         self.ui.pbt_remove_row.clicked.connect(self.remove_row)
         self.ui.pbt_clear_table.clicked.connect(self.clear)

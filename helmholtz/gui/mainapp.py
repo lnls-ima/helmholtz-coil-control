@@ -14,6 +14,8 @@ from helmholtz.gui.resultsdialog import ResultsDialog \
     as _ResultsDialog
 from helmholtz.gui.scanparameterdialog import ScanParameterDialog \
     as _ScanParameterDialog
+from helmholtz.gui.findtriggerdialog import FindTriggerDialog \
+    as _FindTriggerDialog
 from helmholtz.data import configuration as _configuration
 from helmholtz.data import measurement as _measurement
 
@@ -35,12 +37,14 @@ class MainApp(_QApplication):
         self.advanced_options_dialog = None
         self.results_dialog = None
         self.scan_parameter_dialog = None
+        self.find_trigger_dialog = None
 
     def create_dialogs(self):
         """Create dialogs."""
         self.advanced_options_dialog = _AdvancedOptionsDialog()
         self.results_dialog = _ResultsDialog()
         self.scan_parameter_dialog = _ScanParameterDialog()
+        self.find_trigger_dialog = _FindTriggerDialog()
 
     def create_database(self):
         """Create database and tables."""

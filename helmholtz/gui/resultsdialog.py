@@ -715,7 +715,7 @@ class ResultsDialog(_QDialog):
             _traceback.print_exc(file=_sys.stdout)
             msg = _QCoreApplication.translate('', 'Failed to show dialog.')
             title = _QCoreApplication.translate('', 'Failure')
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            _QMessageBox.critical(self, title, msg, _QMessageBox.Ok)
             return
 
     def enable_limits(self):

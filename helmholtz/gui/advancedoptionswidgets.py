@@ -2,6 +2,8 @@
 
 """Advanced options widget for the control application."""
 
+import sys as _sys
+import traceback as _traceback
 from qtpy.QtWidgets import (
     QDialog as _QDialog,
     QHBoxLayout as _QHBoxLayout,
@@ -36,6 +38,20 @@ class AdvancedOptionsDialog(_QDialog):
     def config(self):
         """Return configuration."""
         return self.main_widget.config
+
+    def show(self):
+        try:
+            self.main_widget.load()
+        except Exception:
+            _traceback.print_exc(file=_sys.stdout)
+        super().show()
+
+    def open(self):
+        try:
+            self.main_widget.load()
+        except Exception:
+            _traceback.print_exc(file=_sys.stdout)
+        super().open()
 
 
 class AdvancedOptionsWidget(_ConfigurationWidget):
@@ -78,5 +94,5 @@ class AdvancedOptionsWidget(_ConfigurationWidget):
     def connect_signal_slots(self):
         """Create signal/slot connections."""
         super().connect_signal_slots()
-        self.ui.pbt_save.clicked.connect(self.save_db)
+        self.ui.pbt_save.clicked.connect(lambda: self.save_db(force=True))
         self.ui.pbt_cancel.clicked.connect(self.load)
