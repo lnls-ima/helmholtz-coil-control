@@ -54,12 +54,15 @@ class ResultsDialog(_QDialog):
         self.mx = []
         self.my = []
         self.mz = []
+        self.mnorm = []
         self.std_mx = []
         self.std_my = []
-        self.std_mz = []      
+        self.std_mz = []
+        self.std_mnorm = [] 
         self.graph_mx = None
         self.graph_my = None
         self.graph_mz = None
+        self.graph_mnorm = None
         self.xmin_line = None
         self.xmax_line = None
         self.graph_vol = None
@@ -177,9 +180,11 @@ class ResultsDialog(_QDialog):
         self.mx = []
         self.my = []
         self.mz = []
+        self.mnorm = []
         self.std_mx = []
         self.std_my = []
-        self.std_mz = []      
+        self.std_mz = []
+        self.std_mnorm = []      
         self.xmin_line = None
         self.xmax_line = None
         self.clear_fit()
@@ -207,6 +212,7 @@ class ResultsDialog(_QDialog):
         self.graph_mx = None
         self.graph_my = None
         self.graph_mz = None
+        self.graph_mnorm = None
 
     def clear_plot_iv(self):
         """Clear integrated voltage plots."""
@@ -378,6 +384,7 @@ class ResultsDialog(_QDialog):
         color_mx = (255, 0, 0)
         color_my = (0, 255, 0)
         color_mz = (0, 0, 255)
+        color_mnorm = (0, 0, 0)
 
         pen = _pyqtgraph.mkPen(color=color_mx, width=self.graph_linewidth)
         self.graph_mx = self.ui.pw_graph_mag.plotItem.plot(
@@ -409,10 +416,21 @@ class ResultsDialog(_QDialog):
             symbolBrush=color_mz)
         self.graph_mz.setPen(pen)
 
-        self.legend_mag_items = ['Mx', 'My', 'Mz']
+        pen = _pyqtgraph.mkPen(color=color_mnorm, width=self.graph_linewidth)
+        self.graph_mnorm = self.ui.pw_graph_mag.plotItem.plot(
+            _np.array([]),
+            _np.array([]),
+            symbol='o',
+            symbolPen=color_mnorm,
+            symbolSize=self.graph_symbolsize,
+            symbolBrush=color_mnorm)
+        self.graph_mnorm.setPen(pen)
+
+        self.legend_mag_items = ['Mx', 'My', 'Mz', 'M']
         self.legend_mag.addItem(self.graph_mx, self.legend_mag_items[0])
         self.legend_mag.addItem(self.graph_my, self.legend_mag_items[1])
         self.legend_mag.addItem(self.graph_mz, self.legend_mag_items[2])
+        self.legend_mag.addItem(self.graph_mnorm, self.legend_mag_items[3])
 
         if self.ui.rbt_std.isChecked():
             self.ui.pw_graph_mag.setLabel(
@@ -442,6 +460,8 @@ class ResultsDialog(_QDialog):
         self.ui.chb_my.stateChanged.connect(
             self.enable_limits_and_update_plot_mag)
         self.ui.chb_mz.stateChanged.connect(
+            self.enable_limits_and_update_plot_mag)
+        self.ui.chb_mnorm.stateChanged.connect(
             self.enable_limits_and_update_plot_mag)
         self.ui.rbt_avg.toggled.connect(
             self.enable_limits_and_update_plot_mag)
@@ -506,7 +526,13 @@ class ResultsDialog(_QDialog):
                     plots.append('std_mz')
                 else:
                     plots.append('mz')
-            
+
+            if self.ui.chb_mnorm.isChecked():
+                if self.ui.rbt_std.isChecked():
+                    plots.append('std_mnorm')
+                else:
+                    plots.append('mnorm')
+
             return plots
 
         except Exception:
@@ -590,12 +616,16 @@ class ResultsDialog(_QDialog):
             ydata = self.my
         elif 'mz' in plots:
             ydata = self.mz
+        elif 'mnorm' in plots:
+            ydata = self.mnorm
         elif 'std_mx' in plots:
             ydata = self.std_mx
         elif 'std_my' in plots:
             ydata = self.std_my
         elif 'std_mz' in plots:
             ydata = self.std_mz
+        elif 'std_mnorm' in plots:
+            ydata = self.std_mnorm
 
         sorted_data = _np.array(sorted(zip(xdata, ydata)))
         x = sorted_data[:, 0]
@@ -643,18 +673,24 @@ class ResultsDialog(_QDialog):
             self.mx = []
             self.my = []
             self.mz = []
+            self.mnorm = []
             self.std_mx = []
             self.std_my = []
-            self.std_mz = []            
+            self.std_mz = []
+            self.std_mnorm = []           
             self.volume_list = []
             self.temperature_list = []
             for m in self.measurement_list:
+                mnorm = _np.sqrt(m.mx_avg**2 + m.my_avg**2 + m.mz_avg**2)
+                std_mnorm = _np.sqrt(m.mx_std**2 + m.my_std**2 + m.mz_std**2)*1e4
                 self.mx.append(m.mx_avg)
                 self.my.append(m.my_avg)
                 self.mz.append(m.mz_avg)
+                self.mnorm.append(mnorm)
                 self.std_mx.append(m.mx_std*1e4)
                 self.std_my.append(m.my_std*1e4)
                 self.std_mz.append(m.mz_std*1e4)
+                self.std_mnorm.append(std_mnorm)
                 self.volume_list.append(m.block_volume*1e6)
                 self.temperature_list.append(m.block_temperature)
 
@@ -791,6 +827,16 @@ class ResultsDialog(_QDialog):
                     x_sorted = sorted_data[:, 0]
                     y_sorted = sorted_data[:, 1]
                     self.graph_mz.setData(x_sorted, y_sorted)
+
+                if 'mnorm' in plots or 'std_mnorm' in plots:
+                    if 'std_mnorm' in plots:                 
+                        sorted_data = _np.array(sorted(zip(x, self.std_mnorm)))
+                    else:
+                        sorted_data = _np.array(sorted(zip(x, self.mnorm)))
+
+                    x_sorted = sorted_data[:, 0]
+                    y_sorted = sorted_data[:, 1]
+                    self.graph_mnorm.setData(x_sorted, y_sorted)
 
             if show_xlines:
                 xmin = self.ui.sbd_xmin.value()

@@ -177,19 +177,13 @@ class FindTriggerDialog(_QDialog):
 
     def show(self, trigger_list, mx_list_1, mx_list_2):
         try:
-            if len(trigger_list) == len(mx_list_1) == len(mx_list_2):
-                self.trigger_list = trigger_list
-                self.mx_list_1 = mx_list_1
-                self.mx_list_2 = mx_list_2
-                self.config_and_plot_mag()
-                self.calc_and_plot_fit()
-                super().show()
+            self.trigger_list = trigger_list
+            self.mx_list_1 = mx_list_1
+            self.mx_list_2 = mx_list_2
+            self.config_and_plot_mag()
+            self.calc_and_plot_fit()
+            super().show()
             
-            else:
-                msg = _QCoreApplication.translate('', 'Invalid find trigger results.')
-                title = _QCoreApplication.translate('', 'Failure')
-                _QMessageBox.critical(self, title, msg, _QMessageBox.Ok)
-
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
             msg = _QCoreApplication.translate('', 'Failed to show trigger dialog.')

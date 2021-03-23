@@ -162,16 +162,7 @@
       <enum>QFrame::StyledPanel</enum>
      </property>
      <layout class="QGridLayout" name="gridLayout">
-      <property name="leftMargin">
-       <number>6</number>
-      </property>
-      <property name="topMargin">
-       <number>6</number>
-      </property>
-      <property name="rightMargin">
-       <number>6</number>
-      </property>
-      <property name="bottomMargin">
+      <property name="margin">
        <number>6</number>
       </property>
       <item row="0" column="1" colspan="3">
@@ -462,20 +453,11 @@
       <string>Block Volume</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_13">
-      <property name="leftMargin">
-       <number>6</number>
-      </property>
-      <property name="topMargin">
-       <number>6</number>
-      </property>
-      <property name="rightMargin">
-       <number>6</number>
-      </property>
-      <property name="bottomMargin">
-       <number>6</number>
-      </property>
       <property name="verticalSpacing">
        <number>0</number>
+      </property>
+      <property name="margin">
+       <number>6</number>
       </property>
       <item row="0" column="0">
        <widget class="QRadioButton" name="rbt_volume">
@@ -1072,7 +1054,10 @@
           <property name="maximum">
            <number>360000</number>
           </property>
-          <property name="displayIntegerBase">
+          <property name="value">
+           <number>75148</number>
+          </property>
+          <property name="displayIntegerBase" stdset="0">
            <number>10</number>
           </property>
          </widget>

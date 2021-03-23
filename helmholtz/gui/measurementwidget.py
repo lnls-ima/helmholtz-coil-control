@@ -868,7 +868,7 @@ class MeasurementWidget(_ConfigurationWidget):
 
                 scan_parameter = 'integration_trigger'
                 scan_interval = encoder_res/36
-                scan_npts = 21               
+                scan_npts = 11               
                 scan_values = _np.linspace(
                     int(initial_guess - scan_interval/2),
                     int(initial_guess + scan_interval/2),
@@ -882,6 +882,10 @@ class MeasurementWidget(_ConfigurationWidget):
                     self.advanced_options.db_save()
                     self.start_one_measurement(silent=True)
                 mx_list_1 = [mx for mx in self.mx_list]
+
+                self.mx_list = []
+                self.my_list = []
+                self.mz_list = []
 
                 msg = _QCoreApplication.translate(
                     '', 'Rotate the magnet 180 degress around the X axis.')

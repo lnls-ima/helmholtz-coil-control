@@ -518,7 +518,7 @@
            <number>5000000</number>
           </property>
           <property name="value">
-           <number>137280</number>
+           <number>75148</number>
           </property>
          </widget>
         </item>
@@ -540,7 +540,7 @@
      </property>
     </spacer>
    </item>
-   <item row="1" column="0">
+   <item row="1" column="0" colspan="2">
     <widget class="QLabel" name="label">
      <property name="font">
       <font>
@@ -548,7 +548,7 @@
       </font>
      </property>
      <property name="text">
-      <string>Posição Inicial (Blocos Delta Sabiá): 137280</string>
+      <string>Posição Inicial (Blocos Delta Sabiá, Piscina de aluminio): 75148</string>
      </property>
     </widget>
    </item>
