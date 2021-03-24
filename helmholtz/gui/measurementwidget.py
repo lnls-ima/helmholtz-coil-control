@@ -841,6 +841,8 @@ class MeasurementWidget(_ConfigurationWidget):
                 return False
             else:
                 try:
+                    prev_adv_opt = self.advanced_options.copy()
+
                     scan_parameter = self.scan_parameter_dialog.scan_parameter
                     scan_values = self.scan_parameter_dialog.scan_values
 
@@ -851,6 +853,8 @@ class MeasurementWidget(_ConfigurationWidget):
                         self.advanced_options.db_save()
                         self.start_one_measurement(silent=True)
 
+                    prev_adv_opt.db_save()
+
                 except Exception:
                     msg = _QCoreApplication.translate(
                         '', 'Set of measurements failed.')
@@ -858,7 +862,7 @@ class MeasurementWidget(_ConfigurationWidget):
                     _QMessageBox.critical(
                         self, title, msg, _QMessageBox.Ok)
                     return False
-        
+
             msg = _QCoreApplication.translate(
                 '', 'End of measurement.')
             title = _QCoreApplication.translate('', 'Information')
@@ -867,6 +871,8 @@ class MeasurementWidget(_ConfigurationWidget):
 
         elif self.ui.chb_find_trigger.isChecked():
             try:
+                prev_adv_opt = self.advanced_options.copy()
+
                 self.global_config.measure_position_1 = True
                 self.global_config.measure_position_2 = False
                 encoder_res = self.advanced_options.integrator_encoder_resolution
@@ -874,13 +880,13 @@ class MeasurementWidget(_ConfigurationWidget):
 
                 scan_parameter = 'integration_trigger'
                 scan_interval = encoder_res/36
-                scan_npts = 5               
+                scan_npts = 5
                 scan_values = _np.linspace(
                     int(initial_guess - scan_interval/2),
                     int(initial_guess + scan_interval/2),
                     scan_npts) % encoder_res
                 scan_values = scan_values.astype(int)
- 
+
                 msg = _QCoreApplication.translate(
                     '', 'Place the magnet in Position 1.')
                 title = _QCoreApplication.translate('', 'Information')
@@ -920,6 +926,8 @@ class MeasurementWidget(_ConfigurationWidget):
                     self.advanced_options.db_save()
                     self.start_one_measurement(silent=True)
                 mx_list_2 = [mx for mx in self.mx_list]
+
+                prev_adv_opt.db_save()
 
                 self.find_trigger_dialog.show(
                     scan_values, mx_list_1, mx_list_2)
