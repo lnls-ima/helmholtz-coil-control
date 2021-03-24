@@ -41,17 +41,23 @@ class AdvancedOptionsDialog(_QDialog):
 
     def show(self):
         try:
-            self.main_widget.load()
+            self.main_widget.load_last_db_entry()
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
         super().show()
 
     def open(self):
         try:
-            self.main_widget.load()
+            self.main_widget.load_last_db_entry()
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
         super().open()
+
+    def update_dialog(self):
+        try:
+            self.main_widget.load_last_db_entry()
+        except Exception:
+            _traceback.print_exc(file=_sys.stdout)
 
 
 class AdvancedOptionsWidget(_ConfigurationWidget):

@@ -101,9 +101,9 @@ class FindTriggerDialog(_QDialog):
 
     def update_trigger_config(self):
         if self.trigger_avg is not None:
-            self.advanced_options_dialog.close()
             self.advanced_options.integration_trigger = self.trigger_avg
             self.advanced_options.db_save()
+            self.advanced_options_dialog.update_dialog()
             self.ui.la_updated_led.setEnabled(True)
 
     def config_and_plot_mag(self):

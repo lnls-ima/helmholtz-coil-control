@@ -106,6 +106,11 @@ class MeasurementWidget(_ConfigurationWidget):
         return dialog.config
 
     @property
+    def advanced_options_dialog(self):
+        """Return advanced options dialog."""
+        return _QApplication.instance().advanced_options_dialog
+
+    @property
     def scan_parameter_dialog(self):
         """Return scan parameter dialog."""
         return _QApplication.instance().scan_parameter_dialog
@@ -316,6 +321,8 @@ class MeasurementWidget(_ConfigurationWidget):
             if not self.update_configuration():
                 return False
 
+            self.config.date = None
+            self.config.hour = None
             if not self.save_db():
                 return False
 
@@ -808,6 +815,19 @@ class MeasurementWidget(_ConfigurationWidget):
             _QMessageBox.critical(self, title, msg, _QMessageBox.Ok)
             return False
 
+    def change_advanced_options_param(self, param, value):
+        try:
+            setattr(self.advanced_options, param, value)
+            setattr(self.advanced_options, 'date', None)
+            setattr(self.advanced_options, 'hour', None)
+            self.advanced_options.db_save()
+            self.advanced_options_dialog.update_dialog()
+            return True
+        
+        except Exception:
+            _traceback.print_exc(file=_sys.stdout)
+            return False
+
     def start_measurements(self):
         self.clear()
 
@@ -841,19 +861,15 @@ class MeasurementWidget(_ConfigurationWidget):
                 return False
             else:
                 try:
-                    prev_adv_opt = self.advanced_options.copy()
-
                     scan_parameter = self.scan_parameter_dialog.scan_parameter
                     scan_values = self.scan_parameter_dialog.scan_values
+                    prev_value = getattr(self.advanced_options, scan_parameter)
 
                     for value in scan_values:
-                        setattr(self.advanced_options, scan_parameter, value)
-                        setattr(self.advanced_options, 'date', None)
-                        setattr(self.advanced_options, 'hour', None)
-                        self.advanced_options.db_save()
+                        self.change_advanced_options_param(scan_parameter, value)
                         self.start_one_measurement(silent=True)
 
-                    prev_adv_opt.db_save()
+                    self.change_advanced_options_param(scan_parameter, prev_value)
 
                 except Exception:
                     msg = _QCoreApplication.translate(
@@ -871,8 +887,6 @@ class MeasurementWidget(_ConfigurationWidget):
 
         elif self.ui.chb_find_trigger.isChecked():
             try:
-                prev_adv_opt = self.advanced_options.copy()
-
                 self.global_config.measure_position_1 = True
                 self.global_config.measure_position_2 = False
                 encoder_res = self.advanced_options.integrator_encoder_resolution
@@ -886,6 +900,7 @@ class MeasurementWidget(_ConfigurationWidget):
                     int(initial_guess + scan_interval/2),
                     scan_npts) % encoder_res
                 scan_values = scan_values.astype(int)
+                prev_value = getattr(self.advanced_options, scan_parameter)
 
                 msg = _QCoreApplication.translate(
                     '', 'Place the magnet in Position 1.')
@@ -898,10 +913,7 @@ class MeasurementWidget(_ConfigurationWidget):
                     return False
 
                 for value in scan_values:
-                    setattr(self.advanced_options, scan_parameter, value)
-                    setattr(self.advanced_options, 'date', None)
-                    setattr(self.advanced_options, 'hour', None)
-                    self.advanced_options.db_save()
+                    self.change_advanced_options_param(scan_parameter, value)
                     self.start_one_measurement(silent=True)
                 mx_list_1 = [mx for mx in self.mx_list]
 
@@ -916,21 +928,17 @@ class MeasurementWidget(_ConfigurationWidget):
                     self, title, msg, _QMessageBox.Ok, _QMessageBox.Cancel)
 
                 if reply == _QMessageBox.Cancel:
+                    self.change_advanced_options_param(scan_parameter, prev_value)
                     self.stop_measurement(silent=True)
                     return False
 
                 for value in scan_values:
-                    setattr(self.advanced_options, scan_parameter, value)
-                    setattr(self.advanced_options, 'date', None)
-                    setattr(self.advanced_options, 'hour', None)
-                    self.advanced_options.db_save()
+                    self.change_advanced_options_param(scan_parameter, value)
                     self.start_one_measurement(silent=True)
                 mx_list_2 = [mx for mx in self.mx_list]
 
-                prev_adv_opt.db_save()
-
-                self.find_trigger_dialog.show(
-                    scan_values, mx_list_1, mx_list_2)
+                self.change_advanced_options_param(scan_parameter, prev_value)
+                self.find_trigger_dialog.show(scan_values, mx_list_1, mx_list_2)
 
             except Exception:
                 msg = _QCoreApplication.translate(
