@@ -859,6 +859,12 @@ class MeasurementWidget(_ConfigurationWidget):
                         self, title, msg, _QMessageBox.Ok)
                     return False
         
+            msg = _QCoreApplication.translate(
+                '', 'End of measurement.')
+            title = _QCoreApplication.translate('', 'Information')
+            _QMessageBox.information(
+                self, title, msg, _QMessageBox.Ok)
+
         elif self.ui.chb_find_trigger.isChecked():
             try:
                 self.global_config.measure_position_1 = True
@@ -868,13 +874,23 @@ class MeasurementWidget(_ConfigurationWidget):
 
                 scan_parameter = 'integration_trigger'
                 scan_interval = encoder_res/36
-                scan_npts = 11               
+                scan_npts = 5               
                 scan_values = _np.linspace(
                     int(initial_guess - scan_interval/2),
                     int(initial_guess + scan_interval/2),
                     scan_npts) % encoder_res
                 scan_values = scan_values.astype(int)
  
+                msg = _QCoreApplication.translate(
+                    '', 'Place the magnet in Position 1.')
+                title = _QCoreApplication.translate('', 'Information')
+                reply = _QMessageBox.information(
+                    self, title, msg, _QMessageBox.Ok, _QMessageBox.Cancel)
+
+                if reply == _QMessageBox.Cancel:
+                    self.stop_measurement(silent=True)
+                    return False
+
                 for value in scan_values:
                     setattr(self.advanced_options, scan_parameter, value)
                     setattr(self.advanced_options, 'date', None)
@@ -920,14 +936,14 @@ class MeasurementWidget(_ConfigurationWidget):
             if not self.start_one_measurement():
                 return False
 
+            msg = _QCoreApplication.translate(
+                '', 'End of measurement.')
+            title = _QCoreApplication.translate('', 'Information')
+            _QMessageBox.information(
+                self, title, msg, _QMessageBox.Ok)
+
         self.ui.pbt_start_measurement.setEnabled(True)
         _QApplication.processEvents()
-
-        msg = _QCoreApplication.translate(
-            '', 'End of measurement.')
-        title = _QCoreApplication.translate('', 'Information')
-        _QMessageBox.information(
-            self, title, msg, _QMessageBox.Ok)
 
         return True
 

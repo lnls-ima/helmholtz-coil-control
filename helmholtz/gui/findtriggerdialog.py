@@ -45,6 +45,7 @@ class FindTriggerDialog(_QDialog):
         self.graph_font.setPixelSize(self.graph_fontsize)
 
         self.connect_signal_slots()
+        self.configure_gui_visualization()
 
     @property
     def advanced_options(self):
@@ -87,6 +88,12 @@ class FindTriggerDialog(_QDialog):
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
             event.accept()
+
+    def configure_gui_visualization(self):
+        if _utils.SIMPLE:
+            self.ui.fm_update_trigger.hide()
+        else:
+            self.ui.fm_update_trigger.show()
 
     def connect_signal_slots(self):
         """Create signal/slot connections."""
