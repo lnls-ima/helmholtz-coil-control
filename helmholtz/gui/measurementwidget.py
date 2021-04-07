@@ -958,6 +958,12 @@ class MeasurementWidget(_ConfigurationWidget):
             _QMessageBox.information(
                 self, title, msg, _QMessageBox.Ok)
 
+        try:
+            if _utils.SIMPLE:
+                self.ui.te_comments.setText('')
+        except Exception:
+            pass
+
         self.ui.pbt_start_measurement.setEnabled(True)
         _QApplication.processEvents()
 
