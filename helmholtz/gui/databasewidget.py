@@ -11,7 +11,7 @@ import qtpy.uic as _uic
 from qtpy.QtCore import (
     Qt as _Qt,
     QCoreApplication as _QCoreApplication,
-    ) 
+    )
 from qtpy.QtWidgets import (
     QWidget as _QWidget,
     QApplication as _QApplication,
@@ -145,7 +145,41 @@ class DatabaseWidget(_QWidget):
             self.disable_invalid_buttons)
 
         self.ui.pbt_save_summary.clicked.connect(self.save_summary)
+        self.ui.pbt_edit_comment.clicked.connect(self.edit_comment)
         self.ui.pbt_view_results.clicked.connect(self.show_results_dialog)
+
+    def edit_comment(self):
+        try:
+            table_name = self.twg_database.get_current_table_name()
+            if table_name is None:
+                return
+
+            idn = self.twg_database.get_table_selected_id(table_name)
+            if idn is None:
+                return
+
+            object_class = self._table_object_dict[table_name]
+            obj = object_class(
+                database_name=self.database_name,
+                mongo=self.mongo, server=self.server)
+            obj.db_read(idn)
+            prev_comments = obj.comments
+
+            title = _QCoreApplication.translate('', 'Edit Comments')
+            label = _QCoreApplication.translate('', 'Comments:')
+            new_comments, resp = _QInputDialog.getText(
+                self, title, label, text=prev_comments)
+
+            if not resp:
+                return
+
+            obj.comments = new_comments
+            obj.db_update(idn)
+
+            self.update_database_tables()
+
+        except Exception:
+            _traceback.print_exc(file=_sys.stdout)
 
     def show_results_dialog(self):
         try:
@@ -239,7 +273,7 @@ class DatabaseWidget(_QWidget):
                     '', 'Failed to save file.')
                 title = _QCoreApplication.translate('', 'Failure')
                 _QMessageBox.critical(self, title, msg, _QMessageBox.Ok)
-        
+
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
 
