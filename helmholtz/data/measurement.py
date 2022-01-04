@@ -202,3 +202,69 @@ class MeasurementData(_database.DatabaseAndFileDocument):
         mstd = [self.mx_std, self.my_std, self.mz_std]
 
         return m, mstd
+
+    def reset_magnetization_components(self):
+        mx1, my, mx1_std, my_std = self.calc_magnetization(
+            self.integrated_voltage_position_1,
+            self.offset_position_1,
+            self.coil_radius,
+            self.coil_distance_center,
+            self.coil_turns,
+            self.block_volume)
+
+        mx2, mz, mx2_std, mz_std = self.calc_magnetization(
+            self.integrated_voltage_position_2,
+            self.offset_position_2,
+            self.coil_radius,
+            self.coil_distance_center,
+            self.coil_turns,
+            self.block_volume)
+
+        mz = (-1)*mz
+
+        npts1 = len(self.integrated_voltage_position_1)
+        npts2 = len(self.integrated_voltage_position_2)
+        npts3 = len(self.integrated_voltage_position_3)
+
+        if npts1 != 0:
+            shape = self.integrated_voltage_position_1.shape
+        elif npts2 != 0:
+            shape = self.integrated_voltage_position_2.shape
+        else:
+            shape = self.integrated_voltage_position_3.shape
+
+        if npts1 == 0:
+            self.integrated_voltage_position_1 = _np.zeros(shape)
+
+        if npts2 == 0:
+            self.integrated_voltage_position_2 = _np.zeros(shape)
+
+        if npts3 == 0:
+            self.integrated_voltage_position_3 = _np.zeros(shape)
+
+        if mx1 == 0:
+            mx = mx2
+            mx_std = mx2_std
+        elif mx2 == 0:
+            mx = mx1
+            mx_std = mx1_std
+        elif _np.abs(my) >= _np.abs(mz):
+            mx = mx1
+            mx_std = mx1_std
+        else:
+            mx = mx2
+            mx_std = mx2_std
+
+        self.mx1 = mx1
+        self.mx2 = mx2
+
+        self.mx1_std = mx1_std
+        self.mx2_std = mx2_std
+
+        self.mx_avg = mx
+        self.my_avg = my
+        self.mz_avg = mz
+
+        self.mx_std = mx_std
+        self.my_std = my_std
+        self.mz_std = mz_std

@@ -102,13 +102,13 @@ def run():
     app = None
     if not _QApplication.instance():
         app = MainApp([])
+        app.create_dialogs()
+        window = _MainWindow(
+            width=_utils.WINDOW_WIDTH, height=_utils.WINDOW_HEIGHT)
         translators = _utils.get_translators()
         if translators is not None:
             for translator in translators:
                 app.installTranslator(translator)
-        app.create_dialogs()
-        window = _MainWindow(
-            width=_utils.WINDOW_WIDTH, height=_utils.WINDOW_HEIGHT)
         window.show()
         window.centralize_window()
         _sys.exit(app.exec_())

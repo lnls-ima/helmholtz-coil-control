@@ -77,7 +77,8 @@ class DatabaseWidget(_QWidget):
 
         self.twg_database = _databasewidgets.DatabaseTabWidget(
             database_name=self.database_name,
-            mongo=self.mongo, server=self.server, max_str_size=100)
+            mongo=self.mongo, server=self.server, max_str_size=100,
+            max_number_rows=2000)
         self.ui.lyt_database.addWidget(self.twg_database)
 
         self.connect_signal_slots()
